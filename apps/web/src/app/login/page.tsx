@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useAuth } from "@/application/hooks/use-auth";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
+import { GlowOrb } from "@/presentation/components/features/GlowOrb";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -62,8 +64,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-      <div className="w-full max-w-md space-y-8">
+    <main className="relative container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <DotsBackground opacity={0.3} />
+      <GlowOrb className="top-1/4 left-1/4" size={300} />
+      <GlowOrb className="bottom-1/4 right-1/4" size={250} color="hsl(210, 80%, 50%)" />
+      <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="text-center space-y-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mx-auto">
             <img src="/logo.svg" alt="SpikeClip logo" className="h-7 w-7" />
