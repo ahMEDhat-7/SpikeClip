@@ -1,1486 +1,806 @@
-# SpikeClip Task Breakdown
+# SpikeClip — Task Breakdown
 
-> Ordered by dependency, starting from Phase 0 (Validation). Nothing in Part II builds until Phase 4 is a "go."
+> Complete task breakdown extracted from NEXT-STAGE-PLAN.md. All phases, tasks, hours, files, and deliverables.
 
 ---
 
-## Phase 0: Define the Wedge
+## Phase 0: Git Setup
 
-**Goal:** Establish the one-page value prop, proof metric, and non-goals.
+- [ ] **0.1** Create `develop` branch from `main` as integration branch
+  - Command: `git checkout main && git checkout -b develop`
+  - All feature branches merge into `develop`; `main` remains stable
 
-### Task 0.1: Write Value Proposition
+**Deliverable:** Integration branch ready for development.
 
-**Description:** Write the one-sentence value prop and supporting positioning statement.
-
-**Acceptance criteria:**
-- [ ] One-sentence value prop written: "shows you which moments people actually rewatched, so you clip the right ones — not the ones an AI guesses"
-- [ ] Supporting 2-3 sentence positioning statement
-- [ ] Differentiator vs AI-guessing tools clearly articulated
-
-**Verification:**
-- [ ] Read the value prop to someone unfamiliar with the project — they can explain it back
-
-**Dependencies:** None
-
-**Files likely touched:**
-- `docs/value-proposition.md` (new)
-
-**Estimated scope:** Small (1 file)
-
----
-
-### Task 0.2: Name Competitors and Differentiation
-
-**Description:** Document 3 competitors and explain why heatmap-based beats AI-guessed.
-
-**Acceptance criteria:**
-- [ ] 3 competitors identified (e.g., OpusClip, Vexub, one more)
-- [ ] Each competitor's approach documented
-- [ ] Clear explanation of why heatmap data > AI prediction
-
-**Verification:**
-- [ ] Differentiation is defensible and factual
-
-**Dependencies:** None
-
-**Files likely touched:**
-- `docs/competitive-analysis.md` (new)
-
-**Estimated scope:** Small (1 file)
-
----
-
-### Task 0.3: Pick Proof Metric
-
-**Description:** Choose the single metric that would prove the wedge works.
-
-**Acceptance criteria:**
-- [ ] One metric defined (e.g., "heatmap-selected clips get X% more views than self-selected")
-- [ ] Threshold for success defined
-- [ ] How to measure it documented
-
-**Verification:**
-- [ ] Metric is specific, measurable, and actionable
-
-**Dependencies:** None
-
-**Files likely touched:**
-- `docs/proof-metric.md` (new)
-
-**Estimated scope:** Small (1 file)
-
----
-
-### Task 0.4: Deprioritize Stage 2 in Writing
-
-**Description:** Explicitly document that Stage 2 (captions/editing) is deferred until Stage 1 has demand.
-
-**Acceptance criteria:**
-- [ ] Stage 2 non-goals written
-- [ ] Conditions for starting Stage 2 defined
-- [ ] Added to PRD or standalone doc
-
-**Verification:**
-- [ ] Clear "not building yet" statement exists
-
-**Dependencies:** None
-
-**Files likely touched:**
-- `docs/PRD.md` (edit)
-
-**Estimated scope:** XS (1 file edit)
-
----
-
-### Checkpoint: Phase 0 Complete
-- [ ] Value prop written
-- [ ] Competitors analyzed
-- [ ] Proof metric chosen
-- [ ] Stage 2 deferred in writing
-- [ ] Review with stakeholders before proceeding
-
----
-
-## Phase 1: ICP Definition & Discovery Prep
-
-**Goal:** Define the target persona, source candidates, draft outreach, and build interview questions.
-
-### Task 1.1: Define Persona Document
-
-**Description:** Create a detailed persona doc for the ideal customer.
-
-**Acceptance criteria:**
-- [ ] Persona defined: solo YouTubers, 20K–200K subs, visually-driven niche
-- [ ] Explicit exclusions listed: faceless/meme/high-volume-low-craft
-- [ ] Current workflow documented (how they pick moments today)
-- [ ] Pain points articulated
-
-**Verification:**
-- [ ] Persona is specific enough to identify real candidates
-
-**Dependencies:** Phase 0 complete
-
-**Files likely touched:**
-- `docs/persona.md` (new)
-
-**Estimated scope:** Small (1 file)
-
----
-
-### Task 1.2: Source 30-50 Reachable Candidates
-
-**Description:** Build a list of potential interview candidates matching the persona.
-
-**Acceptance criteria:**
-- [ ] 30-50 candidates identified
-- [ ] Each has channel name, subscriber count, niche, contact info
-- [ ] Candidates are reachable (email, Twitter, Discord, etc.)
-
-**Verification:**
-- [ ] List is importable into outreach tool
-
-**Dependencies:** Task 1.1
-
-**Files likely touched:**
-- `docs/candidates.csv` (new)
-
-**Estimated scope:** Medium (1 file + research)
-
----
-
-### Task 1.3: Draft Non-Salesy Outreach
-
-**Description:** Write outreach messages that don't sound like sales pitches.
-
-**Acceptance criteria:**
-- [ ] 3 outreach templates (email, Twitter DM, Discord)
-- [ ] Tone is peer-to-peer, not vendor-to-customer
-- [ ] Asks for conversation, not sale
-
-**Verification:**
-- [ ] Read templates — do they sound like a fellow creator, not a marketer?
-
-**Dependencies:** Task 1.1
-
-**Files likely touched:**
-- `docs/outreach-templates.md` (new)
-
-**Estimated scope:** Small (1 file)
-
----
-
-### Task 1.4: Build Interview Question Bank
-
-**Description:** Create 15-20 interview questions covering current workflow, pain points, trust in data, and aesthetic preferences.
-
-**Acceptance criteria:**
-- [ ] 15-20 questions written
-- [ ] Covers: current moment-picking process, time spent, past bad picks, trust in watch-data vs. instinct, what "cheap" tools have put them off
-- [ ] Includes aesthetic/design preference questions
-
-**Verification:**
-- [ ] Questions are open-ended, not leading
-
-**Dependencies:** Task 1.1
-
-**Files likely touched:**
-- `docs/interview-questions.md` (new)
-
-**Estimated scope:** Small (1 file)
-
----
-
-### Checkpoint: Phase 1 Complete
-- [ ] Persona documented
-- [ ] 30-50 candidates sourced
-- [ ] Outreach templates ready
-- [ ] Interview questions prepared
-- [ ] Review before sending outreach
-
----
-
-## Phase 2: Discovery Interviews & Signal Synthesis
-
-**Goal:** Run 10-15 conversations, synthesize findings, and make a go/no-go recommendation.
-
-### Task 2.1: Send Outreach to Candidates
-
-**Description:** Send initial outreach to 30-50 candidates.
-
-**Acceptance criteria:**
-- [ ] Outreach sent to full list
-- [ ] Responses tracked in spreadsheet
-
-**Verification:**
-- [ ] Response rate > 20% (6-10 responses)
-
-**Dependencies:** Phase 1 complete
-
-**Files likely touched:**
-- Tracking spreadsheet (external)
-
-**Estimated scope:** Medium (process, not code)
-
----
-
-### Task 2.2: Conduct 10-15 Interviews
-
-**Description:** Run discovery conversations with respondents.
-
-**Acceptance criteria:**
-- [ ] 10-15 interviews completed
-- [ ] Each interview logged with verbatim quotes
-- [ ] Strong/weak/no-signal tagged per interview
-
-**Verification:**
-- [ ] Enough data to identify patterns
-
-**Dependencies:** Task 2.1
-
-**Files likely touched:**
-- `docs/interview-notes/` (new directory)
-
-**Estimated scope:** Large (1-2 weeks, mostly waiting on replies)
-
----
-
-### Task 2.3: Synthesize Findings
-
-**Description:** Analyze interview data and produce a synthesis doc.
-
-**Acceptance criteria:**
-- [ ] Top 3 pains identified
-- [ ] Differentiator resonance assessed (do they care about heatmap data?)
-- [ ] Aesthetic cues noted
-- [ ] Go/no-go recommendation made
-
-**Verification:**
-- [ ] Synthesis is data-backed, not anecdotal
-
-**Dependencies:** Task 2.2
-
-**Files likely touched:**
-- `docs/synthesis.md` (new)
-
-**Estimated scope:** Small (1 file)
-
----
-
-### Checkpoint: Phase 2 Complete
-- [ ] 10-15 interviews conducted
-- [ ] Findings synthesized
-- [ ] Top 3 pains documented
-- [ ] Go/no-go recommendation ready
-- [ ] Review with stakeholders before Phase 3
-
 ---
 
-## Phase 3: Concierge MVP (Manual, No UI)
+## Phase 1: Current State Assessment
 
-**Goal:** Run the algorithm by hand for 5-10 creators, deliver clips, collect performance data.
+### What Already Exists
 
-### Task 3.1: Recruit 5-10 Strong-Signal Participants
+| Area | Status | Details |
+|---|---|---|
+| Algorithm (merge, score, select) | ✅ Complete | 415 lines TS, 654+ tests, Python reference in sync |
+| Database schema | ✅ Complete | User, Job, Clip with relations, indexes, 7 migrations |
+| Auth (Google OAuth + JWT) | ✅ Complete | Cookie-based, guards, roles |
+| yt-dlp integration | ✅ Complete | Metadata, heatmap, section download |
+| FFmpeg integration | ⚠️ Partial | Trim, vertical crop, SRT/drawtext captions, audio mix, vignette. Missing: animations, styles, transitions, quality/format control |
+| BullMQ workers | ✅ Complete | Heatmap (analysis queue), Clip (export queue) |
+| Storage | ✅ Complete | Local + MinIO, HMAC-signed URLs |
+| Payments (Stripe) | ✅ Complete | Checkout, portal, webhooks |
+| Frontend — Dashboard | ✅ Complete | URL input, heatmap chart, scene editor, video preview, metadata sidebar |
+| Frontend — Studio | ⚠️ Partial | Platform select, caption editor, music panel, template library, export panel. Missing: prompt-based chat interface, live preview |
+| Pricing | ⚠️ Partial | UI exists, but scenesLimit defaults don't match new tiers |
+| Tests | ✅ Substantial | 25 web test files, 6 API e2e files, 654+ algorithm tests |
 
-**Description:** Select participants from Phase 2 who showed strong interest and fit the persona.
+### What Needs Building
 
-**Acceptance criteria:**
-- [ ] 5-10 participants confirmed
-- [ ] Each has provided a video URL
-- [ ] Agreement to post clips and track performance
+1. [ ] **1.1** Prompt-based chat interface replacing current editor panels
+2. [ ] **1.2** LLM translation layer (natural language → structured actions)
+3. [ ] **1.3** Standard action language (intermediate representation)
+4. [ ] **1.4** FFmpeg filter graph builder (actions → filter_complex)
+5. [ ] **1.5** Server-side preview rendering (480p, cached)
+6. [ ] **1.6** Quality/format export options (480p/720p/1080p, mp4/webm)
+7. [ ] **1.7** Platform-specific encoding rules
+8. [ ] **1.8** Pricing tier enforcement (Free: 2, Pro: 10, Team: 20 clips)
+9. [ ] **1.9** Additional FFmpeg capabilities (text animations, styles, transitions, speed, overlays)
 
-**Verification:**
-- [ ] Participants are committed (not just interested)
-
-**Dependencies:** Phase 2 complete
-
-**Files likely touched:**
-- `docs/participants.md` (new)
-
-**Estimated scope:** Small (process)
-
 ---
-
-### Task 3.2: Run Videos Through Algorithm by Hand
 
-**Description:** Use the Python prototype (`spike_merger.py`) to process each participant's video.
+## Phase 2: Stage 1 Analyze — Enhancement Tasks
 
-**Acceptance criteria:**
-- [ ] All participant videos processed
-- [ ] Heatmap extracted for each
-- [ ] Scenes merged using canonical algorithm
-- [ ] Reasoning behind each pick documented
+### 2.1 Drag/Drop Scene Selection on Heatmap
 
-**Verification:**
-- [ ] Algorithm output makes sense for each video
+- [ ] **2.1.1** Add `onMouseDown`/`onMouseUp` handlers to `HeatmapChart.tsx`
+- [ ] **2.1.2** Create new scenes from drag range on engagement curve
+- [ ] **2.1.3** Leverage existing `ReferenceArea` for scene overlay rectangles
 
-**Dependencies:** Task 3.1
+**Current state:** `SceneEditor.tsx` and `EditableSceneCard.tsx` support adding/removing scenes. `HeatmapChart.tsx` supports click-to-add via `onChartClick`.
 
-**Files likely touched:**
-- Processing logs (external)
+**Files:** `apps/web/src/presentation/components/heatmap/HeatmapChart.tsx`
 
-**Estimated scope:** Medium (manual process)
+**Acceptance criteria:** User can drag horizontally on the heatmap to create a new scene with start/end times matching the drag range.
 
 ---
 
-### Task 3.3: Cut and Reformat with FFmpeg
+### 2.2 Auto-Update Seconds/Minutes Fields
 
-**Description:** Use FFmpeg to trim and reformat clips to vertical 9:16.
+- [ ] **2.2.1** Verify bidirectional sync between chart drag and time fields
+- [ ] **2.2.2** Ensure chart selection updates when user types in time fields
+- [ ] **2.2.3** Test full round-trip sync via `use-scene-editor.ts`
 
-**Acceptance criteria:**
-- [ ] Clips trimmed to exact scene boundaries
-- [ ] Reformatted to 1080×1920 vertical
-- [ ] No black bars, no artifacts
+**Current state:** `EditableSceneCard.tsx` has time inputs that update scene start/end. Already partially working via shared state.
 
-**Verification:**
-- [ ] Clips look good on mobile preview
+**Files:** `apps/web/src/application/hooks/use-scene-editor.ts`, `EditableSceneCard.tsx`
 
-**Dependencies:** Task 3.2
+**Acceptance criteria:** Changes in chart reflect in time fields AND changes in time fields reflect in chart, with no state drift.
 
-**Files likely touched:**
-- Output video files (external)
-
-**Estimated scope:** Medium (manual process)
-
 ---
-
-### Task 3.4: Hand-Deliver Clips with Reasoning
-
-**Description:** Send clips to participants with explanation of why each moment was picked.
 
-**Acceptance criteria:**
-- [ ] Clips delivered to all participants
-- [ ] Each delivery includes heatmap visualization + reasoning
-- [ ] Participants asked to post and track performance
+### 2.3 Video Player Progress Bar Reflecting Selected Moments
 
-**Verification:**
-- [ ] Participants received and understood the clips
+- [ ] **2.3.1** Build custom progress bar component below YouTube embed
+- [ ] **2.3.2** Show current playback position on progress bar
+- [ ] **2.3.3** Display colored segments for each selected scene
+- [ ] **2.3.4** Implement click-to-seek on scene segments
 
-**Dependencies:** Task 3.3
+**Current state:** `VideoScenePreview.tsx` embeds YouTube player via `react-youtube`, supports play/pause/skip, seeks to scene timestamps.
 
-**Files likely touched:**
-- Delivery emails/messages (external)
+**Files:** `apps/web/src/presentation/components/video/VideoScenePreview.tsx`
 
-**Estimated scope:** Small (process)
+**Acceptance criteria:** Custom progress bar shows colored scene markers and allows click-to-seek.
 
 ---
 
-### Task 3.5: Collect Structured Feedback
+### 2.4 Sidebar Video Metadata
 
-**Description:** Gather qualitative and quantitative feedback from participants.
+- [ ] **2.4.1** Create styled sidebar card with video thumbnail
+- [ ] **2.4.2** Display channel avatar (if available)
+- [ ] **2.4.3** Format view count (e.g., "1.2M views")
+- [ ] **2.4.4** Show relative upload date ("3 months ago")
+- [ ] **2.4.5** Display video duration
 
-**Acceptance criteria:**
-- [ ] Feedback form sent to all participants
-- [ ] Responses collected: clip quality, posting performance, willingness to pay
-- [ ] Your own time-per-video tracked
+**Current state:** Dashboard shows `videoTitle`, `videoThumbnail`, `videoDuration`, `videoViewCount`, `videoUploadDate`, `videoChannelName` from Job entity.
 
-**Verification:**
-- [ ] Enough data to assess value
-
-**Dependencies:** Task 3.4 (after clips are posted)
-
-**Files likely touched:**
-- `docs/concierge-feedback.md` (new)
-
-**Estimated scope:** Small (process)
-
----
+**Files:** `apps/web/src/app/dashboard/page.tsx` (or new `VideoMetadataSidebar.tsx` component)
 
-### Checkpoint: Phase 3 Complete
-- [ ] 5-10 creators processed
-- [ ] Clips delivered and posted
-- [ ] Performance data collected
-- [ ] Qualitative feedback gathered
-- [ ] Time-per-video tracked
-- [ ] Ready for Go/No-Go decision
+**Acceptance criteria:** Metadata sidebar displays all video info with proper formatting.
 
 ---
 
-## Phase 4: Go / No-Go Decision Gate
+## Phase 3: Stage 2 Studio — Prompt-Based "Vibe Editing"
 
-**Goal:** Compare data, assess willingness-to-pay, and make an explicit call.
+### 3.1 Standard Action Language (Intermediate Representation)
 
-### Task 4.1: Compare Performance Data
+#### 3.1.1 Action Schema
 
-**Description:** Analyze heatmap-selected vs. self-selected clip performance.
+- [ ] **3.1.1.1** Create `studio-actions.ts` in `packages/shared/src/types/`
+- [ ] **3.1.1.2** Define `StudioAction` union type (8 action types)
+- [ ] **3.1.1.3** Define `AddCaptionsAction` interface with all fields
+- [ ] **3.1.1.4** Define `MixAudioAction` interface
+- [ ] **3.1.1.5** Define `ApplyEffectAction` interface
+- [ ] **3.1.1.6** Define `SetSpeedAction` interface
+- [ ] **3.1.1.7** Define `AddOverlayAction` interface
+- [ ] **3.1.1.8** Define `SetTransitionAction` interface
+- [ ] **3.1.1.9** Define `AddBackgroundAction` interface
+- [ ] **3.1.1.10** Define `TrimAction` interface
+- [ ] **3.1.1.11** Create Zod schemas for all action types
+- [ ] **3.1.1.12** Add default values for optional fields
 
-**Acceptance criteria:**
-- [ ] Performance metrics compiled (views, engagement, watch time)
-- [ ] Comparison: heatmap clips vs. creator's usual clips
-- [ ] Statistical significance noted (if possible)
+**Files:** `packages/shared/src/types/studio-actions.ts`
 
-**Verification:**
-- [ ] Data is objective, not cherry-picked
+**Action types and their key parameters:**
 
-**Dependencies:** Phase 3 complete
+| Action | Key Parameters |
+|---|---|
+| `add_captions` | text, font (5 options), size (12-120), color, position (top/center/bottom), start, end, animation (5 options), style (5 options), opacity |
+| `mix_audio` | volume, originalVolume, fadeIn, fadeOut, startTime, tone (4 options) |
+| `apply_effect` | type (9 options), intensity (0-1), startTime, endTime |
+| `set_speed` | rate (0.25-4.0), preservePitch |
+| `add_overlay` | assetKey, x, y, scale, opacity, startTime, endTime |
+| `set_transition` | type (56 options), duration, position (start/end) |
+| `add_background` | color, startTime, endTime |
+| `trim` | startTime, endTime |
 
-**Files likely touched:**
-- `docs/performance-analysis.md` (new)
-
-**Estimated scope:** Small (1 file)
-
 ---
-
-### Task 4.2: Tally Willingness-to-Pay Signals
-
-**Description:** Aggregate WTP signals from interviews and concierge MVP.
-
-**Acceptance criteria:**
-- [ ] Number of participants who said they'd pay documented
-- [ ] Price points mentioned captured
-- [ ] Any objections to paying noted
 
-**Verification:**
-- [ ] Signal is clear, not ambiguous
+#### 3.1.2 Example Prompt-to-Action Translations
 
-**Dependencies:** Phase 3 complete
+- [ ] **3.1.2.1** Implement caption prompt translation example
+- [ ] **3.1.2.2** Implement audio mix prompt translation example
+- [ ] **3.1.2.3** Implement multi-action prompt translation example
+- [ ] **3.1.2.4** Implement timing-specific prompt translation example
 
-**Files likely touched:**
-- `docs/wtp-analysis.md` (new)
-
-**Estimated scope:** Small (1 file)
-
 ---
-
-### Task 4.3: Revisit Phase 0 Wedge Statement
-
-**Description:** Compare original value prop against reality from Phase 2-3.
-
-**Acceptance criteria:**
-- [ ] Original wedge statement reviewed
-- [ ] What proved true documented
-- [ ] What needs adjustment noted
 
-**Verification:**
-- [ ] Wedge is still valid or has been refined
+#### 3.1.3 Ambiguity Resolution
 
-**Dependencies:** Tasks 4.1, 4.2
+- [ ] **3.1.3.1** Define clarification response schema
+- [ ] **3.1.3.2** Add suggestion chips for ambiguous prompts
+- [ ] **3.1.3.3** Handle system message display in chat UI
 
-**Files likely touched:**
-- `docs/wedge-reassessment.md` (new)
+```json
+{
+  "type": "clarification",
+  "question": "You mentioned adding captions. What text would you like, and during which time range?",
+  "suggestions": [
+    "Add 'highlight moment' from 0-3s in bold",
+    "Add captions for the full clip duration"
+  ]
+}
+```
 
-**Estimated scope:** Small (1 file)
-
 ---
-
-### Task 4.4: Make Go/No-Go Decision
-
-**Description:** Write a one-page decision memo with explicit call.
-
-**Acceptance criteria:**
-- [ ] GO or NO-GO decision made
-- [ ] Evidence supporting the decision listed
-- [ ] Next steps defined (if GO: begin Phase 5; if NO-GO: pivot or stop)
-
-**Verification:**
-- [ ] Decision is unambiguous
 
-**Dependencies:** Tasks 4.1, 4.2, 4.3
+### 3.2 LLM Translation Service
 
-**Files likely touched:**
-- `docs/go-no-go-decision.md` (new)
+#### 3.2.1 Architecture
 
-**Estimated scope:** Small (1 file)
+- [ ] **3.2.1.1** Create `prompt-translation.service.ts`
+- [ ] **3.2.1.2** Implement `UserPrompt + Context → LLM API → Validated Actions[] → ActionStore` pipeline
 
----
-
-### Checkpoint: Phase 4 Complete — GATE
-- [ ] Performance data analyzed
-- [ ] Willingness-to-pay assessed
-- [ ] Wedge statement validated or refined
-- [ ] Go/No-Go decision made
-- [ ] **STOP: Nothing in Phase 5+ starts until this is a "GO"**
+**New service:** `apps/api/src/infrastructure/external/prompt-translation.service.ts`
 
 ---
 
-## Phase 5: Stage 1 Build
+#### 3.2.2 LLM System Prompt
 
-**Goal:** Build the production-ready SpikeClip product with payments.
+- [ ] **3.2.2.1** Write system prompt with all 8 action definitions
+- [ ] **3.2.2.2** Include parameter descriptions and constraints
+- [ ] **3.2.2.3** Add context variables (platform, scene, assets)
+- [ ] **3.2.2.4** Define rules for JSON output, ambiguity handling, timing defaults
 
-### 5.1 Foundation (Weeks 1–2)
+**System prompt includes:**
+- All 8 action types with full parameter docs
+- Context: platform, scene duration, available assets
+- 8 rules for response format and constraints
 
 ---
-
-### Task 5.1.1: Initialize Turborepo Monorepo
-
-**Description:** Set up the monorepo structure with Turborepo, apps/, packages/, and docker/.
-
-**Acceptance criteria:**
-- [ ] `turbo.json` configured
-- [ ] `apps/web/` (Next.js 16) scaffolded
-- [ ] `apps/api/` (NestJS) scaffolded
-- [ ] `packages/shared/` created
-- [ ] `docker/` directory created
-- [ ] Root `package.json` with workspaces
 
-**Verification:**
-- [ ] `turbo dev` runs both apps
-- [ ] `turbo build` succeeds
+#### 3.2.3 LLM Provider Configuration
 
-**Dependencies:** Phase 4 is GO
+- [ ] **3.2.3.1** Support `LLM_PROVIDER` env var (`openai` | `anthropic`)
+- [ ] **3.2.3.2** Support `LLM_MODEL` env var (default: `gpt-4o-mini`)
+- [ ] **3.2.3.3** Support `LLM_MAX_TOKENS` env var (default: `2000`)
+- [ ] **3.2.3.4** Support `LLM_TEMPERATURE` env var (default: `0.2`)
+- [ ] **3.2.3.5** Support `LLM_TIMEOUT_MS` env var (default: `15000`)
 
-**Files likely touched:**
-- `turbo.json`
-- `package.json`
-- `apps/web/` (new)
-- `apps/api/` (new)
-- `packages/shared/` (new)
-
-**Estimated scope:** Medium (4-5 files + scaffolding)
-
 ---
-
-### Task 5.1.2: Set Up Next.js 16 Frontend
-
-**Description:** Configure Next.js 16 with Tailwind CSS 4, shadcn/ui, and basic layout.
-
-**Acceptance criteria:**
-- [ ] Next.js 16 app running with App Router
-- [ ] Tailwind CSS 4 configured
-- [ ] shadcn/ui installed and configured
-- [ ] Basic layout component with header
-- [ ] Home page renders
 
-**Verification:**
-- [ ] `npm run dev` in `apps/web/` shows the app
+#### 3.2.4 Response Validation
 
-**Dependencies:** Task 5.1.1
+- [ ] **3.2.4.1** Parse JSON response (reject if malformed)
+- [ ] **3.2.4.2** Validate each action against Zod schemas
+- [ ] **3.2.4.3** Clamp out-of-range values (e.g., volume > 1 → 1)
+- [ ] **3.2.4.4** Validate timing within scene bounds
+- [ ] **3.2.4.5** Return errors as clarification prompts if validation fails
 
-**Files likely touched:**
-- `apps/web/package.json`
-- `apps/web/src/app/layout.tsx`
-- `apps/web/src/app/page.tsx`
-- `apps/web/tailwind.config.ts`
-
-**Estimated scope:** Medium (3-5 files)
-
 ---
 
-### Task 5.1.3: Set Up NestJS Backend
+### 3.3 FFmpeg Filter Graph Builder
 
-**Description:** Configure NestJS 11 with module structure, Prisma, and basic health check.
+**New service:** `apps/api/src/infrastructure/external/filter-graph-builder.ts`
 
-**Acceptance criteria:**
-- [ ] NestJS app running
-- [ ] Module structure: auth, jobs, clips, users
-- [ ] Prisma client configured
-- [ ] Health check endpoint (`GET /api/health`)
-- [ ] Pino logger configured
+#### 3.3.1 Filter Chain Mapping
 
-**Verification:**
-- [ ] `npm run start:dev` in `apps/api/` shows the app
-- [ ] Health check returns 200
+**Video filters (applied in order via numbered links `[v0]→[v1]→[v2]...`):**
 
-**Dependencies:** Task 5.1.1
+- [ ] **3.3.1.1** Crop + scale filter: `crop=ih*9/16:ih,scale=1080:1920` (always first)
+- [ ] **3.3.1.2** `add_captions` (fade): `drawtext` with alpha animation
+- [ ] **3.3.1.3** `add_captions` (slide): `drawtext` with x-position animation
+- [ ] **3.3.1.4** `add_captions` (pop): `drawtext` with fontsize bounce
+- [ ] **3.3.1.5** `add_captions` (typewriter): Multiple `drawtext` with character timing
+- [ ] **3.3.1.6** `add_captions` (outlined): `drawtext` with `borderw`
+- [ ] **3.3.1.7** `add_captions` (shadow): `drawtext` with `shadowx/y`
+- [ ] **3.3.1.8** `add_captions` (neon): Duplicate pass with `boxblur`
+- [ ] **3.3.1.9** `add_captions` (background box): `drawtext` with `box=1`
+- [ ] **3.3.1.10** `apply_effect` (vignette): `vignette=angle=${intensity * PI / 2}`
+- [ ] **3.3.1.11** `apply_effect` (zoom_in): `zoompan` with d=1 for video
+- [ ] **3.3.1.12** `apply_effect` (zoom_out): `zoompan` reverse direction
+- [ ] **3.3.1.13** `apply_effect` (blur): `boxblur=${radius}:${radius}`
+- [ ] **3.3.1.14** `apply_effect` (sharpen): `unsharp=5:5:${amount}:5:5:${amount}`
+- [ ] **3.3.1.15** `apply_effect` (sepia): `colorchannelmixer` matrix
+- [ ] **3.3.1.16** `apply_effect` (bw): `hue=s=0`
+- [ ] **3.3.1.17** `apply_effect` (glitch): `rgbashift` + `noise`
+- [ ] **3.3.1.18** `apply_effect` (glow): `gblur` + overlay
+- [ ] **3.3.1.19** `add_overlay`: `overlay` with timing
+- [ ] **3.3.1.20** `add_background`: `drawbox` with timing
+- [ ] **3.3.1.21** `set_speed`: `setpts=PTS/${rate}`
+- [ ] **3.3.1.22** `set_transition` (fade start): `fade=t=in`
+- [ ] **3.3.1.23** `set_transition` (fade end): `fade=t=out`
+- [ ] **3.3.1.24** `set_transition` (between clips): `xfade` with 56 types
 
-**Files likely touched:**
-- `apps/api/package.json`
-- `apps/api/src/app.module.ts`
-- `apps/api/src/main.ts`
-- `apps/api/prisma/schema.prisma`
+**Audio filters (applied via separate link chain `[a0]→[a1]...`):**
 
-**Estimated scope:** Medium (3-5 files)
+- [ ] **3.3.1.25** `set_speed` audio: `atempo=${rate}` (chain for >2x)
+- [ ] **3.3.1.26** `mix_audio` original: `volume=${originalVolume}`
+- [ ] **3.3.1.27** `mix_audio` music: `volume` + `afade`
+- [ ] **3.3.1.28** `mix_audio` bass_boost: `equalizer` low freq
+- [ ] **3.3.1.29** `mix_audio` treble_boost: `equalizer` high freq
+- [ ] **3.3.1.30** `mix_audio` warm: dual `equalizer`
+- [ ] **3.3.1.31** `mix_audio` combine: `amix`
 
 ---
-
-### Task 5.1.4: Port Canonical Merger Algorithm to TypeScript
-
-**Description:** Port `spike_merger.py` to `packages/shared/algorithm/` in TypeScript.
-
-**Acceptance criteria:**
-- [ ] Algorithm ported to TypeScript
-- [ ] All parameters configurable (gap tolerance, intensity delta, floor, min/max duration, etc.)
-- [ ] Composite scoring implemented (peak + average + duration fit)
-- [ ] Max-duration capping via sliding sub-window
-- [ ] Min-duration filtering
-- [ ] Non-overlap + minimum spacing on top-N
 
-**Verification:**
-- [ ] Unit tests pass with synthetic data (TC-VID-06)
-- [ ] Unit tests pass with real heatmap fixtures
+#### 3.3.2 Command Assembly Algorithm
 
-**Dependencies:** Task 5.1.1
+- [ ] **3.3.2.1** Start with input file(s)
+- [ ] **3.3.2.2** Build video filter chain (crop+scale first, then append actions)
+- [ ] **3.3.2.3** Build audio filter chain (volume, music, speed, mix)
+- [ ] **3.3.2.4** Assemble filter_complex string
+- [ ] **3.3.2.5** Set output codec params based on format + quality
+- [ ] **3.3.2.6** Build final command array for execFile
 
-**Files likely touched:**
-- `packages/shared/algorithm/merge.ts`
-- `packages/shared/algorithm/scoring.ts`
-- `packages/shared/algorithm/types.ts`
-- `packages/shared/algorithm/__tests__/merge.test.ts`
-
-**Estimated scope:** Medium (4-5 files)
-
 ---
-
-### Task 5.1.5: Implement yt-dlp Service
-
-**Description:** Create a subprocess wrapper for yt-dlp in the NestJS backend.
 
-**Acceptance criteria:**
-- [ ] yt-dlp service wraps `yt-dlp -j` for metadata extraction
-- [ ] Returns parsed JSON with heatmap data
-- [ ] Error handling for unavailable videos
-- [ ] Handles videos with no heatmap gracefully
+#### 3.3.3 Output Encoding
 
-**Verification:**
-- [ ] Can extract metadata from a real YouTube URL
+- [ ] **3.3.3.1** Define `OutputConfig` interface (format, quality)
+- [ ] **3.3.3.2** Define `QUALITY_PRESETS` (480p/720p/1080p with CRF values)
+- [ ] **3.3.3.3** Define `FORMAT_CODECS` (mp4 with libx264, webm with libvpx-vp9)
 
-**Dependencies:** Task 5.1.3
+```typescript
+const QUALITY_PRESETS = {
+  "480p":  { scale: "scale=-2:480",  crf: "28" },
+  "720p":  { scale: "scale=-2:720",  crf: "26" },
+  "1080p": { scale: "scale=-2:1080", crf: "23" },
+};
 
-**Files likely touched:**
-- `apps/api/src/services/ytdlp.service.ts`
-- `apps/api/src/services/ytdlp.service.spec.ts`
+const FORMAT_CODECS = {
+  mp4:  ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-c:a", "aac"],
+  webm: ["-c:v", "libvpx-vp9", "-b:v", "2M", "-pix_fmt", "yuv420p", "-c:a", "libopus"],
+};
+```
 
-**Estimated scope:** Small (1-2 files)
-
 ---
-
-### Task 5.1.6: Implement FFmpeg Service
-
-**Description:** Create a subprocess wrapper for FFmpeg for trimming and reformatting.
-
-**Acceptance criteria:**
-- [ ] FFmpeg service wraps trim + crop to 9:16
-- [ ] Uses `--force-keyframes-at-cuts` for accurate cuts
-- [ ] Outputs 1080×1920 vertical format
-- [ ] No black bars
-
-**Verification:**
-- [ ] Can trim a video segment and output vertical format
 
-**Dependencies:** Task 5.1.3
+### 3.4 Chat Interface (Frontend)
 
-**Files likely touched:**
-- `apps/api/src/services/ffmpeg.service.ts`
-- `apps/api/src/services/ffmpeg.service.spec.ts`
+#### 3.4.1 UI Layout
 
-**Estimated scope:** Small (1-2 files)
+- [ ] **3.4.1.1** Refactor Studio to 3-panel layout (Chat | Preview | SceneSelector)
+- [ ] **3.4.1.2** Add StudioToolbar (platform select, export button)
+- [ ] **3.4.1.3** Add ActionList at bottom (applied actions with edit/remove)
 
 ---
 
-### Task 5.1.7: Set Up PostgreSQL Schema via Prisma
+#### 3.4.2 Chat Components
 
-**Description:** Define and migrate the database schema using Prisma.
+- [ ] **3.4.2.1** Create `ChatPanel.tsx` — Message list + input field, scrollable
+- [ ] **3.4.2.2** Create `ChatMessage.tsx` — Single message bubble (user or system)
+- [ ] **3.4.2.3** Create `ChatInput.tsx` — Text input with send button
+- [ ] **3.4.2.4** Create `ActionList.tsx` — List of applied actions with remove/edit
+- [ ] **3.4.2.5** Create `ActionCard.tsx` — Single action display (icon + label + params)
+- [ ] **3.4.2.6** Create `ClarificationCard.tsx` — System clarification with suggestions
+- [ ] **3.4.2.7** Create `PreviewPanel.tsx` — Video player showing server-rendered preview
 
-**Acceptance criteria:**
-- [ ] Users table created
-- [ ] Jobs table created
-- [ ] Clips table created
-- [ ] Relations defined
-- [ ] Migrations run successfully
+**New components:** `apps/web/src/presentation/components/studio/`
 
-**Verification:**
-- [ ] `prisma db push` succeeds
-- [ ] Tables exist in database
-
-**Dependencies:** Task 5.1.3
-
-**Files likely touched:**
-- `apps/api/prisma/schema.prisma`
-- `apps/api/prisma/migrations/`
-
-**Estimated scope:** Small (1-2 files)
-
 ---
-
-### Task 5.1.8: Set Up Redis + BullMQ
 
-**Description:** Configure Redis connection and BullMQ queues for background jobs.
+#### 3.4.3 Chat Flow
 
-**Acceptance criteria:**
-- [ ] Redis connection configured (Upstash for prod, local for dev)
-- [ ] BullMQ queues: HeatmapJob, ClipJob
-- [ ] Worker processes created
-- [ ] Docker Compose includes Redis for local dev
+- [ ] **3.4.3.1** User types prompt in `ChatInput`
+- [ ] **3.4.3.2** Message appears in `ChatPanel` as user bubble
+- [ ] **3.4.3.3** Show loading indicator while LLM translates
+- [ ] **3.4.3.4** System response: actions → `ActionList` + trigger preview render
+- [ ] **3.4.3.5** System response: clarification → `ClarificationCard` with suggestions
+- [ ] **3.4.3.6** Preview renders server-side, `PreviewPanel` loads URL
+- [ ] **3.4.3.7** User can type another prompt (actions stack)
+- [ ] **3.4.3.8** User can remove individual actions from `ActionList`
+- [ ] **3.4.3.9** User can click "Export" when satisfied
 
-**Verification:**
-- [ ] Job can be enqueued and processed
-
-**Dependencies:** Task 5.1.3
-
-**Files likely touched:**
-- `apps/api/src/workers/heatmap.worker.ts`
-- `apps/api/src/workers/clip.worker.ts`
-- `docker-compose.yml`
-
-**Estimated scope:** Medium (3-4 files)
-
 ---
-
-### Task 5.1.9: Create Docker Compose for Local Dev
 
-**Description:** Set up Docker Compose with all services for local development.
+#### 3.4.4 State Management
 
-**Acceptance criteria:**
-- [ ] `docker-compose.yml` includes: API, Web, Postgres, Redis
-- [ ] All services start with `docker compose up`
-- [ ] Volumes mounted for hot reload
+- [ ] **3.4.4.1** Extend `use-studio.ts` reducer with `messages: ChatMessage[]`
+- [ ] **3.4.4.2** Add `actions: StudioAction[]` state
+- [ ] **3.4.4.3** Add `previewUrl: string | null` state
+- [ ] **3.4.4.4** Add `previewLoading: boolean` state
+- [ ] **3.4.4.5** Add `previewError: string | null` state
+- [ ] **3.4.4.6** Add `exportConfig: OutputConfig` state
+- [ ] **3.4.4.7** Add reducer actions: `ADD_MESSAGE`, `SET_ACTIONS`, `REMOVE_ACTION`, `SET_PREVIEW_URL`, `SET_PREVIEW_LOADING`, `SET_EXPORT_CONFIG`
 
-**Verification:**
-- [ ] Full stack runs locally via Docker
-
-**Dependencies:** Tasks 5.1.2, 5.1.3, 5.1.7, 5.1.8
-
-**Files likely touched:**
-- `docker-compose.yml`
-
-**Estimated scope:** Small (1 file)
-
 ---
 
-### Checkpoint: Foundation Complete
-- [ ] Monorepo runs with `turbo dev`
-- [ ] Frontend and backend both start
-- [ ] Database schema migrated
-- [ ] Redis + BullMQ operational
-- [ ] Algorithm testable via API
-- [ ] Review before proceeding to core features
+### 3.5 Server-Side Preview Rendering
 
----
+#### 3.5.1 Preview Pipeline
 
-### 5.2 Core Features (Weeks 3–4)
+- [ ] **3.5.1.1** Implement: `User Prompt → LLM → Actions[] → Validate → Cache Check → FFmpeg Render → Upload → Return URL`
 
 ---
-
-### Task 5.2.1: Implement Heatmap Extraction Job
-
-**Description:** Build the API endpoint and worker for heatmap extraction.
-
-**Acceptance criteria:**
-- [ ] `POST /api/jobs` creates a job
-- [ ] HeatmapJob worker extracts heatmap via yt-dlp
-- [ ] Runs spike merge algorithm
-- [ ] Saves scenes to job
-- [ ] Job status updated to completed
-
-**Verification:**
-- [ ] Can submit a URL and get back scenes
 
-**Dependencies:** Foundation complete
+#### 3.5.2 Preview Queue
 
-**Files likely touched:**
-- `apps/api/src/modules/jobs/jobs.controller.ts`
-- `apps/api/src/modules/jobs/jobs.service.ts`
-- `apps/api/src/workers/heatmap.worker.ts`
+- [ ] **3.5.2.1** Create new BullMQ queue: `preview`
+- [ ] **3.5.2.2** Set concurrency: 2
+- [ ] **3.5.2.3** Set timeout: 30s
+- [ ] **3.5.2.4** Set attempts: 1 (no retry)
+- [ ] **3.5.2.5** Set priority: 1 (high)
 
-**Estimated scope:** Medium (3-5 files)
-
 ---
-
-### Task 5.2.2: Implement Interactive Heatmap Chart
-
-**Description:** Build the Recharts-based heatmap visualization component.
-
-**Acceptance criteria:**
-- [ ] Interactive engagement chart renders
-- [ ] Time on X-axis, intensity (0–1) on Y-axis
-- [ ] Merged scene blocks highlighted distinctly
-- [ ] Click a spike to see timestamp/intensity
-- [ ] Responsive on mobile
-
-**Verification:**
-- [ ] Chart renders with real data from API
 
-**Dependencies:** Task 5.2.1
+#### 3.5.3 Preview Caching
 
-**Files likely touched:**
-- `apps/web/src/components/HeatmapChart.tsx`
-- `apps/web/src/components/HeatmapChart.test.tsx`
+- [ ] **3.5.3.1** Create `preview-cache.service.ts`
+- [ ] **3.5.3.2** Implement cache key generation: `SHA256(sceneId:platform:sortedActions)`
+- [ ] **3.5.3.3** Store under `previews/` prefix in MinIO/local
+- [ ] **3.5.3.4** Implement TTL: 1 hour
+- [ ] **3.5.3.5** Implement invalidation on new action append
 
-**Estimated scope:** Medium (2-3 files)
+```typescript
+function previewCacheKey(sceneId: string, actions: StudioAction[], platform: PlatformId): string {
+  const sorted = JSON.stringify(actions, Object.keys(actions[0] || {}).sort());
+  const hash = createHash("sha256").update(`${sceneId}:${platform}:${sorted}`).digest("hex");
+  return `preview/${hash}.mp4`;
+}
+```
 
 ---
-
-### Task 5.2.3: Implement Scene List + Selection UI
-
-**Description:** Build the scene list component with selection capabilities.
-
-**Acceptance criteria:**
-- [ ] List of merged scenes with timestamps
-- [ ] Each shows start/end, duration, peak intensity
-- [ ] User can select/deselect scenes to process
-- [ ] Shows total estimated clip count/duration
-
-**Verification:**
-- [ ] Can select scenes and see count update
-
-**Dependencies:** Task 5.2.1
 
-**Files likely touched:**
-- `apps/web/src/components/SceneList.tsx`
-- `apps/web/src/components/SceneList.test.tsx`
+#### 3.5.4 Preview Rendering
 
-**Estimated scope:** Small (2 files)
+- [ ] **3.5.4.1** Set resolution: 480p (854×480)
+- [ ] **3.5.4.2** Set FPS: 15
+- [ ] **3.5.4.3** Set CRF: 32
+- [ ] **3.5.4.4** Set timeout: 30s
+- [ ] **3.5.4.5** Cap max preview length: 30s
 
 ---
 
-### Task 5.2.4: Implement URL Input Form + Validation
+#### 3.5.5 Preview API Endpoint
 
-**Description:** Build the URL input form with client and server validation.
+- [ ] **3.5.5.1** Create `POST /api/studio/preview` endpoint
+- [ ] **3.5.5.2** Accept body: `{ sceneId, actions, platform }`
+- [ ] **3.5.5.3** Return: `{ previewUrl, renderTime, cached }`
 
-**Acceptance criteria:**
-- [ ] URL input form with validation
-- [ ] Accepts all YouTube URL formats
-- [ ] Rejects non-YouTube URLs with clear error
-- [ ] Loading state during submission
-
-**Verification:**
-- [ ] Can submit a valid YouTube URL
-- [ ] Invalid URLs show error
-
-**Dependencies:** Task 5.2.1
-
-**Files likely touched:**
-- `apps/web/src/components/UrlInput.tsx`
-- `apps/web/src/lib/validations.ts`
-
-**Estimated scope:** Small (2 files)
-
 ---
-
-### Task 5.2.5: Implement Job Status Polling
-
-**Description:** Set up polling to check job status and update UI.
-
-**Acceptance criteria:**
-- [ ] Frontend polls `GET /api/jobs/:id`
-- [ ] Status transitions shown: pending → processing → completed/failed
-- [ ] Error messages displayed on failure
-
-**Verification:**
-- [ ] UI updates as job progresses
 
-**Dependencies:** Task 5.2.1
+#### 3.5.6 Frontend Preview Component
 
-**Files likely touched:**
-- `apps/web/src/lib/api.ts`
-- `apps/web/src/hooks/useJobStatus.ts`
+- [ ] **3.5.6.1** Implement `PreviewPanel.tsx` with HTML5 `<video>` element
+- [ ] **3.5.6.2** Auto-play on URL change
+- [ ] **3.5.6.3** Transport controls (play/pause, seek, time display)
+- [ ] **3.5.6.4** Scene time range indicator
+- [ ] **3.5.6.5** Loading spinner during render
+- [ ] **3.5.6.6** Error state with retry button
 
-**Estimated scope:** Small (2 files)
-
 ---
-
-### Task 5.2.6: Implement Clip Processing Job
-
-**Description:** Build the API endpoint and worker for clip processing.
-
-**Acceptance criteria:**
-- [ ] `POST /api/jobs/:id/process` triggers clip processing
-- [ ] Downloads source once via yt-dlp
-- [ ] FFmpeg trims + crops each selected scene
-- [ ] Uploads to R2
-- [ ] Updates job with clip URLs
-
-**Verification:**
-- [ ] Can process selected scenes and get downloadable clips
 
-**Dependencies:** Task 5.2.1, Tasks 5.1.5, 5.1.6
+### 3.6 Platform-Specific Encoding
 
-**Files likely touched:**
-- `apps/api/src/modules/jobs/jobs.controller.ts`
-- `apps/api/src/modules/clips/clips.service.ts`
-- `apps/api/src/workers/clip.worker.ts`
+#### 3.6.1 Platform Rules
 
-**Estimated scope:** Medium (3-5 files)
+- [ ] **3.6.1.1** Define YouTube Shorts preset: 9:16, 1080×1920, 60s max, H.264, AAC 128kbps, 256MB max
+- [ ] **3.6.1.2** Define Instagram Reels preset: 9:16, 1080×1920, 90s max, H.264, AAC 128kbps, 256MB max
+- [ ] **3.6.1.3** Define TikTok preset: 9:16, 1080×1920, 180s max, H.264, AAC 128kbps, 287MB max
 
 ---
-
-### Task 5.2.7: Implement MinIO Storage Integration
-
-**Description:** Set up MinIO for storing processed clips (self-hosted object storage).
-
-**Acceptance criteria:**
-- [ ] MinIO client configured
-- [ ] Upload function works
-- [ ] Signed, expiring download URLs generated (via API endpoint)
-- [ ] Clips served through API (not direct MinIO access)
-
-**Verification:**
-- [ ] Can upload and retrieve a file from MinIO
-
-**Dependencies:** Task 5.1.1
 
-**Files likely touched:**
-- `apps/api/src/infrastructure/storage/minio-storage.service.ts`
+#### 3.6.2 Platform Encoding Service
 
-**Estimated scope:** Small (1-2 files)
+- [ ] **3.6.2.1** Create `getPlatformEncodingPreset(platform)` function
+- [ ] **3.6.2.2** Return preset with maxDuration, resolution, codecs, extraFlags
 
 ---
 
-### Task 5.2.8: Implement Download Endpoint
+### 3.7 Quality & Format Export Options
 
-**Description:** Build the clip download endpoint with signed URLs.
+#### 3.7.1 Export UI
 
-**Acceptance criteria:**
-- [ ] `GET /api/clips/:id/download` returns signed URL
-- [ ] URL expires after configured time
-- [ ] Returns 404 for non-existent clips
+- [ ] **3.7.1.1** Update `ExportPanel.tsx` with Quality selector (480p, 720p, 1080p)
+- [ ] **3.7.1.2** Add Format selector (MP4, WebM)
+- [ ] **3.7.1.3** Pre-select platform from step 1
 
-**Verification:**
-- [ ] Can download a processed clip
-
-**Dependencies:** Tasks 5.2.6, 5.2.7
-
-**Files likely touched:**
-- `apps/api/src/modules/clips/clips.controller.ts`
-
-**Estimated scope:** Small (1-2 files)
-
 ---
-
-### Task 5.2.9: Write Video-Type Test Cases
 
-**Description:** Create test cases for different video types (TC-VID-01 through TC-VID-06).
+#### 3.7.2 Export API Enhancement
 
-**Acceptance criteria:**
-- [ ] TC-VID-01: Standard video (~3:30), mid-video peaks → 2-3 clips
-- [ ] TC-VID-02: Long-form tutorial (12:00+), multiple peaks → 4-5 clips
-- [ ] TC-VID-03: YouTube Short (0:45), single spike → 1 clip
-- [ ] TC-VID-04: New/low-view video, no heatmap → graceful fallback
-- [ ] TC-VID-05: Viral video (8:30), multiple intense spikes → 3-5 clips
-- [ ] TC-VID-06: Synthetic floor-override case → single merged clip
+- [ ] **3.7.2.1** Update `ExportClipsDto` with `platform`, `format`, `quality`, `actions` fields
+- [ ] **3.7.2.2** Maintain backward compatibility with existing fields
 
-**Verification:**
-- [ ] All test cases pass
-
-**Dependencies:** Task 5.2.1
-
-**Files likely touched:**
-- `packages/shared/algorithm/__tests__/video-types.test.ts`
-- `apps/api/src/__tests__/video-types.integration.test.ts`
-
-**Estimated scope:** Medium (2-3 files)
-
 ---
-
-### Checkpoint: Core Features Complete
-- [ ] End-to-end pipeline works: URL → heatmap → scenes → clips
-- [ ] Heatmap visualization renders
-- [ ] Scene selection works
-- [ ] Clips process and download successfully
-- [ ] All video-type test cases pass
-- [ ] Review before proceeding to monetization
 
----
+#### 3.7.3 Export Pipeline Update
 
-### 5.3 Monetization & Polish (Weeks 5–6)
+- [ ] **3.7.3.1** Download — yt-dlp downloads section
+- [ ] **3.7.3.2** Crop — vertical reformat (if platform requires 9:16)
+- [ ] **3.7.3.3** Apply actions — FFmpeg filter graph from `StudioAction[]`
+- [ ] **3.7.3.4** Encode — platform-specific codec + quality settings
+- [ ] **3.7.3.5** Upload — to MinIO/local storage
+- [ ] **3.7.3.6** Update DB — clip record with file URL, size, duration
 
 ---
-
-### Task 5.3.1: Implement Google OAuth Authentication
-
-**Description:** Set up Google OAuth 2.0 with cookie-based JWT sessions.
-
-**Acceptance criteria:**
-- [ ] Google OAuth configured
-- [ ] Google login working
-- [ ] Session management functional (httpOnly cookie)
-- [ ] Logout working
-
-**Verification:**
-- [ ] Can sign in with Google
 
-**Dependencies:** Core features complete
+## Phase 4: Pricing Tier Enforcement
 
-**Files likely touched:**
-- `apps/api/src/infrastructure/auth/strategies/google.strategy.ts`
-- `apps/api/src/infrastructure/auth/auth.controller.ts`
-- `apps/api/src/infrastructure/auth/auth.service.ts`
+### 4.1 Updated Limits
 
-**Estimated scope:** Medium (3-5 files)
+- [ ] **4.1.1** Free: $0/month, 3 analyses/month, 2 clips, heatmap view only, basic export
+- [ ] **4.1.2** Pro: $20/month, unlimited analyses, 10 clips, full studio, prompt editing, all formats
+- [ ] **4.1.3** Team: $40/month, unlimited analyses, 20 clips, everything in Pro + team seats
 
 ---
 
-### Task 5.3.2: Implement User Dashboard
+### 4.2 Implementation
 
-**Description:** Build the user dashboard showing job history and credit usage.
+- [ ] **4.2.1** Update `scenesLimit` defaults in Prisma schema (Free=2, Pro=10, Team=20)
+- [ ] **4.2.2** Add enforcement in `ExportClipsUseCase`
+- [ ] **4.2.3** Implement `ScenesLimitExceededException`
 
-**Acceptance criteria:**
-- [ ] Dashboard page with job history
-- [ ] Shows analyses used vs. limit
-- [ ] Shows credit balance
-- [ ] Links to view job details
+```typescript
+const totalClips = await clipRepository.countByUser(userId);
+const user = await userRepository.findById(userId);
+if (user.scenesLimit !== -1 && totalClips + requestedClips > user.scenesLimit) {
+  throw new ScenesLimitExceededException(user.scenesLimit, totalClips, requestedClips);
+}
+```
 
-**Verification:**
-- [ ] Can see past jobs and credit usage
-
-**Dependencies:** Task 5.3.1
-
-**Files likely touched:**
-- `apps/web/src/app/dashboard/page.tsx`
-- `apps/web/src/components/JobHistory.tsx`
-- `apps/web/src/components/CreditUsage.tsx`
-
-**Estimated scope:** Medium (3-4 files)
-
 ---
-
-### Task 5.3.3: Implement Stripe Integration
 
-**Description:** Set up Stripe subscriptions for Pro and Team tiers.
+### 4.3 Upgrade Prompt
 
-**Acceptance criteria:**
-- [ ] Stripe customer creation on signup
-- [ ] Checkout session for Pro tier ($19/mo)
-- [ ] Checkout session for Team tier ($49/mo)
-- [ ] Webhook handler for subscription events
-- [ ] Upgrade/downgrade flow
+- [ ] **4.3.1** Show inline upgrade prompt in Studio UI when limit reached
+- [ ] **4.3.2** Link to `/pricing` page
 
-**Verification:**
-- [ ] Can subscribe to Pro tier
-- [ ] Webhook processes payment events
-
-**Dependencies:** Task 5.3.1
-
-**Files likely touched:**
-- `apps/api/src/modules/payments/payments.service.ts`
-- `apps/api/src/modules/payments/payments.controller.ts`
-- `apps/api/src/modules/payments/webhook.handler.ts`
-- `apps/web/src/app/pricing/page.tsx`
-
-**Estimated scope:** Large (5-8 files)
-
 ---
 
-### Task 5.3.4: Implement Credit/Usage Tracking + Enforcement
+## Phase 5: Testing Strategy
 
-**Description:** Track analyses per user and enforce free-tier limits.
+### 5.1 Unit Tests
 
-**Acceptance criteria:**
-- [ ] Analyses count incremented on each job
-- [ ] Free tier limited to 3 analyses/month
-- [ ] Pro/Team tiers unlimited
-- [ ] Clear error when limit reached
+- [ ] **5.1.1** `prompt-translation.service.spec.ts` — LLM call formatting, response parsing, validation
+- [ ] **5.1.2** `filter-graph-builder.spec.ts` — Action→filter mapping, filter_complex assembly, edge cases
+- [ ] **5.1.3** `studio-actions.schema.spec.ts` — Zod schema validation for all action types
+- [ ] **5.1.4** `preview-cache.spec.ts` — Cache key generation, hit/miss, TTL
+- [ ] **5.1.5** `platform-encoding.spec.ts` — Platform preset selection, duration enforcement
 
-**Verification:**
-- [ ] Free user blocked after 3 analyses
-- [ ] Pro user not blocked
-
-**Dependencies:** Tasks 5.3.1, 5.3.3
-
-**Files likely touched:**
-- `apps/api/src/modules/users/users.service.ts`
-- `apps/api/src/guards/credit.guard.ts`
-
-**Estimated scope:** Small (2-3 files)
-
 ---
-
-### Task 5.3.5: Build Landing Page with Pricing
 
-**Description:** Create a marketing landing page with pricing section.
+### 5.2 Integration Tests
 
-**Acceptance criteria:**
-- [ ] Hero section with value prop
-- [ ] Features section
-- [ ] Pricing table (Free, Pro, Team)
-- [ ] CTA buttons link to signup/pricing
-- [ ] Meets NFR-8 design bar
+- [ ] **5.2.1** Prompt → Actions → FFmpeg command — full translation pipeline
+- [ ] **5.2.2** Preview render (mocked FFmpeg) — end-to-end preview flow
+- [ ] **5.2.3** Export with actions — full export with new action system
+- [ ] **5.2.4** Platform encoding compliance — output matches platform specs
 
-**Verification:**
-- [ ] Landing page loads and looks professional
-
-**Dependencies:** Task 5.3.3
-
-**Files likely touched:**
-- `apps/web/src/app/page.tsx`
-- `apps/web/src/components/Hero.tsx`
-- `apps/web/src/components/Features.tsx`
-- `apps/web/src/components/Pricing.tsx`
-
-**Estimated scope:** Medium (3-5 files)
-
 ---
-
-### Task 5.3.6: Implement Error Handling + Retry Logic
 
-**Description:** Add comprehensive error handling across the application.
+### 5.3 E2E Tests
 
-**Acceptance criteria:**
-- [ ] Per-clip try/catch in workers
-- [ ] Retry logic (3x) for failed jobs
-- [ ] Dead-letter queue for permanently failed jobs
-- [ ] Partial results returned on partial failure
-- [ ] User-friendly error messages
+- [ ] **5.3.1** Chat → preview → export — full user flow in studio
+- [ ] **5.3.2** Multiple prompts stacking — actions accumulate correctly
+- [ ] **5.3.3** Ambiguity resolution — clarification flow works
+- [ ] **5.3.4** Pricing enforcement — limit blocks at threshold
 
-**Verification:**
-- [ ] Failed jobs retry automatically
-- [ ] Partial results available on partial failure
-
-**Dependencies:** Core features complete
-
-**Files likely touched:**
-- `apps/api/src/workers/heatmap.worker.ts`
-- `apps/api/src/workers/clip.worker.ts`
-- `apps/api/src/modules/jobs/jobs.service.ts`
-
-**Estimated scope:** Medium (3-4 files)
-
 ---
-
-### Task 5.3.7: Set Up Sentry Error Tracking
 
-**Description:** Integrate Sentry for error tracking in both frontend and backend.
+### 5.4 Performance Tests
 
-**Acceptance criteria:**
-- [ ] Sentry configured for frontend
-- [ ] Sentry configured for backend
-- [ ] Source maps uploaded
-- [ ] Alert rules configured
+- [ ] **5.4.1** LLM translation response: < 5s (p95)
+- [ ] **5.4.2** Preview render (480p, 15s clip): < 15s
+- [ ] **5.4.3** Export render (1080p, 30s clip): < 60s
+- [ ] **5.4.4** Preview cache hit: < 500ms
+- [ ] **5.4.5** Chat input → first action: < 3s
 
-**Verification:**
-- [ ] Test error appears in Sentry dashboard
-
-**Dependencies:** Core features complete
-
-**Files likely touched:**
-- `apps/web/src/lib/sentry.ts`
-- `apps/api/src/sentry.plugin.ts`
-
-**Estimated scope:** Small (2 files)
-
 ---
 
-### Task 5.3.8: Implement Rate Limiting
+## Phase 6: Deployment & Migration
 
-**Description:** Add rate limiting to API endpoints.
+### 6.1 Environment Variables
 
-**Acceptance criteria:**
-- [ ] 100 req/min for metadata endpoints
-- [ ] 10 req/min for processing endpoints
-- [ ] Clear error message when rate limited
+- [ ] **6.1.1** `LLM_PROVIDER` — `openai` | `anthropic`
+- [ ] **6.1.2** `LLM_API_KEY` — API key
+- [ ] **6.1.3** `LLM_MODEL` — model name (default: `gpt-4o-mini`)
+- [ ] **6.1.4** `LLM_MAX_TOKENS` — max tokens (default: `2000`)
+- [ ] **6.1.5** `LLM_TEMPERATURE` — temperature (default: `0.2`)
+- [ ] **6.1.6** `PREVIEW_QUALITY` — preview quality (default: `480p`)
+- [ ] **6.1.7** `PREVIEW_FPS` — preview FPS (default: `15`)
+- [ ] **6.1.8** `PREVIEW_MAX_DURATION` — max preview duration (default: `30`)
+- [ ] **6.1.9** `PREVIEW_CACHE_TTL_MS` — cache TTL (default: `3600000`)
 
-**Verification:**
-- [ ] Exceeding limits returns 429
-
-**Dependencies:** Core features complete
-
-**Files likely touched:**
-- `apps/api/src/guards/rate-limit.guard.ts`
-- `apps/api/src/main.ts`
-
-**Estimated scope:** Small (2 files)
-
 ---
-
-### Task 5.3.9: Design Pass Against NFR-8
 
-**Description:** Review and polish all UI surfaces against the elegant-brand bar.
+### 6.2 Database Migration
 
-**Acceptance criteria:**
-- [ ] Typography: one serif/sans pairing used consistently
-- [ ] Color: restrained palette (2-3 core + neutrals)
-- [ ] Motion: subtle and purposeful
-- [ ] Copy: direct and quiet
-- [ ] Output: no black bars, no artifacts
+- [ ] **6.2.1** Update `scenesLimit` default from 3 to 2 for new users
+- [ ] **6.2.2** Existing free users keep current limit
+- [ ] **6.2.3** Pro/Team users get limits via Stripe webhook
 
-**Verification:**
-- [ ] Visual review against NFR-8 checklist
-- [ ] No generic/stock design elements
-
-**Dependencies:** All other tasks in 5.3
-
-**Files likely touched:**
-- `apps/web/src/app/` (multiple)
-- `apps/web/src/components/` (multiple)
-
-**Estimated scope:** Medium (5+ files)
-
----
-
-### Checkpoint: Monetization & Polish Complete
-- [ ] Authentication working (Google OAuth)
-- [ ] User dashboard functional
-- [ ] Stripe payments working
-- [ ] Credit limits enforced
-- [ ] Landing page live
-- [ ] Error handling comprehensive
-- [ ] Sentry tracking errors
-- [ ] Rate limiting active
-- [ ] Design meets NFR-8 bar
-- [ ] **Ready for production deployment**
-
 ---
-
-## Phase 6: Stage 2 — Editing Layer
-
-**Goal:** Add caption generation as a Stage 1 add-on/upsell. Only start after Stage 1 has real paying usage.
-
-### Task 6.1: Whisper API Integration
 
-**Description:** Integrate Whisper API for caption generation from audio.
+### 6.3 Redis Queue
 
-**Acceptance criteria:**
-- [ ] Whisper API called for audio transcription
-- [ ] Captions returned with timestamps
-- [ ] Error handling for API failures
+- [ ] **6.3.1** Add `preview` queue alongside `analysis` and `export`
+- [ ] **6.3.2** No new Redis infrastructure needed
 
-**Verification:**
-- [ ] Can generate captions from a clip
-
-**Dependencies:** Stage 1 has paying users
-
-**Files likely touched:**
-- `apps/api/src/services/whisper.service.ts`
-- `apps/api/src/workers/caption.worker.ts`
-
-**Estimated scope:** Medium (2-3 files)
-
 ---
-
-### Task 6.2: Caption Style Customization
-
-**Description:** Build UI for caption style selection with curated elegant presets.
-
-**Acceptance criteria:**
-- [ ] Caption style selector in UI
-- [ ] 3-5 curated elegant presets
-- [ ] Font, color, position configurable
-- [ ] Preview before burning
-
-**Verification:**
-- [ ] Can select style and preview captions
-
-**Dependencies:** Task 6.1
 
-**Files likely touched:**
-- `apps/web/src/components/CaptionEditor.tsx`
-- `apps/web/src/lib/caption-presets.ts`
+### 6.4 Storage
 
-**Estimated scope:** Medium (2-3 files)
+- [ ] **6.4.1** Add `previews/` prefix in MinIO bucket
+- [ ] **6.4.2** Add TTL cleanup job (delete files older than 1 hour)
 
 ---
-
-### Checkpoint: Stage 2 Complete
-- [ ] Caption generation works
-- [ ] Style customization functional
-- [ ] Presets meet elegant-brand bar
-- [ ] Ready to ship as upsell
-
----
-
-## Phase 7: Launch & Growth (Backlog, Traction-Gated)
-
-**Goal:** Growth levers, not launch blockers. Only schedule after Phase 5-6 have real users.
-
-### Task 7.1: Shareable Clip Links
-
-**Description:** Allow sharing clips via public links.
-
-**Acceptance criteria:**
-- [ ] Each clip gets a shareable URL
-- [ ] Landing page for shared clips
-- [ ] Analytics on shared clip views
-
-**Verification:**
-- [ ] Can share a clip link and view it
-
-**Dependencies:** Stage 1 with real users
 
-**Files likely touched:**
-- `apps/api/src/modules/clips/clips.controller.ts`
-- `apps/web/src/app/shared/[id]/page.tsx`
+### 6.5 CI/CD
 
-**Estimated scope:** Small (2-3 files)
+- [ ] **6.5.1** `pnpm lint` (type-check)
+- [ ] **6.5.2** `pnpm test` (all packages)
+- [ ] **6.5.3** `pnpm build`
+- [ ] **6.5.4** Deploy
 
 ---
 
-### Task 7.2: ZIP Download for Batch Clips
+### 6.6 Monitoring
 
-**Description:** Allow downloading multiple clips as a ZIP file.
+- [ ] **6.6.1** LLM token usage/user/day — alert > 100K tokens
+- [ ] **6.6.2** LLM API errors — alert > 5% error rate
+- [ ] **6.6.3** Preview render time — alert p95 > 20s
+- [ ] **6.6.4** Export render time — alert p95 > 90s
+- [ ] **6.6.5** Preview cache hit rate — alert < 30% hit rate
+- [ ] **6.6.6** BullMQ queue depth — alert preview > 10 pending
 
-**Acceptance criteria:**
-- [ ] "Download All" button on job page
-- [ ] ZIP file created with all clips
-- [ ] Progress indicator during ZIP creation
-
-**Verification:**
-- [ ] Can download all clips as ZIP
-
-**Dependencies:** Stage 1 with real users
-
-**Files likely touched:**
-- `apps/api/src/modules/clips/clips.controller.ts`
-- `apps/api/src/services/zip.service.ts`
-
-**Estimated scope:** Small (2 files)
-
 ---
 
-### Task 7.3: Chrome Extension
+## Phase 7: Implementation Phases
 
-**Description:** Build a Chrome extension that reads YouTube URLs and opens the web app.
+### Phase A: Standard Language + LLM Layer (Weeks 1–2, 54 hours)
 
-**Acceptance criteria:**
-- [ ] Extension icon appears on YouTube pages
-- [ ] Clicking opens SpikeClip with URL pre-filled
-- [ ] Works on watch, shorts, and embed pages
+- [ ] **A.1** Define StudioAction types in shared (4h)
+  - Create `studio-actions.ts` with all action interfaces + Zod schemas
+- [ ] **A.2** Implement PromptTranslationService (12h)
+  - LLM API integration, system prompt, response parsing, validation
+- [ ] **A.3** Implement FilterGraphBuilder (16h)
+  - Action→FFmpeg filter mapping, filter_complex assembly
+- [ ] **A.4** Enhance FFmpegService (8h)
+  - Add new filter support (animations, styles, transitions, speed, overlays)
+- [ ] **A.5** Add output quality/format encoding (4h)
+  - CRF control, WebM/VP9, resolution presets
+- [ ] **A.6** Unit tests for A.2–A.5 (10h)
+  - Comprehensive test coverage
 
-**Verification:**
-- [ ] Extension installs and works
+**Deliverable:** Prompt → FFmpeg pipeline works end-to-end via API.
 
-**Dependencies:** Stage 1 with real users
-
-**Files likely touched:**
-- `apps/extension/` (new directory)
-- `apps/extension/manifest.json`
-- `apps/extension/background.ts`
-- `apps/extension/popup.tsx`
-
-**Estimated scope:** Large (5+ files)
-
 ---
-
-### Task 7.4: SEO Optimization
-
-**Description:** Optimize the landing page for search engines.
 
-**Acceptance criteria:**
-- [ ] Meta tags configured
-- [ ] Open Graph tags
-- [ ] Structured data
-- [ ] Sitemap generated
+### Phase B: Chat UI + Preview (Weeks 3–4, 62 hours)
 
-**Verification:**
-- [ ] Google Search Console shows valid pages
+- [ ] **B.1** Build ChatPanel, ChatMessage, ChatInput components (10h)
+  - Conversational UI in Studio
+- [ ] **B.2** Build ActionList, ActionCard components (6h)
+  - Display and manage applied actions
+- [ ] **B.3** Build ClarificationCard component (4h)
+  - LLM ambiguity resolution UI
+- [ ] **B.4** Refactor StudioLayout to 3-panel (6h)
+  - Chat | Preview | SceneSelector
+- [ ] **B.5** Implement PreviewPanel (6h)
+  - Video player with transport controls
+- [ ] **B.6** Implement preview queue (BullMQ) (8h)
+  - Background preview rendering
+- [ ] **B.7** Implement preview caching (MinIO) (4h)
+  - Cache key generation, TTL, storage
+- [ ] **B.8** POST /api/studio/preview endpoint (4h)
+  - API endpoint for preview requests
+- [ ] **B.9** Extend use-studio.ts reducer (6h)
+  - New state: messages, actions, previewUrl
+- [ ] **B.10** Integration tests (8h)
+  - Chat → translate → preview → render flow
 
-**Dependencies:** Stage 1 with real users
+**Deliverable:** Full chat-based editing with live server-side preview.
 
-**Files likely touched:**
-- `apps/web/src/app/layout.tsx`
-- `apps/web/src/app/sitemap.ts`
-
-**Estimated scope:** Small (2 files)
-
 ---
-
-### Task 7.5: Landing Page Animations
-
-**Description:** Add subtle animations to the landing page.
-
-**Acceptance criteria:**
-- [ ] Hero section animations
-- [ ] Feature reveal on scroll
-- [ ] Subtle and purposeful (per NFR-8)
 
-**Verification:**
-- [ ] Animations enhance, not distract
+### Phase C: Export + Pricing (Week 5, 38 hours)
 
-**Dependencies:** Stage 1 with real users
+- [ ] **C.1** Update ExportClipsDto for actions (4h)
+  - Accept StudioAction[] in export request
+- [ ] **C.2** Refactor ClipWorker pipeline (8h)
+  - Replace separate caption/music/template passes with unified action pipeline
+- [ ] **C.3** Platform-specific encoding (4h)
+  - Encoding presets per platform
+- [ ] **C.4** Quality/format selection in export (4h)
+  - 480p/720p/1080p, mp4/webm
+- [ ] **C.5** Pricing tier enforcement (6h)
+  - scenesLimit check, upgrade prompts
+- [ ] **C.6** Update ExportPanel UI (4h)
+  - Quality/format/platform selectors
+- [ ] **C.7** E2E tests (8h)
+  - Full flow: chat → preview → export → download
 
-**Files likely touched:**
-- `apps/web/src/components/Hero.tsx`
-- `apps/web/src/components/Features.tsx`
+**Deliverable:** Complete export pipeline with pricing enforcement.
 
-**Estimated scope:** Medium (2-3 files)
-
 ---
-
-### Task 7.6: Product Hunt Launch Prep
-
-**Description:** Prepare for Product Hunt launch.
-
-**Acceptance criteria:**
-- [ ] Product Hunt page created
-- [ ] Screenshots and demo video
-- [ ] Launch day checklist
-
-**Verification:**
-- [ ] Ready to launch on PH
 
-**Dependencies:** All of Phase 5-6
+### Phase D: Polish + Launch (Week 6, 22 hours)
 
-**Files likely touched:**
-- `docs/product-hunt/` (new directory)
+- [ ] **D.1** Design pass on chat UI (6h)
+  - NFR-8 compliance, elegant-brand bar
+- [ ] **D.2** Error handling + retry (4h)
+  - LLM failures, FFmpeg failures, timeout handling
+- [ ] **D.3** Rate limiting for LLM calls (4h)
+  - Per-user token limits
+- [ ] **D.4** Sentry integration for new services (2h)
+  - Error tracking
+- [ ] **D.5** Documentation (2h)
+  - API docs, prompt examples, architecture
+- [ ] **D.6** Performance optimization (4h)
+  - Preview render time, filter chain optimization
 
-**Estimated scope:** Small (process)
+**Deliverable:** Production-ready prompt-based editing studio.
 
 ---
 
-## Effort Summary
+### Effort Summary
 
 | Phase | Hours | Weeks (part-time) |
-|-------|-------|-------------------|
-| 0–4 (Validation) | — | 3–5 weeks calendar time |
-| 5.1 (Foundation) | 50 | 1–2 |
-| 5.2 (Core Features) | 68 | 2 |
-| 5.3 (Monetization) | 62 | 2 |
-| 6 (Stage 2) | 14 | 1 |
-| 7 (Launch/Growth) | 34 | 1.5 |
-| **Total to Stage 1 launch** | **180** | **~10–14 weeks incl. validation** |
+|---|---|---|
+| A: Language + LLM | 54 | 1.5–2 |
+| B: Chat UI + Preview | 62 | 2 |
+| C: Export + Pricing | 38 | 1 |
+| D: Polish + Launch | 22 | 0.5–1 |
+| **Total** | **176** | **~5–6 weeks** |
 
-At 20 hrs/week on Phase 5 alone: ~9 weeks. At 30 hrs/week: ~6 weeks.
+At 20 hrs/week: ~9 weeks. At 30 hrs/week: ~6 weeks.
 
 ---
 
-## Dependency Graph
-
-```
-Phase 0 (Wedge)
-    │
-    ▼
-Phase 1 (ICP + Prep)
-    │
-    ▼
-Phase 2 (Interviews)
-    │
-    ▼
-Phase 3 (Concierge MVP)
-    │
-    ▼
-Phase 4 (Go/No-Go) ──── GATE ──── STOP if NO-GO
-    │
-    ▼
-Phase 5.1 (Foundation)
-    ├── 5.1.1 Monorepo
-    ├── 5.1.2 Next.js Frontend
-    ├── 5.1.3 NestJS Backend
-    ├── 5.1.4 Algorithm Port
-    ├── 5.1.5 yt-dlp Service ──┐
-    ├── 5.1.6 FFmpeg Service ──┤
-    ├── 5.1.7 Prisma Schema ───┤
-    ├── 5.1.8 Redis + BullMQ ──┤
-    └── 5.1.9 Docker Compose ──┘
-                │
-                ▼
-Phase 5.2 (Core Features)
-    ├── 5.2.1 Heatmap Job ────────┐
-    ├── 5.2.2 Heatmap Chart ─────┤
-    ├── 5.2.3 Scene List ────────┤
-    ├── 5.2.4 URL Input ─────────┤
-    ├── 5.2.5 Job Polling ───────┤
-    ├── 5.2.6 Clip Processing ───┤
-    ├── 5.2.7 R2 Storage ────────┤
-    ├── 5.2.8 Download Endpoint ─┤
-    └── 5.2.9 Test Cases ────────┘
-                │
-                ▼
-Phase 5.3 (Monetization)
-    ├── 5.3.1 Auth ──────────────┐
-    ├── 5.3.2 Dashboard ─────────┤
-    ├── 5.3.3 Stripe ────────────┤
-    ├── 5.3.4 Credits ───────────┤
-    ├── 5.3.5 Landing Page ──────┤
-    ├── 5.3.6 Error Handling ────┤
-    ├── 5.3.7 Sentry ────────────┤
-    ├── 5.3.8 Rate Limiting ─────┤
-    └── 5.3.9 Design Pass ───────┘
-                │
-                ▼
-Phase 6 (Stage 2) ── After real users
-                │
-                ▼
-Phase 7 (Growth) ── Traction-gated
-```
-
----
-
-## Risks & Mitigations
+## Phase 8: Risk Mitigations
 
 | Risk | Impact | Mitigation |
-|------|--------|------------|
-| YouTube changes heatmap payload / blocks yt-dlp | High | Keep yt-dlp pinned; visible fallback messaging |
-| FFmpeg processing slow | Medium | Optimize presets; hardware acceleration |
-| Whisper API costs high | Medium | Local faster-whisper option; limit to paid tier |
-| Low conversion rate | Medium | Strong free tier, clear upgrade triggers |
-| Algorithm overfit to synthetic example | Medium | Validate against real heatmap fixtures (5.2.9) |
-| Persona too broad | Medium | Enforce Phase 1 exclusion criteria |
-| Copyright/ToS exposure | Medium | Track as open legal question |
+|---|---|---|
+| LLM generates invalid FFmpeg | High | Zod validation + graceful error + retry with correction prompt |
+| LLM API downtime | High | Cache common prompt→action patterns, show "try again later" |
+| Preview render too slow | Medium | 480p + 15fps cap, timeout at 30s, show spinner |
+| FFmpeg filter_complex too long | Medium | Limit to 10 actions per prompt, split into multiple passes if needed |
+| LLM costs high | Medium | Use gpt-4o-mini ($0.15/1M input tokens), cache translations |
+| User writes unintelligible prompts | Medium | Clarification flow + suggestion chips + example prompts |
+| Preview cache storage grows | Low | TTL cleanup + max 50 previews per user |
+| Platform encoding differences break output | Medium | Platform presets tested against each platform's upload requirements |
+
+---
+
+## Phase 9: File Impact Summary
+
+### New Files (15)
+
+| Path | Purpose |
+|---|---|
+| `packages/shared/src/types/studio-actions.ts` | Action type definitions + Zod schemas |
+| `apps/api/src/infrastructure/external/prompt-translation.service.ts` | LLM integration |
+| `apps/api/src/infrastructure/external/filter-graph-builder.ts` | FFmpeg filter_complex builder |
+| `apps/api/src/infrastructure/external/preview-cache.service.ts` | Preview caching |
+| `apps/api/src/infrastructure/workers/preview.worker.ts` | Preview render worker |
+| `apps/api/src/modules/studio/studio.module.ts` | Studio module |
+| `apps/api/src/modules/studio/studio.controller.ts` | Preview + translate endpoints |
+| `apps/api/src/modules/studio/studio.service.ts` | Studio orchestration |
+| `apps/web/src/presentation/components/studio/ChatPanel.tsx` | Chat UI |
+| `apps/web/src/presentation/components/studio/ChatMessage.tsx` | Message bubble |
+| `apps/web/src/presentation/components/studio/ChatInput.tsx` | Text input |
+| `apps/web/src/presentation/components/studio/ActionList.tsx` | Applied actions |
+| `apps/web/src/presentation/components/studio/ActionCard.tsx` | Single action |
+| `apps/web/src/presentation/components/studio/ClarificationCard.tsx` | Clarification prompt |
+| `apps/web/src/presentation/components/studio/PreviewPanel.tsx` | Preview player |
+
+### Modified Files (10)
+
+| Path | Changes |
+|---|---|
+| `apps/api/src/infrastructure/external/ffmpeg.service.ts` | Add animation, style, transition, speed, overlay filters |
+| `apps/api/src/infrastructure/workers/clip.worker.ts` | Unified action pipeline |
+| `apps/api/src/application/dto/export-clips.dto.ts` | Add actions field, quality/format |
+| `apps/api/src/main.ts` | Register preview queue |
+| `apps/web/src/application/hooks/use-studio.ts` | New state for chat/actions/preview |
+| `apps/web/src/app/studio/page.tsx` | 3-panel layout |
+| `apps/web/src/domain/entities/studio.ts` | New types |
+| `apps/web/src/domain/ports/job-api.port.ts` | Add preview endpoint |
+| `apps/web/src/infrastructure/api/job-api.client.ts` | Add preview API call |
+| `apps/api/prisma/schema.prisma` | Update scenesLimit default |
+
+---
+
+## Phase 10: UI/UX Overhaul
+
+### 10.1 Color System
+
+**Dark mode (primary):**
+- [ ] **10.1.1** Background: `hsl(222, 47%, 5%)` — near-black
+- [ ] **10.1.2** Card: `hsl(222, 47%, 8%)`
+- [ ] **10.1.3** Border: `hsl(217, 20%, 15%)`
+- [ ] **10.1.4** Surface: `hsl(222, 47%, 10%)`
+- [ ] **10.1.5** Primary accent: `hsl(354, 79%, 65%)` — crimson
+
+**Light mode:**
+- [ ] **10.1.6** Background: `hsl(0, 0%, 98%)`
+- [ ] **10.1.7** Card: `hsl(0, 0%, 100%)`
+- [ ] **10.1.8** Border: `hsl(220, 13%, 91%)`
+
+---
+
+### 10.2 Components
+
+- [ ] **10.2.1** `DotsBackground` — CSS `radial-gradient` dot pattern (24px grid, 0.4 opacity)
+- [ ] **10.2.2** `FloatingIcon` — CSS keyframe floating animation (4-6s loops)
+- [ ] **10.2.3** `GlowOrb` — Pulsing radial gradient effect
+- [ ] **10.2.4** `HeatmapWave` — SVG path morphing with crimson gradient
+
+---
+
+### 10.3 Page Updates
+
+- [ ] **10.3.1** Home — Floating icons (film, scissors, play), glow orbs, heatmap wave divider, dots background
+- [ ] **10.3.2** About — Hero + 3-column grid (What/Why/Who) + monetization data section
+- [ ] **10.3.3** Login — Dots background + dual glow orbs
+- [ ] **10.3.4** Pricing — Hero section with glow, dots background on tiers
+- [ ] **10.3.5** Features — Dots backgrounds on hero and feature grid
+- [ ] **10.3.6** Privacy/Terms — Subtle dots background
+
+---
+
+### 10.4 Logo/Favicon
+
+- [ ] **10.4.1** Filled dark background (`#09090b` / `#171717` gradient)
+- [ ] **10.4.2** SVG glow filter on stroke paths
+- [ ] **10.4.3** Refined gradient transitions
+- [ ] **10.4.4** Animated opacity on favicon/icon variants
+
+---
+
+## Example User Journey
+
+1. User pastes YouTube URL → Analyze stage runs → Heatmap chart shows engagement data
+2. User drags on chart to select a 15s high-engagement moment → Scene added to list
+3. User clicks "Open in Studio" → Navigates to Studio with scene loaded
+4. User selects platform → "YouTube Shorts" (9:16 locked)
+5. User types: _"Add bold white captions saying 'Wait for it...' from 0-2s, then 'HERE WE GO!' in neon style from 5-8s with a pop animation"_
+6. LLM translates → 2 `add_captions` actions returned
+7. System renders preview → 480p preview appears in sidebar, user watches it
+8. User types: _"Also mix in some chill beats at 30% volume with a 2s fade in"_
+9. LLM translates → 1 `mix_audio` action appended (total: 3 actions)
+10. Preview re-renders → Updated preview with captions + music
+11. User types: _"And add a vignette effect"_
+12. Actions stack → 4 total actions, preview updates
+13. User satisfied → Clicks "Export" → Selects 1080p MP4 → Export renders
+14. User downloads → 1080p MP4 clip with all effects applied
