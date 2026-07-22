@@ -76,7 +76,7 @@ export function Header() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto grid grid-cols-3 h-16 items-center px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2.5 font-bold text-xl justify-self-start">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
