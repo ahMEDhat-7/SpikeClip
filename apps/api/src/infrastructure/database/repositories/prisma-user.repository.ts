@@ -17,6 +17,8 @@ export class PrismaUserRepository implements UserRepository {
     analysesUsed: number;
     analysesLimit: number;
     scenesLimit: number;
+    clipsUsed: number;
+    clipsLimit: number;
     analysesResetAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -30,6 +32,8 @@ export class PrismaUserRepository implements UserRepository {
       user.analysesUsed,
       user.analysesLimit,
       user.scenesLimit,
+      user.clipsUsed,
+      user.clipsLimit,
       user.analysesResetAt ?? undefined,
       user.createdAt,
       user.updatedAt
@@ -59,6 +63,8 @@ export class PrismaUserRepository implements UserRepository {
         analysesUsed: user.analysesUsed,
         analysesLimit: user.analysesLimit,
         scenesLimit: user.scenesLimit,
+        clipsUsed: user.clipsUsed,
+        clipsLimit: user.clipsLimit,
       },
     });
 
@@ -75,9 +81,15 @@ export class PrismaUserRepository implements UserRepository {
         ...(data.analysesUsed !== undefined && { analysesUsed: data.analysesUsed }),
         ...(data.analysesLimit !== undefined && { analysesLimit: data.analysesLimit }),
         ...(data.scenesLimit !== undefined && { scenesLimit: data.scenesLimit }),
+        ...(data.clipsUsed !== undefined && { clipsUsed: data.clipsUsed }),
+        ...(data.clipsLimit !== undefined && { clipsLimit: data.clipsLimit }),
       },
     });
 
     return this.toEntity(updated);
+  }
+
+  async save(user: User): Promise<User> {
+    return this.update(user.id, user);
   }
 }

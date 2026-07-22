@@ -4,6 +4,7 @@ import { QueueService, QUEUE_SERVICE, ExportJobConfig } from "../../domain/servi
 import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
+import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
 import type { StudioAction } from "@spikeclips/shared";
 
 interface ExportScene {
@@ -53,6 +54,7 @@ export class ExportClipsUseCase {
 
   constructor(
     @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
+    @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
     @Inject(QUEUE_SERVICE) private readonly queueService: QueueService,
     private readonly prisma: PrismaService
   ) {}
@@ -60,12 +62,25 @@ export class ExportClipsUseCase {
   async execute(
     jobId: string,
     scenes: ExportScene[],
+    userId: string,
     studioConfig?: StudioConfig
   ): Promise<{ jobId: string; clipJobIds: string[] }> {
     this.logger.log(`Exporting ${scenes.length} clips for job ${jobId}`);
 
     const job = await this.jobRepository.findById(jobId);
     if (!job) throw new JobNotFoundException(jobId);
+
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new Error("User not found");
+
+    if (!user.canExportClips(scenes.length)) {
+      const remaining = user.getClipsRemaining();
+      throw new Error(
+        remaining === 0
+          ? "Clip export limit reached. Upgrade your plan for more clips."
+          : `Not enough clips remaining. You have ${remaining} clip(s) left.`
+      );
+    }
 
     const clipJobIds: string[] = [];
 
@@ -107,6 +122,9 @@ export class ExportClipsUseCase {
 
       clipJobIds.push(clipId);
     }
+
+    user.incrementClipUsage(scenes.length);
+    await this.userRepository.save(user);
 
     return { jobId, clipJobIds };
   }

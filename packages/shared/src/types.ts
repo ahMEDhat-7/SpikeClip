@@ -111,6 +111,8 @@ export interface User {
   analysesUsed: number;
   analysesLimit: number;
   scenesLimit: number;
+  clipsUsed: number;
+  clipsLimit: number;
   createdAt: Date;
   updatedAt: Date;
 }

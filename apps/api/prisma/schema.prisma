@@ -18,6 +18,8 @@ model User {
   analysesUsed        Int       @default(0)
   analysesLimit       Int       @default(3)
   scenesLimit         Int       @default(3)
+  clipsUsed           Int       @default(0)
+  clipsLimit          Int       @default(2)
   analysesResetAt     DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

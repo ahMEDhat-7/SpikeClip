@@ -7,4 +7,5 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   create(user: User): Promise<User>;
   update(id: string, data: Partial<User>): Promise<User>;
+  save(user: User): Promise<User>;
 }
