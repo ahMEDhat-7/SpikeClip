@@ -97,16 +97,28 @@ describe("Studio Action Schemas", () => {
       expect(result.tone).toBe("normal");
     });
 
-    it("should clamp volume to 0-1 range", () => {
-      const result = MixAudioActionSchema.parse({
-        action: "mix_audio",
-        volume: 1.5,
-        originalVolume: -0.5,
-        fadeIn: 0,
-        fadeOut: 0,
-      });
-      expect(result.volume).toBe(1);
-      expect(result.originalVolume).toBe(0);
+    it("should reject volume outside 0-1 range", () => {
+      expect(() =>
+        MixAudioActionSchema.parse({
+          action: "mix_audio",
+          volume: 1.5,
+          originalVolume: 0.5,
+          fadeIn: 0,
+          fadeOut: 0,
+        })
+      ).toThrow();
+    });
+
+    it("should reject originalVolume outside 0-1 range", () => {
+      expect(() =>
+        MixAudioActionSchema.parse({
+          action: "mix_audio",
+          volume: 0.5,
+          originalVolume: -0.5,
+          fadeIn: 0,
+          fadeOut: 0,
+        })
+      ).toThrow();
     });
   });
 
