@@ -12,6 +12,8 @@ import { MusicModule } from "./presentation/music/music.module";
 import { ExternalModule } from "./infrastructure/external/external.module";
 import { SentryModule } from "./infrastructure/sentry/sentry.module";
 import { PaymentsModule } from "./presentation/payments/payments.module";
+import { StudioModule } from "./presentation/studio/studio.module";
+import { RedisModule } from "./infrastructure/redis/redis.module";
 import { JwtAuthGuard } from "./infrastructure/auth/jwt-auth.guard";
 import { RolesGuard } from "./infrastructure/auth/roles.guard";
 import { ThrottlerGuard } from "@nestjs/throttler";
@@ -28,6 +30,8 @@ import { ThrottlerGuard } from "@nestjs/throttler";
     MusicModule,
     ExternalModule,
     PaymentsModule,
+    StudioModule,
+    RedisModule,
     SentryModule.forRoot({
       dsn: process.env.SENTRY_DSN || "",
       environment: process.env.NODE_ENV || "development",
