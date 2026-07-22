@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, Users, Target, Zap } from "lucide-react";
+import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
+import { GlowOrb } from "@/presentation/components/features/GlowOrb";
+import { BarChart3, Users, Target, Zap, DollarSign, TrendingUp, Award } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About",
@@ -10,32 +12,59 @@ export const metadata: Metadata = {
     "SpikeClip uses real YouTube heatmap data to identify the most-replayed moments. Built for creators who value data over guesswork.",
 };
 
-const values = [
+const whatWhyWho = [
   {
     icon: BarChart3,
-    title: "Data over guesses",
-    description:
-      "Every recommendation is backed by actual viewer behavior. We don't guess — we measure.",
+    title: "What is SpikeClip?",
+    items: [
+      "Heatmap-driven clip extraction tool",
+      "Real viewer replay data — not AI guesses",
+      "Two-stage: Analyze (data) + Studio (edit)",
+      "Vertical 9:16 format for every platform",
+    ],
   },
   {
     icon: Users,
-    title: "Creator-first",
-    description:
-      "Built by creators who were tired of guessing which moments would perform. The tool we wished existed.",
+    title: "Who is it for?",
+    items: [
+      "Solo creators scaling content output",
+      "Agencies managing multiple channels",
+      "Visual niches (cooking, gaming, tutorials)",
+      "Anyone tired of guessing clip moments",
+    ],
   },
   {
-    icon: Target,
-    title: "Precision matters",
-    description:
-      "Keyframe-accurate cuts, no black bars, no upscaling artifacts. Your content deserves professional output.",
-  },
-  {
-    icon: Zap,
-    title: "Speed is a feature",
-    description:
-      "From URL to clips in under a minute. Your workflow shouldn't be bottlenecked by analysis.",
+    icon: TrendingUp,
+    title: "Why use this?",
+    items: [
+      "Data > guesswork — real engagement signals",
+      "Prompt-based editing (\"vibe editing\")",
+      "Extract, don't recreate — preserve context",
+      "From URL to clips in under 60 seconds",
+    ],
   },
 ];
+
+const monetizationData = {
+  platforms: [
+    { name: "YouTube Shorts", rpm: "$0.04 - $0.30", views: "per 1K views" },
+    { name: "TikTok Creator Rewards", rpm: "$0.40 - $1.00", views: "per 1K views" },
+    { name: "Instagram Reels", rpm: "$0.01 - $0.12", views: "per 1K views" },
+  ],
+  sponsorships: [
+    { tier: "Nano (1K-10K)", rate: "$25 - $150", per: "per post" },
+    { tier: "Micro (10K-100K)", rate: "$250 - $1.5K", per: "per post" },
+    { tier: "Mid (100K-500K)", rate: "$1.5K - $8K", per: "per post" },
+    { tier: "Macro (500K+)", rate: "$8K - $100K+", per: "per post" },
+  ],
+  streams: [
+    "Ad revenue (long-form funnel)",
+    "Sponsorships & brand deals",
+    "Affiliate marketing",
+    "Merch & products",
+    "Licensing viral clips",
+  ],
+};
 
 const storySections = [
   {
@@ -44,77 +73,170 @@ const storySections = [
   },
   {
     label: "Our approach",
-    text: "SpikeClip extracts YouTube heatmap data and uses our v2 spike merging algorithm with gap-tolerant clustering (5s tolerance, 0.25 intensity delta) to identify the most-engaged moments. No AI guesses. No sentiment analysis. Just raw viewer behavior translated into actionable clip suggestions — built with Next.js, NestJS, Clean Architecture, and Prisma.",
+    text: "SpikeClip extracts YouTube heatmap data and uses our v2 spike merging algorithm with gap-tolerant clustering to identify the most-engaged moments. No AI guesses. No sentiment analysis. Just raw viewer behavior translated into actionable clip suggestions.",
   },
   {
     label: "The result",
-    text: "Creators get data-driven clip suggestions in under 60 seconds. Every recommendation is backed by actual viewer attention. The result: higher engagement, less guesswork, and a content workflow that scales.",
+    text: "Creators get data-driven clip suggestions in under 60 seconds. Every recommendation is backed by actual viewer attention. Higher engagement, less guesswork, and a content workflow that scales.",
   },
 ];
 
 export default function AboutPage() {
   return (
-    <main className="space-y-16">
-      <section className="container mx-auto px-4 sm:px-6 pt-16 pb-12 text-center space-y-6">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-          Built for creators who{" "}
-          <span className="text-primary">measure</span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          SpikeClip was born from a simple frustration: why guess which moments
-          to clip when YouTube already tells you what viewers rewatch?
-        </p>
+    <main className="space-y-0">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
+        <DotsBackground opacity={0.3} />
+        <GlowOrb className="top-20 right-1/4" size={250} />
+        <div className="container mx-auto px-4 sm:px-6 pt-16 pb-12 relative z-10 text-center space-y-6">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+            Built for creators who{" "}
+            <span className="text-primary">measure</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            SpikeClip was born from a simple frustration: why guess which moments
+            to clip when YouTube already tells you what viewers rewatch?
+          </p>
+        </div>
       </section>
 
-      <section className="bg-surface py-16">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="max-w-3xl mx-auto space-y-10">
-            {storySections.map((section) => (
-              <div key={section.label} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-1 rounded-full bg-primary" />
-                  <h2 className="text-xl sm:text-2xl font-bold">{section.label}</h2>
-                </div>
-                <p className="text-muted-foreground leading-relaxed pl-4">
-                  {section.text}
-                </p>
-              </div>
+      {/* 3-Column Grid: What / Why / Who */}
+      <section className="relative bg-surface py-16">
+        <DotsBackground opacity={0.2} />
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {whatWhyWho.map((section) => (
+              <Card key={section.title} className="glow-crimson-subtle">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <section.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-semibold text-lg">{section.title}</h3>
+                  <ul className="space-y-2">
+                    {section.items.map((item) => (
+                      <li key={item} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6 py-12">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
-          Our values
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {values.map((value) => (
-            <Card key={value.title}>
-              <CardContent className="p-6 space-y-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <value.icon className="h-5 w-5" />
-                </div>
-                <h3 className="font-semibold">{value.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {value.description}
-                </p>
-              </CardContent>
-            </Card>
+      {/* Story Sections */}
+      <section className="container mx-auto px-4 sm:px-6 py-16">
+        <div className="max-w-3xl mx-auto space-y-10">
+          {storySections.map((section) => (
+            <div key={section.label} className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-1 rounded-full bg-primary" />
+                <h2 className="text-xl sm:text-2xl font-bold">{section.label}</h2>
+              </div>
+              <p className="text-muted-foreground leading-relaxed pl-4">
+                {section.text}
+              </p>
+            </div>
           ))}
         </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6 py-16 text-center space-y-6">
-        <h2 className="text-2xl sm:text-3xl font-bold">
-          Ready to clip with data?
-        </h2>
-        <p className="text-muted-foreground max-w-lg mx-auto">
-          Join creators using real viewer data to make better content decisions.
-        </p>
-        <Button asChild size="lg">
-          <Link href="/login">Get started free</Link>
-        </Button>
+      {/* Earn Money Section */}
+      <section className="relative bg-surface py-16">
+        <DotsBackground opacity={0.2} />
+        <GlowOrb className="bottom-10 left-1/4" size={300} color="hsl(142, 71%, 45%)" />
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold">
+              Earn money with <span className="text-primary">SpikeClip</span>
+            </h2>
+            <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+              Shorts are discovery engines that funnel viewers to your long-form content.
+              Here&apos;s how creators monetize across platforms.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Platform RPMs */}
+            <Card className="glow-crimson-subtle">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+                <h3 className="font-semibold text-lg">Platform RPMs</h3>
+                <div className="space-y-3">
+                  {monetizationData.platforms.map((platform) => (
+                    <div key={platform.name} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{platform.name}</span>
+                        <span className="font-mono font-bold text-primary">{platform.rpm}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{platform.views}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Sponsorships */}
+            <Card className="glow-crimson-subtle">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <h3 className="font-semibold text-lg">Sponsorships</h3>
+                <div className="space-y-3">
+                  {monetizationData.sponsorships.map((sponsor) => (
+                    <div key={sponsor.tier} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{sponsor.tier}</span>
+                        <span className="font-mono font-bold text-primary">{sponsor.rate}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{sponsor.per}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Revenue Streams */}
+            <Card className="glow-crimson-subtle">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Award className="h-5 w-5" />
+                </div>
+                <h3 className="font-semibold text-lg">Revenue Streams</h3>
+                <ul className="space-y-2">
+                  {monetizationData.streams.map((stream) => (
+                    <li key={stream} className="text-sm text-muted-foreground flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      {stream}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative container mx-auto px-4 sm:px-6 py-16 text-center space-y-6">
+        <GlowOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" size={350} />
+        <div className="relative z-10 space-y-6">
+          <h2 className="text-2xl sm:text-3xl font-bold">
+            Ready to clip with data?
+          </h2>
+          <p className="text-muted-foreground max-w-lg mx-auto">
+            Join creators using real viewer data to make better content decisions.
+          </p>
+          <Button asChild size="lg">
+            <Link href="/login">Get started free</Link>
+          </Button>
+        </div>
       </section>
     </main>
   );
