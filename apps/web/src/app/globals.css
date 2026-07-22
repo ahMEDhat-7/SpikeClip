@@ -13,7 +13,7 @@ html {
   --radius: 0.5rem;
 
   /* ── Light mode (default) ── */
-  --color-background: hsl(220 20% 98%);
+  --color-background: hsl(0 0% 98%);
   --color-foreground: hsl(224 71% 4%);
 
   --color-card: hsl(0 0% 100%);
@@ -54,22 +54,22 @@ html {
 
 /* ── Dark mode ── */
 .dark {
-  --color-background: hsl(224 71% 4%);
+  --color-background: hsl(222 47% 5%);
   --color-foreground: hsl(210 40% 98%);
 
-  --color-card: hsl(224 50% 8%);
+  --color-card: hsl(222 47% 8%);
   --color-card-foreground: hsl(210 40% 98%);
 
-  --color-popover: hsl(224 50% 8%);
+  --color-popover: hsl(222 47% 8%);
   --color-popover-foreground: hsl(210 40% 98%);
 
   --color-primary: hsl(354 79% 65%);
   --color-primary-foreground: hsl(0 0% 100%);
 
-  --color-secondary: hsl(224 30% 14%);
+  --color-secondary: hsl(217 20% 12%);
   --color-secondary-foreground: hsl(210 40% 98%);
 
-  --color-muted: hsl(224 30% 12%);
+  --color-muted: hsl(217 20% 10%);
   --color-muted-foreground: hsl(215 20% 55%);
 
   --color-accent: hsl(354 79% 65%);
@@ -78,13 +78,13 @@ html {
   --color-destructive: hsl(0 62% 50%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
-  --color-border: hsl(224 20% 16%);
-  --color-input: hsl(224 20% 16%);
+  --color-border: hsl(217 20% 15%);
+  --color-input: hsl(217 20% 15%);
   --color-ring: hsl(354 79% 65%);
 
-  --color-surface: hsl(224 40% 10%);
-  --color-surface-hover: hsl(224 35% 14%);
-  --color-surface-active: hsl(224 30% 18%);
+  --color-surface: hsl(222 47% 10%);
+  --color-surface-hover: hsl(217 30% 14%);
+  --color-surface-active: hsl(217 25% 18%);
 
   --color-chart-primary: hsl(354 79% 65%);
   --color-chart-secondary: hsl(354 60% 50%);
@@ -141,12 +141,51 @@ a {
   height: 8px;
 }
 .dark ::-webkit-scrollbar-track {
-  background: hsl(224 30% 12%);
+  background: hsl(217 20% 10%);
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(224 20% 25%);
+  background: hsl(217 20% 22%);
   border-radius: 4px;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(224 20% 35%);
+  background: hsl(217 20% 30%);
+}
+
+/* ── Dots grid background utility ── */
+.dots-bg {
+  background-image: radial-gradient(circle, hsl(217 20% 20% / 0.4) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Glow effects ── */
+.glow-crimson {
+  box-shadow: 0 0 60px hsl(354 79% 59% / 0.15), 0 0 120px hsl(354 79% 59% / 0.05);
+}
+
+.glow-crimson-subtle {
+  box-shadow: 0 0 40px hsl(354 79% 59% / 0.08);
+}
+
+/* ── Floating animation ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(1deg); }
+  50% { transform: translateY(-12px) rotate(0deg); }
+  75% { transform: translateY(-6px) rotate(-1deg); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(2deg); }
+  66% { transform: translateY(-5px) rotate(-1deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+@keyframes typing-cursor {
+  0%, 50% { border-right-color: hsl(354 79% 65%); }
+  51%, 100% { border-right-color: transparent; }
 }
