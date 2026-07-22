@@ -269,9 +269,10 @@ function DashboardContent() {
             </p>
           </div>
           {user?.plan === "free" && (
-            <p className="text-xs text-muted-foreground/60">
-              Free plan: {user.analysesUsed}/{user.analysesLimit} analyses used this month
-            </p>
+            <div className="text-xs text-muted-foreground/60 space-y-1">
+              <p>Analyses: {user.analysesUsed}/{user.analysesLimit} used this month</p>
+              <p>Clips: {user.clipsUsed}/{user.clipsLimit} exported this month</p>
+            </div>
           )}
         </div>
       )}

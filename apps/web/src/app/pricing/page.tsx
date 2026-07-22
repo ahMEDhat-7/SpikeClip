@@ -28,6 +28,7 @@ const tiers = [
     features: [
       "3 heatmap analyses per month",
       "Up to 3 scenes per video",
+      "2 clip exports per month",
       "View engagement data",
       "Scene editor with heatmap",
       "Standard processing speed",
@@ -43,10 +44,12 @@ const tiers = [
     description: "Full pipeline for solo creators",
     features: [
       "Unlimited heatmap analyses",
-      "Download processed clips",
+      "Up to 10 scenes per video",
+      "10 clip exports per month",
       "Vertical reformatting (9:16)",
       "Priority processing",
       "All export formats",
+      "Prompt-based editing",
     ],
     cta: "Start Pro Trial",
     href: "/login",
@@ -60,6 +63,8 @@ const tiers = [
     description: "For agencies and teams",
     features: [
       "Everything in Pro",
+      "Up to 25 scenes per video",
+      "20 clip exports per month",
       "5 team seats",
       "Priority support",
       "API access",
