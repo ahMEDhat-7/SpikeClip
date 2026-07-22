@@ -4,9 +4,23 @@
       <stop offset="0%" stop-color="#FF6B35"/>
       <stop offset="100%" stop-color="#E63946"/>
     </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#09090b"/>
+      <stop offset="100%" stop-color="#171717"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="#1A1A2E"/>
-  <line x1="8" y1="48" x2="56" y2="48" stroke="url(#g)" stroke-width="2" stroke-linecap="round"/>
-  <path d="M8 48 Q12 32 16 16 Q22 38 28 44 Q34 46 40 43 Q46 40 52 44 L56 48 L8 48 Z" fill="url(#g)" opacity="0.85"/>
-  <path d="M8 48 Q12 28 16 10 Q22 38 28 44 Q34 46 40 43 Q46 40 52 44" fill="none" stroke="url(#g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bgGrad)" stroke="#262626" stroke-width="1"/>
+
+  <line x1="12" y1="44" x2="52" y2="44" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+
+  <path d="M12 44 Q16 32 20 16 Q26 30 32 36 Q38 40 44 36 Q48 30 52 34 L52 44 L12 44 Z" fill="url(#g)" opacity="0.85"/>
+
+  <path d="M12 44 Q16 28 20 10 Q26 30 32 36 Q38 40 44 36 Q48 28 52 32" fill="none" stroke="url(#g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+
+  <animate attributeName="opacity" values="0.85;1;0.85" dur="2s" repeatCount="indefinite" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
 </svg>
