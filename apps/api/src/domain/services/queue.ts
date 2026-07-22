@@ -1,3 +1,5 @@
+import type { StudioAction } from "@spikeclips/shared";
+
 export const QUEUE_SERVICE = "QUEUE_SERVICE";
 
 export interface ExportJobConfig {
@@ -38,6 +40,7 @@ export interface ExportJobConfig {
   };
   templateId?: string;
   templateConfig?: Record<string, unknown>;
+  actions?: StudioAction[];
 }
 
 export interface QueueService {

@@ -4,6 +4,7 @@ import { QueueService, QUEUE_SERVICE, ExportJobConfig } from "../../domain/servi
 import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
+import type { StudioAction } from "@spikeclips/shared";
 
 interface ExportScene {
   start_time: number;
@@ -43,6 +44,7 @@ interface StudioConfig {
   };
   templateId?: string;
   templateConfig?: Record<string, unknown>;
+  actions?: StudioAction[];
 }
 
 @Injectable()
@@ -98,6 +100,7 @@ export class ExportClipsUseCase {
         music: studioConfig?.music,
         templateId: studioConfig?.templateId,
         templateConfig: studioConfig?.templateConfig,
+        actions: studioConfig?.actions,
       };
 
       await this.queueService.addExportJob(jobId, exportConfig);

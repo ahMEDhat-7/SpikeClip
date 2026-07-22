@@ -9,6 +9,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { unlink, mkdir, stat, access } from "fs/promises";
 import { join } from "path";
+import type { StudioAction } from "@spikeclips/shared";
 
 const execFileAsync = promisify(execFile);
 const TMP_DIR = "/tmp/spikeclips-export";
@@ -28,6 +29,7 @@ interface ClipExportJobData {
   music?: MusicMixConfig;
   templateId?: string;
   templateConfig?: Record<string, unknown>;
+  actions?: StudioAction[];
 }
 
 const connectionOptions = {
@@ -58,7 +60,7 @@ export function createClipWorker(
     async (bullJob: BullMQJob<ClipExportJobData>) => {
       const {
         jobId, clipId, sceneIndex, videoUrl, startTime, endTime,
-        vertical, captions, music, templateConfig,
+        vertical, captions, music, templateConfig, actions,
       } = bullJob.data;
       logger.log(`Processing clip ${clipId} (scene ${sceneIndex}) for job ${jobId}`);
 
@@ -131,6 +133,18 @@ export function createClipWorker(
           }
         }
 
+        // Step 4.5: Apply StudioActions (effects, speed, overlays, etc.)
+        if (actions && actions.length > 0 && ffmpeg) {
+          try {
+            const actionsOutput = join(TMP_DIR, `${clipId}-actions.mp4`);
+            await ffmpeg.applyStudioActions(currentFile, actionsOutput, actions);
+            currentFile = actionsOutput;
+            logger.log(`Applied ${actions.length} studio action(s) to clip ${clipId}`);
+          } catch (actErr) {
+            logger.warn(`Studio actions failed for ${clipId}: ${actErr instanceof Error ? actErr.message : actErr}`);
+          }
+        }
+
         // Step 5: Music mix (with correct fade-out and -shortest)
         if (music) {
           try {
@@ -182,6 +196,7 @@ export function createClipWorker(
         await unlink(tmpCropped).catch(() => {});
         await unlink(tmpCaptions).catch(() => {});
         await unlink(tmpEffects).catch(() => {});
+        await unlink(join(TMP_DIR, `${clipId}-actions.mp4`)).catch(() => {});
         await unlink(tmpOutput).catch(() => {});
         if (music) {
           const sanitizedKey = music.fileKey.replace(/[^a-zA-Z0-9._-]/g, "_");
