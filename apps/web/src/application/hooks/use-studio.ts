@@ -8,12 +8,24 @@ import { EditTemplate } from "@/domain/entities/template";
 import { ScoredBlock } from "@/domain/entities/job";
 import { StudioStep, STUDIO_STEPS } from "@/domain/entities/studio";
 import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
+import type { StudioAction as StudioActionType } from "@spikeclips/shared";
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "system";
+  content: string;
+  timestamp: Date;
+}
 
 export interface SceneEditState {
   captions: Caption[];
   musicTrack: MusicTrack | null;
   originalVolume: number;
   selectedTemplate: EditTemplate | null;
+  studioActions: StudioActionType[];
+  previewUrl: string | null;
+  previewLoading: boolean;
+  previewError: string | null;
 }
 
 export interface StudioState {
@@ -25,6 +37,8 @@ export interface StudioState {
   outputFormat: OutputFormat;
   outputQuality: OutputQuality;
   customTimeRange: { start: number; end: number } | null;
+  chatMessages: ChatMessage[];
+  chatLoading: boolean;
 }
 
 type StudioAction =
@@ -42,6 +56,14 @@ type StudioAction =
   | { type: "SET_MUSIC"; index: number; track: MusicTrack | null }
   | { type: "SET_ORIGINAL_VOLUME"; index: number; volume: number }
   | { type: "SET_TEMPLATE"; index: number; template: EditTemplate | null }
+  | { type: "ADD_CHAT_MESSAGE"; message: ChatMessage }
+  | { type: "SET_CHAT_LOADING"; loading: boolean }
+  | { type: "SET_STUDIO_ACTIONS"; index: number; actions: StudioActionType[] }
+  | { type: "ADD_STUDIO_ACTION"; index: number; action: StudioActionType }
+  | { type: "REMOVE_STUDIO_ACTION"; index: number; actionIndex: number }
+  | { type: "SET_PREVIEW_URL"; index: number; url: string | null }
+  | { type: "SET_PREVIEW_LOADING"; index: number; loading: boolean }
+  | { type: "SET_PREVIEW_ERROR"; index: number; error: string | null }
   | { type: "RESET" };
 
 const STEPS = STUDIO_STEPS;
@@ -52,6 +74,10 @@ function createDefaultSceneEdit(): SceneEditState {
     musicTrack: null,
     originalVolume: 1,
     selectedTemplate: null,
+    studioActions: [],
+    previewUrl: null,
+    previewLoading: false,
+    previewError: null,
   };
 }
 
@@ -64,6 +90,8 @@ const initialState: StudioState = {
   outputFormat: DEFAULT_OUTPUT_FORMAT,
   outputQuality: DEFAULT_OUTPUT_QUALITY,
   customTimeRange: null,
+  chatMessages: [],
+  chatLoading: false,
 };
 
 function studioReducer(state: StudioState, action: StudioAction): StudioState {
@@ -182,6 +210,63 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
       const nextEdits = new Map(state.sceneEdits);
       const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
       nextEdits.set(action.index, { ...existing, selectedTemplate: action.template });
+      return { ...state, sceneEdits: nextEdits };
+    }
+
+    case "ADD_CHAT_MESSAGE":
+      return {
+        ...state,
+        chatMessages: [...state.chatMessages, action.message],
+      };
+
+    case "SET_CHAT_LOADING":
+      return { ...state, chatLoading: action.loading };
+
+    case "SET_STUDIO_ACTIONS": {
+      const nextEdits = new Map(state.sceneEdits);
+      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
+      nextEdits.set(action.index, { ...existing, studioActions: action.actions });
+      return { ...state, sceneEdits: nextEdits };
+    }
+
+    case "ADD_STUDIO_ACTION": {
+      const nextEdits = new Map(state.sceneEdits);
+      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
+      nextEdits.set(action.index, {
+        ...existing,
+        studioActions: [...existing.studioActions, action.action],
+      });
+      return { ...state, sceneEdits: nextEdits };
+    }
+
+    case "REMOVE_STUDIO_ACTION": {
+      const nextEdits = new Map(state.sceneEdits);
+      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
+      nextEdits.set(action.index, {
+        ...existing,
+        studioActions: existing.studioActions.filter((_, i) => i !== action.actionIndex),
+      });
+      return { ...state, sceneEdits: nextEdits };
+    }
+
+    case "SET_PREVIEW_URL": {
+      const nextEdits = new Map(state.sceneEdits);
+      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
+      nextEdits.set(action.index, { ...existing, previewUrl: action.url });
+      return { ...state, sceneEdits: nextEdits };
+    }
+
+    case "SET_PREVIEW_LOADING": {
+      const nextEdits = new Map(state.sceneEdits);
+      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
+      nextEdits.set(action.index, { ...existing, previewLoading: action.loading });
+      return { ...state, sceneEdits: nextEdits };
+    }
+
+    case "SET_PREVIEW_ERROR": {
+      const nextEdits = new Map(state.sceneEdits);
+      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
+      nextEdits.set(action.index, { ...existing, previewError: action.error });
       return { ...state, sceneEdits: nextEdits };
     }
 
@@ -305,6 +390,64 @@ export function useStudio() {
     dispatch({ type: "ADD_CUSTOM_SCENE", scene: customScene, replace, start, end });
   }, []);
 
+  const addChatMessage = useCallback((message: ChatMessage) => {
+    dispatch({ type: "ADD_CHAT_MESSAGE", message });
+  }, []);
+
+  const setChatLoading = useCallback((loading: boolean) => {
+    dispatch({ type: "SET_CHAT_LOADING", loading });
+  }, []);
+
+  const studioActions = useMemo(
+    () => (selectedSceneIndex !== null ? sceneEdits.get(selectedSceneIndex)?.studioActions ?? [] : []),
+    [selectedSceneIndex, sceneEdits]
+  );
+
+  const setStudioActions = useCallback((actions: StudioActionType[]) => {
+    if (selectedSceneIndex === null) return;
+    dispatch({ type: "SET_STUDIO_ACTIONS", index: selectedSceneIndex, actions });
+  }, [selectedSceneIndex]);
+
+  const addStudioAction = useCallback((action: StudioActionType) => {
+    if (selectedSceneIndex === null) return;
+    dispatch({ type: "ADD_STUDIO_ACTION", index: selectedSceneIndex, action });
+  }, [selectedSceneIndex]);
+
+  const removeStudioAction = useCallback((actionIndex: number) => {
+    if (selectedSceneIndex === null) return;
+    dispatch({ type: "REMOVE_STUDIO_ACTION", index: selectedSceneIndex, actionIndex });
+  }, [selectedSceneIndex]);
+
+  const previewUrl = useMemo(
+    () => (selectedSceneIndex !== null ? sceneEdits.get(selectedSceneIndex)?.previewUrl ?? null : null),
+    [selectedSceneIndex, sceneEdits]
+  );
+
+  const previewLoading = useMemo(
+    () => (selectedSceneIndex !== null ? sceneEdits.get(selectedSceneIndex)?.previewLoading ?? false : false),
+    [selectedSceneIndex, sceneEdits]
+  );
+
+  const previewError = useMemo(
+    () => (selectedSceneIndex !== null ? sceneEdits.get(selectedSceneIndex)?.previewError ?? null : null),
+    [selectedSceneIndex, sceneEdits]
+  );
+
+  const setPreviewUrl = useCallback((url: string | null) => {
+    if (selectedSceneIndex === null) return;
+    dispatch({ type: "SET_PREVIEW_URL", index: selectedSceneIndex, url });
+  }, [selectedSceneIndex]);
+
+  const setPreviewLoading = useCallback((loading: boolean) => {
+    if (selectedSceneIndex === null) return;
+    dispatch({ type: "SET_PREVIEW_LOADING", index: selectedSceneIndex, loading });
+  }, [selectedSceneIndex]);
+
+  const setPreviewError = useCallback((error: string | null) => {
+    if (selectedSceneIndex === null) return;
+    dispatch({ type: "SET_PREVIEW_ERROR", index: selectedSceneIndex, error });
+  }, [selectedSceneIndex]);
+
   const reset = useCallback(() => {
     dispatch({ type: "RESET" });
   }, []);
@@ -321,6 +464,10 @@ export function useStudio() {
     musicTrack: currentSceneEdit?.musicTrack ?? null,
     originalVolume: currentSceneEdit?.originalVolume ?? 1,
     selectedTemplate: currentSceneEdit?.selectedTemplate ?? null,
+    studioActions,
+    previewUrl,
+    previewLoading,
+    previewError,
     currentStep,
     currentStepIndex,
     steps: STEPS,
@@ -346,6 +493,16 @@ export function useStudio() {
     setOutputQuality,
     customTimeRange,
     addCustomScene,
+    chatMessages,
+    chatLoading,
+    addChatMessage,
+    setChatLoading,
+    setStudioActions,
+    addStudioAction,
+    removeStudioAction,
+    setPreviewUrl,
+    setPreviewLoading,
+    setPreviewError,
     reset,
   };
 }

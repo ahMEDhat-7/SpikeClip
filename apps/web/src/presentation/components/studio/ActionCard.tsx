@@ -1,0 +1,76 @@
+"use client";
+
+import { X } from "lucide-react";
+import type { StudioAction } from "@spikeclips/shared";
+
+const ACTION_ICONS: Record<string, string> = {
+  add_captions: "Aa",
+  mix_audio: "♪",
+  apply_effect: "✦",
+  set_speed: "⚡",
+  add_overlay: "◻",
+  set_transition: "→",
+  add_background: "■",
+  trim: "✂",
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  add_captions: "Caption",
+  mix_audio: "Audio Mix",
+  apply_effect: "Effect",
+  set_speed: "Speed",
+  add_overlay: "Overlay",
+  set_transition: "Transition",
+  add_background: "Background",
+  trim: "Trim",
+};
+
+function getActionSummary(action: StudioAction): string {
+  switch (action.action) {
+    case "add_captions":
+      return `"${action.text}" (${action.start}s-${action.end}s)`;
+    case "mix_audio":
+      return `Volume ${Math.round(action.volume * 100)}%`;
+    case "apply_effect":
+      return `${action.type} (${Math.round(action.intensity * 100)}%)`;
+    case "set_speed":
+      return `${action.rate}x speed`;
+    case "add_overlay":
+      return action.assetKey;
+    case "set_transition":
+      return `${action.type} (${action.duration}s)`;
+    case "add_background":
+      return action.color;
+    case "trim":
+      return `${action.startTime}s-${action.endTime}s`;
+    default:
+      return "";
+  }
+}
+
+interface ActionCardProps {
+  action: StudioAction;
+  index: number;
+  onRemove: (index: number) => void;
+}
+
+export function ActionCard({ action, index, onRemove }: ActionCardProps) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border text-sm group">
+      <span className="text-lg w-6 text-center">{ACTION_ICONS[action.action]}</span>
+      <div className="flex-1 min-w-0">
+        <span className="font-medium">{ACTION_LABELS[action.action]}</span>
+        <span className="text-muted-foreground ml-2 text-xs truncate">
+          {getActionSummary(action)}
+        </span>
+      </div>
+      <button
+        onClick={() => onRemove(index)}
+        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded transition-opacity"
+        aria-label="Remove action"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
