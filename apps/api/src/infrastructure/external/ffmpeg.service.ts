@@ -9,6 +9,13 @@ import {
   MusicMixConfig,
 } from "../../domain/services/video-processor";
 import { generateSrt } from "./srt-generator";
+import { FilterGraphBuilder } from "./filter-graph-builder";
+import {
+  StudioAction,
+  PlatformId,
+  OutputQuality,
+  OutputFormat,
+} from "@spikeclips/shared";
 
 const execFileAsync = promisify(execFile);
 const TMP_DIR = "/tmp/spikeclips-ffmpeg";
@@ -328,6 +335,72 @@ export class FfmpegService implements VideoProcessor {
       return duration;
     } catch (err) {
       this.logger.error(`Get duration failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
+  }
+
+  async applyStudioActions(
+    inputPath: string,
+    outputPath: string,
+    actions: StudioAction[],
+    platform: PlatformId,
+    quality: OutputQuality = "1080p",
+    format: OutputFormat = "mp4",
+    startTime?: number,
+    duration?: number
+  ): Promise<void> {
+    this.logger.log(`Applying ${actions.length} studio actions to ${outputPath}`);
+
+    const builder = new FilterGraphBuilder();
+    const { command } = builder.buildCommand({
+      actions,
+      platform,
+      quality,
+      format,
+      inputPath,
+      outputPath,
+      startTime,
+      duration,
+    });
+
+    try {
+      await withTimeout(
+        execFileAsync("ffmpeg", command),
+        FFMPEG_TIMEOUT_MS,
+        "studio-actions"
+      );
+    } catch (err) {
+      this.logger.error(`Studio actions failed: ${err instanceof Error ? err.message : err}`);
+      throw err;
+    }
+  }
+
+  async applyPreviewActions(
+    inputPath: string,
+    outputPath: string,
+    actions: StudioAction[],
+    platform: PlatformId
+  ): Promise<void> {
+    this.logger.log(`Applying preview actions to ${outputPath}`);
+
+    const builder = new FilterGraphBuilder();
+    const { command } = builder.buildPreviewCommand({
+      actions,
+      platform,
+      quality: "480p",
+      format: "mp4",
+      inputPath,
+      outputPath,
+    });
+
+    try {
+      await withTimeout(
+        execFileAsync("ffmpeg", command),
+        30_000,
+        "preview-actions"
+      );
+    } catch (err) {
+      this.logger.error(`Preview actions failed: ${err instanceof Error ? err.message : err}`);
       throw err;
     }
   }
