@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
+import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
+import { GlowOrb } from "@/presentation/components/features/GlowOrb";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -71,19 +73,24 @@ const tiers = [
 
 export default function PricingPage() {
   return (
-    <main className="space-y-16">
-      <section className="container mx-auto px-4 sm:px-6 pt-16 pb-4 text-center space-y-4">
-        <h1 className="text-3xl sm:text-4xl font-bold">
-          Simple, transparent pricing
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Choose the plan that fits your workflow. All plans include our core
-          heatmap analysis technology.
-        </p>
+    <main className="space-y-0">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
+        <DotsBackground opacity={0.3} />
+        <GlowOrb className="top-20 left-1/3" size={250} />
+        <div className="container mx-auto px-4 sm:px-6 pt-16 pb-4 text-center space-y-4 relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-bold">
+            Simple, transparent pricing
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Choose the plan that fits your workflow. All plans include our core
+            heatmap analysis technology.
+          </p>
+        </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <section className="relative container mx-auto px-4 sm:px-6 py-12">
+        <DotsBackground opacity={0.15} />
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {tiers.map((tier) => (
             <Card
               key={tier.name}
@@ -135,8 +142,9 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="bg-surface py-16">
-        <div className="container mx-auto px-4 sm:px-6 text-center space-y-4">
+      <section className="relative bg-surface py-16">
+        <DotsBackground opacity={0.2} />
+        <div className="container mx-auto px-4 sm:px-6 text-center space-y-4 relative z-10">
           <h2 className="text-2xl font-bold">Need something custom?</h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
             For enterprise needs, API access, or custom integrations, reach out

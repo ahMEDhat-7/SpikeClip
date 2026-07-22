@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — SpikeClip",
@@ -7,7 +8,9 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="container mx-auto px-4 py-12 max-w-3xl">
+    <main className="relative container mx-auto px-4 py-12 max-w-3xl">
+      <DotsBackground opacity={0.2} />
+      <div className="relative z-10">
       <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
       <div className="prose prose-sm dark:prose-invert space-y-4">
         <p>Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
@@ -63,6 +66,7 @@ export default function PrivacyPage() {
           For privacy-related inquiries, please open an issue on our
           <a href="https://github.com/ahmedhat/SpikeClip" className="text-primary hover:underline"> GitHub repository</a>.
         </p>
+      </div>
       </div>
     </main>
   );

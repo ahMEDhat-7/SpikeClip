@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DETAILED_FEATURES } from "@/presentation/constants/features";
+import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
+import { GlowOrb } from "@/presentation/components/features/GlowOrb";
 
 export const metadata: Metadata = {
   title: "Features",
@@ -39,20 +41,25 @@ const steps = [
 
 export default function FeaturesPage() {
   return (
-    <main className="space-y-16">
-      <section className="container mx-auto px-4 sm:px-6 pt-16 pb-12 text-center space-y-6">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-          Features built for{" "}
-          <span className="text-primary">data-driven</span> creators
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Every feature is designed to turn raw viewer engagement data into
-          actionable content insights.
-        </p>
+    <main className="space-y-0">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
+        <DotsBackground opacity={0.3} />
+        <GlowOrb className="top-20 right-1/4" size={250} />
+        <div className="container mx-auto px-4 sm:px-6 pt-16 pb-12 text-center space-y-6 relative z-10">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+            Features built for{" "}
+            <span className="text-primary">data-driven</span> creators
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Every feature is designed to turn raw viewer engagement data into
+            actionable content insights.
+          </p>
+        </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <section className="relative container mx-auto px-4 sm:px-6 py-12">
+        <DotsBackground opacity={0.15} />
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {DETAILED_FEATURES.map((feature) => (
             <Card key={feature.title} className="group hover:shadow-lg transition-shadow">
               <CardContent className="p-6 space-y-4">
@@ -80,8 +87,9 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      <section className="bg-surface py-16">
-        <div className="container mx-auto px-4 sm:px-6">
+      <section className="relative bg-surface py-16">
+        <DotsBackground opacity={0.2} />
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12">
             How it works
           </h2>
