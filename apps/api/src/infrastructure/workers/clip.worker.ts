@@ -137,7 +137,12 @@ export function createClipWorker(
         if (actions && actions.length > 0 && ffmpeg) {
           try {
             const actionsOutput = join(TMP_DIR, `${clipId}-actions.mp4`);
-            await ffmpeg.applyStudioActions(currentFile, actionsOutput, actions);
+            await ffmpeg.applyStudioActions(
+              currentFile,
+              actionsOutput,
+              actions,
+              (bullJob.data.platform as "youtube_shorts" | "instagram_reels" | "tiktok") || "youtube_shorts"
+            );
             currentFile = actionsOutput;
             logger.log(`Applied ${actions.length} studio action(s) to clip ${clipId}`);
           } catch (actErr) {

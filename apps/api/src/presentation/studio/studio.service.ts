@@ -42,10 +42,13 @@ export class StudioService {
         platform: dto.platform as "youtube_shorts" | "instagram_reels" | "tiktok",
       });
 
-      const ffmpegCommand = this.filterGraphBuilder.buildFilterGraph(actions, {
-        width: 1080,
-        height: 1920,
-        fps: 30,
+      const { command: ffmpegCommand } = this.filterGraphBuilder.buildCommand({
+        actions,
+        platform: dto.platform as "youtube_shorts" | "instagram_reels" | "tiktok",
+        quality: "1080p",
+        format: "mp4",
+        inputPath: "",
+        outputPath: "",
       });
 
       return {
@@ -77,15 +80,17 @@ export class StudioService {
       return { previewUrl: cached, cached: true };
     }
 
-    const previewUrl = await this.ffmpegService.applyPreviewActions(
+    const outputPath = `/tmp/preview-${dto.sceneId}.mp4`;
+    await this.ffmpegService.applyPreviewActions(
       dto.sceneId,
+      outputPath,
       actions,
       dto.platform as "youtube_shorts" | "instagram_reels" | "tiktok"
     );
 
-    await this.redisService.set(cacheKey, previewUrl, 3600);
+    await this.redisService.set(cacheKey, outputPath, 3600);
 
-    return { previewUrl, cached: false };
+    return { previewUrl: outputPath, cached: false };
   }
 
   async generatePreviewForScene(userId: string, jobId: string, sceneIndex: number, dto: Omit<GeneratePreviewDto, "sceneId">) {

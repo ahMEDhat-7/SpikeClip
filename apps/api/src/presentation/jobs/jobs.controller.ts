@@ -206,7 +206,7 @@ export class JobsController {
       scenes = scenes.slice(0, MAX_SCENES_PER_EXPORT);
     }
 
-    return this.exportClipsUseCase.execute(id, scenes, {
+    return this.exportClipsUseCase.execute(id, scenes, req.user.userId, {
       platform: dto.platform,
       format: dto.format,
       quality: dto.quality,
@@ -214,6 +214,7 @@ export class JobsController {
       music: dto.music,
       templateId: dto.templateId,
       templateConfig: dto.templateConfig as Record<string, unknown> | undefined,
+      actions: dto.actions,
     });
   }
 }
