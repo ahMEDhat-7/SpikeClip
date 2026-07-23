@@ -1,12 +1,18 @@
 import { Injectable, Inject, Logger, BadRequestException } from "@nestjs/common";
 import { PromptTranslationService } from "../../infrastructure/external/prompt-translation.service";
 import { FilterGraphBuilder } from "../../infrastructure/external/filter-graph-builder";
-import { FFmpegService } from "../../infrastructure/external/ffmpeg.service";
+import { FFMPEG_SERVICE } from "../../infrastructure/external/external.module";
 import { JOB_REPOSITORY, JobRepository } from "../../domain/repositories/job.repository";
 import { CLIP_REPOSITORY, ClipRepository } from "../../domain/repositories/clip.repository";
 import { RedisService } from "../../infrastructure/redis/redis.service";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction, PlatformId } from "@spikeclips/shared";
 import { createHash } from "crypto";
+
+const PLATFORM_DEFAULTS: Record<string, { aspectRatio: string; maxDuration: number }> = {
+  "youtube-shorts": { aspectRatio: "9:16", maxDuration: 60 },
+  "instagram-reels": { aspectRatio: "9:16", maxDuration: 90 },
+  "tiktok": { aspectRatio: "9:16", maxDuration: 180 },
+};
 
 interface TranslatePromptDto {
   prompt: string;
@@ -28,23 +34,43 @@ export class StudioService {
   constructor(
     private readonly promptTranslation: PromptTranslationService,
     private readonly filterGraphBuilder: FilterGraphBuilder,
-    private readonly ffmpegService: FFmpegService,
+    @Inject(FFMPEG_SERVICE) private readonly ffmpegService: any,
     @Inject(JOB_REPOSITORY) private readonly jobRepo: JobRepository,
     @Inject(CLIP_REPOSITORY) private readonly clipRepo: ClipRepository,
     private readonly redisService: RedisService
   ) {}
 
   async translatePrompt(userId: string, dto: TranslatePromptDto) {
+    const platformId = dto.platform as PlatformId;
+    const defaults = PLATFORM_DEFAULTS[dto.platform] ?? { aspectRatio: "9:16", maxDuration: 60 };
+
     try {
-      const actions = await this.promptTranslation.translate(dto.prompt, {
-        start: dto.sceneStart,
-        end: dto.sceneEnd,
-        platform: dto.platform as "youtube_shorts" | "instagram_reels" | "tiktok",
+      const result = await this.promptTranslation.translate(dto.prompt, {
+        platform: platformId,
+        aspectRatio: defaults.aspectRatio,
+        maxDuration: defaults.maxDuration,
+        sceneStart: dto.sceneStart,
+        sceneEnd: dto.sceneEnd,
+        sceneDuration: dto.sceneEnd - dto.sceneStart,
+        availableAssets: [],
       });
+
+      if (!result.success) {
+        return {
+          actions: [],
+          ffmpegCommand: "",
+          clarification: result.clarification ?? {
+            question: result.error ?? "Could not process your request",
+            suggestions: ["Try rephrasing", "Be more specific"],
+          },
+        };
+      }
+
+      const actions = result.actions ?? [];
 
       const { command: ffmpegCommand } = this.filterGraphBuilder.buildCommand({
         actions,
-        platform: dto.platform as "youtube_shorts" | "instagram_reels" | "tiktok",
+        platform: platformId,
         quality: "1080p",
         format: "mp4",
         inputPath: "",
@@ -57,22 +83,21 @@ export class StudioService {
         clarification: null,
       };
     } catch (error) {
-      if (error instanceof Error && error.message.includes("clarification")) {
-        return {
-          actions: [],
-          ffmpegCommand: "",
-          clarification: {
-            question: "Could you clarify what you mean?",
-            suggestions: ["Try rephrasing", "Be more specific"],
-          },
-        };
-      }
-      throw error;
+      this.logger.error(`Translation failed: ${error instanceof Error ? error.message : error}`);
+      return {
+        actions: [],
+        ffmpegCommand: "",
+        clarification: {
+          question: "Could you process your request. Please try again.",
+          suggestions: ["Try rephrasing", "Be more specific"],
+        },
+      };
     }
   }
 
   async generatePreview(userId: string, dto: GeneratePreviewDto) {
     const actions = dto.actions as StudioAction[];
+    const platformId = dto.platform as PlatformId;
     
     const cacheKey = this.getCacheKey(dto.sceneId, actions, dto.platform);
     const cached = await this.redisService.get(cacheKey);
@@ -85,7 +110,7 @@ export class StudioService {
       dto.sceneId,
       outputPath,
       actions,
-      dto.platform as "youtube_shorts" | "instagram_reels" | "tiktok"
+      platformId
     );
 
     await this.redisService.set(cacheKey, outputPath, 3600);
@@ -103,7 +128,8 @@ export class StudioService {
       throw new BadRequestException("Unauthorized");
     }
 
-    const scene = job.scenes[sceneIndex];
+    const scenes = job.scenes ?? [];
+    const scene = scenes[sceneIndex];
     if (!scene) {
       throw new BadRequestException("Scene not found");
     }

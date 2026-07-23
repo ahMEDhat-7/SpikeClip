@@ -22,6 +22,12 @@ export class UserResponseDto {
   @ApiProperty({ description: "Maximum scenes per analysis", example: 3 })
   scenesLimit!: number;
 
+  @ApiProperty({ description: "Clips exported this month", example: 0 })
+  clipsUsed!: number;
+
+  @ApiProperty({ description: "Monthly clip export limit", example: 2 })
+  clipsLimit!: number;
+
   @ApiProperty({ description: "Account creation timestamp", example: "2026-01-15T10:30:00.000Z" })
   createdAt!: Date;
 }

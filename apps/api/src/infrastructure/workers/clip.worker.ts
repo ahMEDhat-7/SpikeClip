@@ -141,7 +141,7 @@ export function createClipWorker(
               currentFile,
               actionsOutput,
               actions,
-              (bullJob.data.platform as "youtube_shorts" | "instagram_reels" | "tiktok") || "youtube_shorts"
+              (bullJob.data.platform as "youtube-shorts" | "instagram-reels" | "tiktok") || "youtube-shorts"
             );
             currentFile = actionsOutput;
             logger.log(`Applied ${actions.length} studio action(s) to clip ${clipId}`);

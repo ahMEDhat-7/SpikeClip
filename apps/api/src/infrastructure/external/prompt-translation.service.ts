@@ -8,10 +8,6 @@ import {
   PlatformId,
 } from "@spikeclips/shared";
 
-interface LLMProvider {
-  chat(params: { model: string; messages: Array<{ role: string; content: string }>; temperature: number; max_tokens: number }): Promise<{ content: string }>;
-}
-
 interface TranslationContext {
   platform: PlatformId;
   aspectRatio: string;
@@ -32,64 +28,53 @@ interface TranslationResult {
 @Injectable()
 export class PromptTranslationService {
   private readonly logger = new Logger(PromptTranslationService.name);
-  private readonly provider: string;
+  private readonly apiUrl: string;
   private readonly model: string;
   private readonly maxTokens: number;
   private readonly temperature: number;
   private readonly timeoutMs: number;
-  private openaiClient: LLMProvider | null = null;
-  private anthropicClient: LLMProvider | null = null;
 
   constructor(private readonly config: ConfigService) {
-    this.provider = this.config.get("LLM_PROVIDER", "openai");
-    this.model = this.config.get("LLM_MODEL", "gpt-4o-mini");
+    this.apiUrl = this.config.get("LLM_API_URL", "https://opencode.ai/zen/v1/chat/completions");
+    this.model = this.config.get("LLM_MODEL", "mimo-v2.5-free");
     this.maxTokens = this.config.get("LLM_MAX_TOKENS", 2000);
     this.temperature = this.config.get("LLM_TEMPERATURE", 0.2);
     this.timeoutMs = this.config.get("LLM_TIMEOUT_MS", 15000);
   }
 
-  private async getLLMClient(): Promise<LLMProvider> {
-    if (this.provider === "openai") {
-      if (!this.openaiClient) {
-        const { default: OpenAI } = await import("openai");
-        const apiKey = this.config.get<string>("LLM_API_KEY");
-        if (!apiKey) throw new Error("LLM_API_KEY is required for OpenAI provider");
-        const client = new OpenAI({ apiKey });
-        this.openaiClient = {
-          chat: async (params) => {
-            const response = await client.chat.completions.create({
-              model: params.model,
-              messages: params.messages as any,
-              temperature: params.temperature,
-              max_tokens: params.max_tokens,
-            });
-            return { content: response.choices[0]?.message?.content ?? "" };
-          },
-        };
+  private async callLLM(messages: Array<{ role: string; content: string }>): Promise<string> {
+    const apiKey = this.config.get<string>("LLM_API_KEY");
+    if (!apiKey) throw new Error("LLM_API_KEY is required");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages,
+          temperature: this.temperature,
+          max_tokens: this.maxTokens,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`LLM API error ${response.status}: ${body}`);
       }
-      return this.openaiClient;
-    } else if (this.provider === "anthropic") {
-      if (!this.anthropicClient) {
-        const { default: Anthropic } = await import("@anthropic-ai/sdk");
-        const apiKey = this.config.get<string>("LLM_API_KEY");
-        if (!apiKey) throw new Error("LLM_API_KEY is required for Anthropic provider");
-        const client = new Anthropic({ apiKey });
-        this.anthropicClient = {
-          chat: async (params) => {
-            const response = await client.messages.create({
-              model: params.model,
-              max_tokens: params.max_tokens,
-              temperature: params.temperature,
-              messages: params.messages as any,
-            });
-            const textBlock = response.content.find((b: any) => b.type === "text");
-            return { content: textBlock?.text ?? "" };
-          },
-        };
-      }
-      return this.anthropicClient;
+
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content ?? "";
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw new Error(`Unsupported LLM provider: ${this.provider}`);
   }
 
   private buildSystemPrompt(context: TranslationContext): string {
@@ -147,7 +132,7 @@ Parameters: startTime (seconds), endTime (seconds).
 
   private parseLLMResponse(content: string): StudioAction[] | ClarificationResponse {
     const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    
+
     let parsed: any;
     try {
       parsed = JSON.parse(cleaned);
@@ -204,25 +189,14 @@ Parameters: startTime (seconds), endTime (seconds).
 
   async translate(prompt: string, context: TranslationContext): Promise<TranslationResult> {
     try {
-      const client = await this.getLLMClient();
       const systemPrompt = this.buildSystemPrompt(context);
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+      const content = await this.callLLM([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ]);
 
-      const response = await client.chat({
-        model: this.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ],
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-      });
-
-      clearTimeout(timeoutId);
-
-      const result = this.parseLLMResponse(response.content);
+      const result = this.parseLLMResponse(content);
 
       if ("type" in result && result.type === "clarification") {
         return { success: true, clarification: result };

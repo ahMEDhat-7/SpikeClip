@@ -8,6 +8,8 @@ export interface UserResponse {
   analysesUsed: number;
   analysesLimit: number;
   scenesLimit: number;
+  clipsUsed: number;
+  clipsLimit: number;
   createdAt: string;
 }
 
