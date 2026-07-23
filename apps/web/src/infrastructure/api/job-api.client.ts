@@ -1,4 +1,5 @@
 import { JobApiPort, JobResponse, ClipResponse, StudioExportConfig, MusicUploadResponse } from "../../domain/ports/job-api.port";
+import type { StudioAction } from "@spikeclips/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -7,6 +8,20 @@ interface ApiResponseError {
   statusCode?: number;
   timestamp?: string;
   path?: string;
+}
+
+interface TranslateResponse {
+  actions: StudioAction[];
+  ffmpegCommand: string;
+  clarification: {
+    question: string;
+    suggestions: string[];
+  } | null;
+}
+
+interface PreviewResponse {
+  previewUrl: string;
+  cached: boolean;
 }
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -131,6 +146,54 @@ export class JobApiClient implements JobApiPort {
       const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to delete music" }));
       throw new Error(error.message || `HTTP ${res.status}`);
     }
+  }
+
+  async translatePrompt(prompt: string, sceneStart: number, sceneEnd: number, platform: string): Promise<TranslateResponse> {
+    const res = await fetch(`${API_BASE}/studio/translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ prompt, sceneStart, sceneEnd, platform }),
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to translate prompt" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+
+    return parseJson<TranslateResponse>(res);
+  }
+
+  async generatePreview(sceneId: string, actions: StudioAction[], platform: string): Promise<PreviewResponse> {
+    const res = await fetch(`${API_BASE}/studio/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ sceneId, actions, platform }),
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to generate preview" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+
+    return parseJson<PreviewResponse>(res);
+  }
+
+  async generatePreviewForScene(jobId: string, sceneIndex: number, actions: StudioAction[], platform: string): Promise<PreviewResponse> {
+    const res = await fetch(`${API_BASE}/studio/preview/${jobId}/${sceneIndex}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ actions, platform }),
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to generate preview" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+
+    return parseJson<PreviewResponse>(res);
   }
 }
 

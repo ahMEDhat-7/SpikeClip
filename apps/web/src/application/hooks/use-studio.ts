@@ -398,6 +398,73 @@ export function useStudio() {
     dispatch({ type: "SET_CHAT_LOADING", loading });
   }, []);
 
+  const sendChatMessage = useCallback(async (prompt: string) => {
+    if (selectedSceneIndex === null || !platform) return;
+
+    const scene = scenes[selectedSceneIndex];
+    if (!scene) return;
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: prompt,
+      timestamp: new Date(),
+    };
+    addChatMessage(userMessage);
+    setChatLoading(true);
+
+    try {
+      const { jobApi } = await import("@/infrastructure/api/job-api.client");
+      const result = await jobApi.translatePrompt(
+        prompt,
+        scene.start_time,
+        scene.end_time,
+        platform.id
+      );
+
+      if (result.clarification) {
+        const systemMessage: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "system",
+          content: result.clarification.question,
+          timestamp: new Date(),
+        };
+        addChatMessage(systemMessage);
+      } else if (result.actions.length > 0) {
+        setStudioActions(result.actions);
+
+        const systemMessage: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "system",
+          content: `Applied ${result.actions.length} action(s): ${result.actions.map(a => a.action).join(", ")}`,
+          timestamp: new Date(),
+        };
+        addChatMessage(systemMessage);
+
+        setPreviewLoading(true);
+        try {
+          const sceneId = `${scenes[selectedSceneIndex]?.start_time}-${scenes[selectedSceneIndex]?.end_time}`;
+          const preview = await jobApi.generatePreview(sceneId, result.actions, platform.id);
+          setPreviewUrl(preview.previewUrl);
+        } catch (previewErr) {
+          setPreviewError(previewErr instanceof Error ? previewErr.message : "Preview failed");
+        } finally {
+          setPreviewLoading(false);
+        }
+      }
+    } catch (err) {
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "system",
+        content: err instanceof Error ? err.message : "Failed to process prompt",
+        timestamp: new Date(),
+      };
+      addChatMessage(errorMessage);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [selectedSceneIndex, platform, scenes, addChatMessage, setChatLoading, setStudioActions, setPreviewLoading, setPreviewUrl, setPreviewError]);
+
   const studioActions = useMemo(
     () => (selectedSceneIndex !== null ? sceneEdits.get(selectedSceneIndex)?.studioActions ?? [] : []),
     [selectedSceneIndex, sceneEdits]
@@ -497,6 +564,7 @@ export function useStudio() {
     chatLoading,
     addChatMessage,
     setChatLoading,
+    sendChatMessage,
     setStudioActions,
     addStudioAction,
     removeStudioAction,

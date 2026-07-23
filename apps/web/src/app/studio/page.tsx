@@ -9,7 +9,7 @@ import { Job, JOB_STATUS } from "@/domain/entities/job";
 import { useAuth } from "@/application/hooks/use-auth";
 import { useIsMobile } from "@/lib/hooks/use-media-query";
 import { useBeforeUnload } from "@/lib/hooks/use-before-unload";
-import { StudioLayout } from "@/presentation/components/studio/StudioLayout";
+import { StudioLayout, ChatStudioLayout } from "@/presentation/components/studio/StudioLayout";
 import { StudioToolbar } from "@/presentation/components/studio/StudioToolbar";
 import { ToolPalette } from "@/presentation/components/studio/ToolPalette";
 import { StudioTimeline } from "@/presentation/components/studio/StudioTimeline";
@@ -20,6 +20,9 @@ import { MusicPanel } from "@/presentation/components/studio/MusicPanel";
 import { TemplateLibrary } from "@/presentation/components/studio/TemplateLibrary";
 import { ExportPanel } from "@/presentation/components/studio/ExportPanel";
 import { CompositePreview } from "@/presentation/components/studio/CompositePreview";
+import { ChatPanel } from "@/presentation/components/studio/ChatPanel";
+import { ActionList } from "@/presentation/components/studio/ActionList";
+import { PreviewPanel } from "@/presentation/components/studio/PreviewPanel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -162,6 +165,7 @@ function StudioContent() {
           music: musicConfig,
           templateId: studio.selectedTemplate?.id,
           templateConfig: studio.selectedTemplate?.config as unknown as Record<string, unknown>,
+          actions: studio.studioActions.length > 0 ? studio.studioActions : undefined,
         }
       );
       toastSuccess("Export started! Check the Export tab for progress.");
@@ -260,6 +264,17 @@ function StudioContent() {
           />
         );
 
+      case "chat":
+        return (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <ChatPanel
+              messages={studio.chatMessages}
+              onSend={studio.sendChatMessage}
+              loading={studio.chatLoading}
+            />
+          </div>
+        );
+
       case "captions":
         return (
           <CaptionEditor
@@ -319,6 +334,25 @@ function StudioContent() {
 
   const renderRight = () => {
     if (!job) return null;
+    
+    if (studio.currentStep === "chat") {
+      return (
+        <div className="flex flex-col h-full">
+          <PreviewPanel
+            previewUrl={studio.previewUrl}
+            loading={studio.previewLoading}
+            error={studio.previewError}
+            sceneStart={studio.selectedSceneIndex !== null ? studio.scenes[studio.selectedSceneIndex]?.start_time : 0}
+            sceneEnd={studio.selectedSceneIndex !== null ? studio.scenes[studio.selectedSceneIndex]?.end_time : 15}
+          />
+          <ActionList
+            actions={studio.studioActions}
+            onRemove={studio.removeStudioAction}
+          />
+        </div>
+      );
+    }
+    
     return (
       <CompositePreview
         job={job}
