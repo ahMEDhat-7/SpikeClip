@@ -1,6 +1,7 @@
 import { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "../entities/job";
 import { PlatformId } from "../entities/platform";
 import { OutputFormat, OutputQuality } from "../entities/export";
+import type { StudioAction } from "@spikeclips/shared";
 
 export interface StudioExportConfig {
   platform?: PlatformId;
@@ -34,6 +35,7 @@ export interface StudioExportConfig {
   };
   templateId?: string;
   templateConfig?: Record<string, unknown>;
+  actions?: StudioAction[];
 }
 
 export interface MusicUploadResponse {
