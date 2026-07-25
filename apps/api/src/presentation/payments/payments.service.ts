@@ -21,13 +21,13 @@ const PLAN_LIMITS: Record<string, { analysesLimit: number; scenesLimit: number }
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly stripe: Stripe;
+  private readonly stripe: Stripe | null;
 
   constructor(private readonly prisma: PrismaService) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
       this.logger.warn("STRIPE_SECRET_KEY not set — payments disabled");
-      this.stripe = null as unknown as Stripe;
+      this.stripe = null;
       return;
     }
     try {
@@ -36,7 +36,7 @@ export class PaymentsService {
       });
     } catch (err) {
       this.logger.error(`Failed to initialize Stripe: ${err instanceof Error ? err.message : err}`);
-      this.stripe = null as unknown as Stripe;
+      this.stripe = null;
     }
   }
 
@@ -198,6 +198,7 @@ export class PaymentsService {
         plan: "free",
         analysesLimit: 3,
         scenesLimit: 3,
+        clipsLimit: 2,
       },
     });
 

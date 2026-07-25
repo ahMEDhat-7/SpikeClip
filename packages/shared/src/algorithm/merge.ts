@@ -50,6 +50,22 @@ export function validateAlgorithmConfig(cfg: Partial<AlgorithmConfig>): void {
   if (c.min_spacing < 0) {
     throw new AlgorithmConfigError(`min_spacing must be >= 0, got ${c.min_spacing}`);
   }
+  if (c.weight_peak < 0 || c.weight_peak > 1) {
+    throw new AlgorithmConfigError(`weight_peak must be in [0, 1], got ${c.weight_peak}`);
+  }
+  if (c.weight_avg < 0 || c.weight_avg > 1) {
+    throw new AlgorithmConfigError(`weight_avg must be in [0, 1], got ${c.weight_avg}`);
+  }
+  if (c.weight_duration_fit < 0 || c.weight_duration_fit > 1) {
+    throw new AlgorithmConfigError(`weight_duration_fit must be in [0, 1], got ${c.weight_duration_fit}`);
+  }
+  const totalWeight = c.weight_peak + c.weight_avg + c.weight_duration_fit;
+  if (totalWeight <= 0) {
+    throw new AlgorithmConfigError(`sum of weights must be > 0, got ${totalWeight}`);
+  }
+  if (Math.abs(totalWeight - 1.0) > 1e-9) {
+    throw new AlgorithmConfigError(`sum of weights must equal 1.0, got ${totalWeight}`);
+  }
 }
 
 export function normalizeHeatmapValues(spikes: HeatmapSpike[]): HeatmapSpike[] {
@@ -398,11 +414,19 @@ export function padScenes(
 
     const prev = merged[merged.length - 1];
     if (scene.start_time <= prev.end_time) {
+      const prevDuration = prev.end_time - prev.start_time;
+      const sceneDuration = scene.end_time - scene.start_time;
+      const totalDuration = prevDuration + sceneDuration;
+
       prev.end_time = Math.max(prev.end_time, scene.end_time);
       prev.duration = prev.end_time - prev.start_time;
       prev.peak_intensity = Math.max(prev.peak_intensity, scene.peak_intensity);
-      prev.avg_intensity = (prev.avg_intensity + scene.avg_intensity) / 2;
+      prev.avg_intensity = totalDuration > 0
+        ? (prev.avg_intensity * prevDuration + scene.avg_intensity * sceneDuration) / totalDuration
+        : (prev.avg_intensity + scene.avg_intensity) / 2;
       prev.score = Math.max(prev.score, scene.score);
+      if (scene.capped) prev.capped = true;
+      if (scene.confidence === "floor_override") prev.confidence = "floor_override";
     } else {
       merged.push(scene);
     }

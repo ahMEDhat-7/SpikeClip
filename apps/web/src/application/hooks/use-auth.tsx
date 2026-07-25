@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, createContext, useContext, ReactNode } from "react";
+import { useState, useCallback, useEffect, useMemo, createContext, useContext, ReactNode } from "react";
 import { useAuthApi } from "@/application/providers/api-provider";
 import { toastWarning } from "@/lib/toast";
 import { PlanTier } from "@spikeclips/shared";
@@ -104,7 +104,7 @@ function useAuthProvider(): AuthContextType {
     setUserFromProfile(updated);
   }, [setUserFromProfile]);
 
-  return { user, isLoading, logout, updateProfile, refreshUser };
+  return useMemo(() => ({ user, isLoading, logout, updateProfile, refreshUser }), [user, isLoading, logout, updateProfile, refreshUser]);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

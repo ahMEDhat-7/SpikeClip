@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
+import { ErrorPage } from "@/presentation/components/ui/error-page";
 
 export default function ProfileError({
   error,
@@ -12,26 +9,12 @@ export default function ProfileError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.error(error);
-    }
-  }, [error]);
-
   return (
-    <main className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center p-6">
-      <Card className="max-w-md w-full">
-        <CardContent className="p-8 text-center space-y-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 mx-auto">
-            <AlertTriangle className="h-6 w-6 text-destructive" />
-          </div>
-          <h2 className="text-2xl font-bold">Profile error</h2>
-          <p className="text-sm text-muted-foreground">
-            Failed to load your profile. Please try again.
-          </p>
-          <Button onClick={reset}>Try Again</Button>
-        </CardContent>
-      </Card>
-    </main>
+    <ErrorPage
+      title="Profile error"
+      message="Failed to load your profile. Please try again."
+      error={error}
+      reset={reset}
+    />
   );
 }

@@ -14,7 +14,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-              <img src="/logo.svg" alt="" className="h-4 w-4" />
+              <img src="/logo.svg" alt="SpikeClip" className="h-4 w-4" />
             </div>
             <span className="text-sm font-semibold">
               <span className="text-primary">Spike</span>

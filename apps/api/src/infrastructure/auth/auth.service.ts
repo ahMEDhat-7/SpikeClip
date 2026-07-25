@@ -28,6 +28,8 @@ export class AuthService {
     analysesUsed: number;
     analysesLimit: number;
     scenesLimit: number;
+    clipsUsed: number;
+    clipsLimit: number;
   }> {
     // Try to find by provider+id first
     let user = await this.prisma.user.findFirst({
@@ -173,6 +175,8 @@ export class AuthService {
     analysesUsed: number;
     analysesLimit: number;
     scenesLimit: number;
+    clipsUsed: number;
+    clipsLimit: number;
     createdAt: Date;
   }> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -197,6 +201,8 @@ export class AuthService {
       analysesUsed: updated.analysesUsed,
       analysesLimit: updated.analysesLimit,
       scenesLimit: updated.scenesLimit,
+      clipsUsed: updated.clipsUsed,
+      clipsLimit: updated.clipsLimit,
       createdAt: updated.createdAt,
     };
   }

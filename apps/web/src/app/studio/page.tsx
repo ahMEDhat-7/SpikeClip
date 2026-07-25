@@ -20,6 +20,7 @@ import { MusicPanel } from "@/presentation/components/studio/MusicPanel";
 import { TemplateLibrary } from "@/presentation/components/studio/TemplateLibrary";
 import { ExportPanel } from "@/presentation/components/studio/ExportPanel";
 import { CompositePreview } from "@/presentation/components/studio/CompositePreview";
+import { ErrorBoundary } from "@/presentation/components/ui/error-boundary";
 import { ChatPanel } from "@/presentation/components/studio/ChatPanel";
 import { ActionList } from "@/presentation/components/studio/ActionList";
 import { PreviewPanel } from "@/presentation/components/studio/PreviewPanel";
@@ -164,7 +165,7 @@ function StudioContent() {
             : undefined,
           music: musicConfig,
           templateId: studio.selectedTemplate?.id,
-          templateConfig: studio.selectedTemplate?.config as unknown as Record<string, unknown>,
+          templateConfig: studio.selectedTemplate?.config as Record<string, unknown> | undefined,
           actions: studio.studioActions.length > 0 ? studio.studioActions : undefined,
         }
       );
@@ -270,7 +271,7 @@ function StudioContent() {
             <ChatPanel
               messages={studio.chatMessages}
               onSend={studio.sendChatMessage}
-              loading={studio.chatLoading}
+              loadingPhase={studio.chatLoadingPhase}
             />
           </div>
         );
@@ -354,16 +355,18 @@ function StudioContent() {
     }
     
     return (
-      <CompositePreview
-        job={job}
-        platform={studio.platform}
-        captions={studio.captions}
-        selectedTemplate={studio.selectedTemplate}
-        scenes={studio.scenes}
-        selectedScenes={studio.selectedSceneIndex !== null ? [studio.selectedSceneIndex] : []}
-        musicTrack={studio.musicTrack}
-        onCaptionDrag={(id, x, y) => studio.updateCaption(id, { x, y })}
-      />
+      <ErrorBoundary>
+        <CompositePreview
+          job={job}
+          platform={studio.platform}
+          captions={studio.captions}
+          selectedTemplate={studio.selectedTemplate}
+          scenes={studio.scenes}
+          selectedScenes={studio.selectedSceneIndex !== null ? [studio.selectedSceneIndex] : []}
+          musicTrack={studio.musicTrack}
+          onCaptionDrag={(id, x, y) => studio.updateCaption(id, { x, y })}
+        />
+      </ErrorBoundary>
     );
   };
 

@@ -3,21 +3,22 @@
 import { useEffect, useRef } from "react";
 import { ChatInput } from "./ChatInput";
 import { ChatMessage, ChatMessageData, TypingIndicator } from "./ChatMessage";
+import type { ChatLoadingPhase } from "@/application/hooks/use-studio";
 
 interface ChatPanelProps {
   messages: ChatMessageData[];
   onSend: (message: string) => void;
-  loading?: boolean;
+  loadingPhase?: ChatLoadingPhase;
 }
 
-export function ChatPanel({ messages, onSend, loading }: ChatPanelProps) {
+export function ChatPanel({ messages, onSend, loadingPhase }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, loading]);
+  }, [messages, loadingPhase]);
 
   return (
     <div className="flex flex-col h-full border rounded-xl bg-background">
@@ -25,7 +26,7 @@ export function ChatPanel({ messages, onSend, loading }: ChatPanelProps) {
         <h3 className="font-semibold text-sm">Edit with prompts</h3>
         <p className="text-xs text-muted-foreground">Describe what you want to change</p>
       </div>
-      
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1">
         {messages.length === 0 && (
           <div className="text-center text-muted-foreground text-sm py-8">
@@ -52,15 +53,15 @@ export function ChatPanel({ messages, onSend, loading }: ChatPanelProps) {
             </div>
           </div>
         )}
-        
+
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} />
         ))}
-        
-        {loading && <TypingIndicator />}
+
+        {loadingPhase && <TypingIndicator phase={loadingPhase} />}
       </div>
-      
-      <ChatInput onSend={onSend} disabled={loading} />
+
+      <ChatInput onSend={onSend} disabled={!!loadingPhase} />
     </div>
   );
 }

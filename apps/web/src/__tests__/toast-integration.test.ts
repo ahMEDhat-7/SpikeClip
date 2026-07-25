@@ -1,4 +1,5 @@
-import { toastSuccess, toastError, toastWarning, toastInfo } from "@/lib/toast";
+import { toastSuccess, toastError, toastWarning } from "@/lib/toast";
+import { toast } from "sonner";
 
 jest.mock("sonner", () => ({
   toast: {
@@ -8,8 +9,6 @@ jest.mock("sonner", () => ({
     info: jest.fn(),
   },
 }));
-
-import { toast } from "sonner";
 
 describe("toast utilities", () => {
   beforeEach(() => {
@@ -29,10 +28,5 @@ describe("toast utilities", () => {
   it("toastWarning calls toast.warning", () => {
     toastWarning("Be careful");
     expect(toast.warning).toHaveBeenCalledWith("Be careful");
-  });
-
-  it("toastInfo calls toast.info", () => {
-    toastInfo("FYI");
-    expect(toast.info).toHaveBeenCalledWith("FYI");
   });
 });

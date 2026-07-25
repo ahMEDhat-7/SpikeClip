@@ -1,4 +1,4 @@
-import { FilterGraphBuilder } from "../../infrastructure/external/filter-graph-builder";
+import { FilterGraphBuilder } from "../filter-graph-builder";
 import { StudioAction } from "@spikeclips/shared";
 
 describe("FilterGraphBuilder", () => {
@@ -70,6 +70,9 @@ describe("FilterGraphBuilder", () => {
           animation: "none",
           style: "normal",
           opacity: 1,
+          backgroundEnabled: false,
+          strokeWidth: 2,
+          shadowRadius: 2,
         },
       ];
 

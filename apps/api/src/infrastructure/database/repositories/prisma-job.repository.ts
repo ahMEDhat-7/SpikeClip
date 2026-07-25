@@ -3,7 +3,7 @@ import { PrismaService } from "../prisma.service";
 import { JobRepository } from "../../../domain/repositories/job.repository";
 import { Job } from "../../../domain/entities/job.entity";
 import { JobMapper } from "../../../application/mappers/job.mapper";
-import { JobStatus, ScoredBlock } from "@spikeclips/shared";
+import { JobStatus } from "@spikeclips/shared";
 import { Prisma } from "@prisma/client";
 
 @Injectable()

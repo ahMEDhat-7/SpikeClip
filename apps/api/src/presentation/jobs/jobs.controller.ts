@@ -6,6 +6,8 @@ import {
   Body,
   Inject,
   Req,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   ForbiddenException,
   ParseUUIDPipe,
@@ -30,6 +32,7 @@ import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { ClipResponseDto } from "../clips/dto/clip-response.dto";
 import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "../../infrastructure/auth/auth.service";
+import { toClipResponse } from "../../application/mappers/clip.mapper";
 
 @ApiTags("Jobs")
 @Controller("jobs")
@@ -44,6 +47,7 @@ export class JobsController {
   ) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Create a new analysis job", description: "Submits a YouTube URL for heatmap analysis. Extracts video metadata and queues the job for processing." })
@@ -119,21 +123,7 @@ export class JobsController {
       orderBy: { sceneIndex: "asc" },
     });
 
-    return clips.map((clip) => ({
-      id: clip.id,
-      jobId: clip.jobId,
-      sceneIndex: clip.sceneIndex,
-      startTime: clip.startTime,
-      endTime: clip.endTime,
-      peakIntensity: clip.peakIntensity ?? undefined,
-      status: clip.status,
-      fileUrl: clip.fileUrl ?? undefined,
-      fileSize: clip.fileSize ?? undefined,
-      duration: clip.duration ?? undefined,
-      errorMessage: clip.errorMessage ?? undefined,
-      createdAt: clip.createdAt,
-      completedAt: clip.completedAt ?? undefined,
-    }));
+    return clips.map(toClipResponse);
   }
 
   @Post(":id/process")

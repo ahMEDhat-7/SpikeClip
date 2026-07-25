@@ -24,6 +24,7 @@ import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { ClipResponseDto } from "./dto/clip-response.dto";
 import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
+import { toClipResponse } from "../../application/mappers/clip.mapper";
 
 import { Public } from "../../infrastructure/auth/jwt-auth.guard";
 
@@ -60,28 +61,14 @@ export class ClipsController {
       orderBy: { sceneIndex: "asc" },
     });
 
-    return clips.map((clip) => ({
-      id: clip.id,
-      jobId: clip.jobId,
-      sceneIndex: clip.sceneIndex,
-      startTime: clip.startTime,
-      endTime: clip.endTime,
-      peakIntensity: clip.peakIntensity ?? undefined,
-      status: clip.status,
-      fileUrl: clip.fileUrl ?? undefined,
-      fileSize: clip.fileSize ?? undefined,
-      duration: clip.duration ?? undefined,
-      errorMessage: clip.errorMessage ?? undefined,
-      createdAt: clip.createdAt,
-      completedAt: clip.completedAt ?? undefined,
-    }));
+    return clips.map(toClipResponse);
   }
 
   @Get(":id/download")
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Download a clip",
-    description: "Returns a signed URL for downloading the clip file.",
+    description: "Returns a signed URL for downloading the clip file. Requires Pro or Team plan.",
   })
   @ApiParam({ name: "id", description: "Clip UUID" })
   @ApiResponse({ status: 200, description: "Redirects to signed download URL" })
@@ -101,6 +88,11 @@ export class ClipsController {
     const job = await this.prisma.job.findUnique({ where: { id: clip.jobId }, select: { userId: true } });
     if (!job || job.userId !== req.user?.userId) {
       throw new ForbiddenException("Clip does not belong to you");
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: req.user?.userId }, select: { plan: true } });
+    if (!user || user.plan === "free") {
+      throw new ForbiddenException("Pro or Team plan required to download clips");
     }
 
     if (clip.status !== "completed" || !clip.fileUrl) {

@@ -179,22 +179,6 @@ export class JobApiClient implements JobApiPort {
 
     return parseJson<PreviewResponse>(res);
   }
-
-  async generatePreviewForScene(jobId: string, sceneIndex: number, actions: StudioAction[], platform: string): Promise<PreviewResponse> {
-    const res = await fetch(`${API_BASE}/studio/preview/${jobId}/${sceneIndex}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ actions, platform }),
-    });
-
-    if (!res.ok) {
-      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to generate preview" }));
-      throw new Error(error.message || `HTTP ${res.status}`);
-    }
-
-    return parseJson<PreviewResponse>(res);
-  }
 }
 
 export const jobApi = new JobApiClient();

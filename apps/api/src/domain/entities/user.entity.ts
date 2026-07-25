@@ -27,11 +27,6 @@ export class User {
     return this.clipsUsed + count <= this.clipsLimit;
   }
 
-  incrementUsage(): void {
-    this.analysesUsed += 1;
-    this.updatedAt = new Date();
-  }
-
   incrementClipUsage(count: number = 1): void {
     this.clipsUsed += count;
     this.updatedAt = new Date();

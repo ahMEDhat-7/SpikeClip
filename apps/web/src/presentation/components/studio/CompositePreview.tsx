@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { memo, useState, useCallback, useEffect, useRef, useMemo } from "react";
 import YouTube from "react-youtube";
 import { Job } from "@/domain/entities/job";
 import { Platform } from "@/domain/entities/platform";
@@ -177,7 +177,7 @@ function FlashTransitionOverlay({ elapsed, duration }: { elapsed: number; durati
   );
 }
 
-export function CompositePreview({
+export const CompositePreview = memo(function CompositePreview({
   job,
   platform,
   captions,
@@ -601,4 +601,4 @@ export function CompositePreview({
       </div>
     </div>
   );
-}
+});

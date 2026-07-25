@@ -5,6 +5,12 @@ export interface CaptionOverlay {
   color: string;
   position: string;
   animation: string;
+  style?: string;
+  opacity?: number;
+  backgroundColor?: string;
+  backgroundEnabled?: boolean;
+  strokeWidth?: number;
+  shadowRadius?: number;
   startFrame?: number;
   endFrame?: number;
   x?: number;

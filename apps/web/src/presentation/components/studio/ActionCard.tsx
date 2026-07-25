@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { X } from "lucide-react";
 import type { StudioAction } from "@spikeclips/shared";
 
@@ -54,7 +55,7 @@ interface ActionCardProps {
   onRemove: (index: number) => void;
 }
 
-export function ActionCard({ action, index, onRemove }: ActionCardProps) {
+export const ActionCard = memo(function ActionCard({ action, index, onRemove }: ActionCardProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border text-sm group">
       <span className="text-lg w-6 text-center">{ACTION_ICONS[action.action]}</span>
@@ -73,4 +74,4 @@ export function ActionCard({ action, index, onRemove }: ActionCardProps) {
       </button>
     </div>
   );
-}
+});

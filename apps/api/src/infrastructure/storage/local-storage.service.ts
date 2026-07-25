@@ -1,10 +1,10 @@
 import { Injectable, Logger, OnModuleInit, ForbiddenException } from "@nestjs/common";
-import { writeFile, readFile, mkdir, stat, unlink, access } from "fs/promises";
+import { writeFile, readFile, mkdir, unlink, access } from "fs/promises";
 import { join, resolve } from "path";
 import { createReadStream } from "fs";
 import { Readable } from "stream";
 import { StorageService } from "./storage.interface";
-import { randomBytes, createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
 const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclips-clips";
 

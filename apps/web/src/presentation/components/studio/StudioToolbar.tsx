@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ interface StudioToolbarProps {
   outputQuality?: OutputQuality;
 }
 
-export function StudioToolbar({
+export const StudioToolbar = memo(function StudioToolbar({
   currentStep,
   currentStepIndex,
   steps,
@@ -167,4 +167,4 @@ export function StudioToolbar({
       </div>
     </div>
   );
-}
+});

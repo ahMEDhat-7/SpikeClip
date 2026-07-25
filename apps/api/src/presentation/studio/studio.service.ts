@@ -2,11 +2,20 @@ import { Injectable, Inject, Logger, BadRequestException } from "@nestjs/common"
 import { PromptTranslationService } from "../../infrastructure/external/prompt-translation.service";
 import { FilterGraphBuilder } from "../../infrastructure/external/filter-graph-builder";
 import { FFMPEG_SERVICE } from "../../infrastructure/external/external.module";
+import { FfmpegService } from "../../infrastructure/external/ffmpeg.service";
 import { JOB_REPOSITORY, JobRepository } from "../../domain/repositories/job.repository";
-import { CLIP_REPOSITORY, ClipRepository } from "../../domain/repositories/clip.repository";
 import { RedisService } from "../../infrastructure/redis/redis.service";
+import { withTimeout } from "../../infrastructure/external/utils/timeout";
 import type { StudioAction, PlatformId } from "@spikeclips/shared";
 import { createHash } from "crypto";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { mkdir, unlink } from "fs/promises";
+import { join } from "path";
+
+const execFileAsync = promisify(execFile);
+const PREVIEW_TMP = "/tmp/spikeclips-preview";
+const YTDLP_TIMEOUT_MS = 5 * 60 * 1000;
 
 const PLATFORM_DEFAULTS: Record<string, { aspectRatio: string; maxDuration: number }> = {
   "youtube-shorts": { aspectRatio: "9:16", maxDuration: 60 },
@@ -34,9 +43,8 @@ export class StudioService {
   constructor(
     private readonly promptTranslation: PromptTranslationService,
     private readonly filterGraphBuilder: FilterGraphBuilder,
-    @Inject(FFMPEG_SERVICE) private readonly ffmpegService: any,
+    @Inject(FFMPEG_SERVICE) private readonly ffmpegService: FfmpegService,
     @Inject(JOB_REPOSITORY) private readonly jobRepo: JobRepository,
-    @Inject(CLIP_REPOSITORY) private readonly clipRepo: ClipRepository,
     private readonly redisService: RedisService
   ) {}
 
@@ -98,24 +106,55 @@ export class StudioService {
   async generatePreview(userId: string, dto: GeneratePreviewDto) {
     const actions = dto.actions as StudioAction[];
     const platformId = dto.platform as PlatformId;
-    
+
     const cacheKey = this.getCacheKey(dto.sceneId, actions, dto.platform);
     const cached = await this.redisService.get(cacheKey);
     if (cached) {
       return { previewUrl: cached, cached: true };
     }
 
-    const outputPath = `/tmp/preview-${dto.sceneId}.mp4`;
-    await this.ffmpegService.applyPreviewActions(
-      dto.sceneId,
-      outputPath,
-      actions,
-      platformId
-    );
+    const [jobId, sceneIndexStr] = dto.sceneId.split("-");
+    const sceneIndex = parseInt(sceneIndexStr, 10);
+    const job = await this.jobRepo.findById(jobId);
+    if (!job) throw new BadRequestException("Job not found");
 
-    await this.redisService.set(cacheKey, outputPath, 3600);
+    if (job.userId !== userId) {
+      throw new BadRequestException("Unauthorized");
+    }
 
-    return { previewUrl: outputPath, cached: false };
+    const scenes = job.scenes ?? [];
+    const scene = scenes[sceneIndex];
+    if (!scene) throw new BadRequestException("Scene not found");
+
+    await mkdir(PREVIEW_TMP, { recursive: true });
+    const tmpInput = join(PREVIEW_TMP, `${dto.sceneId}-source.mp4`);
+    const outputPath = join(PREVIEW_TMP, `${dto.sceneId}-preview.mp4`);
+
+    try {
+      await withTimeout(
+        execFileAsync("yt-dlp", [
+          "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+          "--download-sections", `*${scene.start_time}-${scene.end_time}`,
+          "--force-keyframes-at-cuts",
+          "-o", tmpInput,
+          job.url,
+        ]),
+        YTDLP_TIMEOUT_MS,
+        "yt-dlp preview download"
+      );
+
+      await this.ffmpegService.applyPreviewActions(
+        tmpInput,
+        outputPath,
+        actions,
+        platformId
+      );
+
+      await this.redisService.set(cacheKey, outputPath, 3600);
+      return { previewUrl: outputPath, cached: false };
+    } finally {
+      await unlink(tmpInput).catch(() => {});
+    }
   }
 
   async generatePreviewForScene(userId: string, jobId: string, sceneIndex: number, dto: Omit<GeneratePreviewDto, "sceneId">) {

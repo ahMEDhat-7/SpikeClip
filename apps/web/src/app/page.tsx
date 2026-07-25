@@ -5,8 +5,7 @@ import { AnimatedHeatmapHero } from "@/presentation/components/features/Animated
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
 import { FloatingIcon } from "@/presentation/components/features/FloatingIcon";
 import { GlowOrb } from "@/presentation/components/features/GlowOrb";
-import { HeatmapWave } from "@/presentation/components/features/HeatmapWave";
-import { ArrowRight, Code } from "lucide-react";
+import { ArrowRight, Code, MessageSquare, Eye, Sparkles } from "lucide-react";
 import { LANDING_FEATURES } from "@/presentation/constants/features";
 
 const stats = [
@@ -105,7 +104,7 @@ export default function HomePage() {
             </Card>
             <Card className="relative group glow-crimson-subtle">
               <CardContent className="p-8 text-center space-y-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/10 text-secondary mx-auto font-mono font-bold text-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mx-auto font-mono font-bold text-lg">
                   2
                 </div>
                 <h3 className="text-lg font-semibold">See the heatmap</h3>
@@ -130,11 +129,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Heatmap Wave Divider */}
-      <div className="container mx-auto px-4">
-        <HeatmapWave />
-      </div>
 
       {/* Why SpikeClip */}
       <section className="relative bg-surface py-20">
@@ -165,6 +159,107 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Clip Studio */}
+      <section className="relative py-20 overflow-hidden">
+        <DotsBackground opacity={0.15} />
+        <GlowOrb className="top-1/3 left-1/4" size={250} />
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+          <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+                <Sparkles className="h-3 w-3" />
+                AI-Powered Editing
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold">
+                Edit clips with
+                <span className="text-primary"> natural language</span>
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                Type what you want in plain English. Our AI translates your prompt into
+                professional video edits — captions, effects, transitions, speed changes,
+                and more.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <MessageSquare className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Prompt-based workflow</h4>
+                    <p className="text-sm text-muted-foreground">
+                      "Add bold captions centered on screen" or "Speed up the intro by 2x"
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Eye className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Live preview</h4>
+                    <p className="text-sm text-muted-foreground">
+                      See every change in real-time before exporting
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Code className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">8 action types</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Captions, effects, overlays, transitions, speed, audio mixing, backgrounds, and trims
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Button asChild size="lg" className="group mt-4">
+                <Link href="/login">
+                  Try Clip Studio
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+            </div>
+            <div className="relative">
+              <div className="rounded-xl border bg-card/50 backdrop-blur-sm p-6 shadow-xl">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    Clip Studio
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs">
+                    <span className="text-primary">You:</span> Add bold captions centered on screen
+                  </div>
+                  <div className="rounded-lg bg-primary/10 p-3 font-mono text-xs">
+                    <span className="text-primary font-medium">Studio:</span> Applied 1 action: add_captions
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs">
+                    <span className="text-primary">You:</span> Speed up the intro by 2x
+                  </div>
+                  <div className="rounded-lg bg-primary/10 p-3 font-mono text-xs">
+                    <span className="text-primary font-medium">Studio:</span> Applied 1 action: set_speed
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs">
+                    <span className="text-primary">You:</span> Make it black and white with a vignette
+                  </div>
+                  <div className="rounded-lg bg-primary/10 p-3 font-mono text-xs">
+                    <span className="text-primary font-medium">Studio:</span> Applied 2 actions: apply_effect x2
+                  </div>
+                  <div className="flex gap-1.5 mt-2">
+                    <div className="h-1.5 flex-1 rounded bg-primary/20" />
+                    <div className="h-1.5 flex-1 rounded bg-primary/40" />
+                    <div className="h-1.5 flex-1 rounded bg-primary/60" />
+                    <div className="h-1.5 flex-1 rounded bg-primary/30" />
+                    <div className="h-1.5 flex-1 rounded bg-primary/50" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

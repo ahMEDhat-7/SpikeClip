@@ -46,7 +46,7 @@ describe("useStudio", () => {
   it("has correct step order", () => {
     const { result } = renderHook(() => useStudio());
     expect(result.current.steps).toEqual([
-      "platform", "scenes", "captions", "music", "templates", "export",
+      "platform", "scenes", "chat", "captions", "music", "templates", "export",
     ]);
   });
 
@@ -93,6 +93,10 @@ describe("useStudio", () => {
     const { result } = renderHook(() => useStudio());
 
     act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+
+    act(() => {
       result.current.goToStep("scenes");
     });
 
@@ -103,17 +107,37 @@ describe("useStudio", () => {
     const { result } = renderHook(() => useStudio());
 
     act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+
+    act(() => {
+      result.current.selectScene(0);
+    });
+
+    act(() => {
       result.current.goToStep("export");
     });
 
     expect(result.current.isLastStep).toBe(true);
   });
 
-  it("selects a single scene and auto-advances to captions", () => {
+  it("selects a scene and stays on scenes step", () => {
     const { result } = renderHook(() => useStudio());
 
     act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+
+    act(() => {
       result.current.initFromJob(mockScenes);
+    });
+
+    act(() => {
+      result.current.goToStep("scenes");
     });
 
     expect(result.current.selectedSceneIndex).toBeNull();
@@ -125,7 +149,7 @@ describe("useStudio", () => {
 
     expect(result.current.selectedSceneIndex).toBe(1);
     expect(result.current.selectedScenes).toEqual([1]);
-    expect(result.current.currentStep).toBe("captions");
+    expect(result.current.currentStep).toBe("scenes");
   });
 
   it("adds and removes captions for selected scene", () => {
@@ -254,5 +278,266 @@ describe("useStudio", () => {
 
     expect(result.current.captions).toHaveLength(1);
     expect(result.current.captions[0].text).toBe("Scene 0 caption");
+  });
+
+  it("initializes chat state", () => {
+    const { result } = renderHook(() => useStudio());
+    expect(result.current.chatMessages).toEqual([]);
+    expect(result.current.chatLoadingPhase).toBeNull();
+  });
+
+  it("addChatMessage appends to chatMessages", () => {
+    const { result } = renderHook(() => useStudio());
+    const msg = { id: "1", role: "user" as const, content: "Hello", timestamp: new Date() };
+    act(() => {
+      result.current.addChatMessage(msg);
+    });
+    expect(result.current.chatMessages).toHaveLength(1);
+    expect(result.current.chatMessages[0].content).toBe("Hello");
+  });
+
+  it("setChatLoadingPhase sets loading phase", () => {
+    const { result } = renderHook(() => useStudio());
+    act(() => {
+      result.current.setChatLoadingPhase("analyzing");
+    });
+    expect(result.current.chatLoadingPhase).toBe("analyzing");
+    act(() => {
+      result.current.setChatLoadingPhase("generating");
+    });
+    expect(result.current.chatLoadingPhase).toBe("generating");
+    act(() => {
+      result.current.setChatLoadingPhase(null);
+    });
+    expect(result.current.chatLoadingPhase).toBeNull();
+  });
+
+  it("setStudioActions updates scene edit", () => {
+    const { result } = renderHook(() => useStudio());
+    const actions = [{ action: "set_speed" as const, rate: 2, preservePitch: true }];
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+    act(() => {
+      result.current.setStudioActions(actions);
+    });
+
+    expect(result.current.studioActions).toEqual(actions);
+  });
+
+  it("addStudioAction appends to scene edit", () => {
+    const { result } = renderHook(() => useStudio());
+    const action = { action: "set_speed" as const, rate: 2, preservePitch: true };
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+    act(() => {
+      result.current.addStudioAction(action);
+    });
+
+    expect(result.current.studioActions).toHaveLength(1);
+    expect(result.current.studioActions[0]).toEqual(action);
+  });
+
+  it("removeStudioAction removes by index", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+    act(() => {
+      result.current.addStudioAction({ action: "set_speed", rate: 2, preservePitch: true });
+      result.current.addStudioAction({ action: "apply_effect", type: "vignette", intensity: 0.7 });
+    });
+
+    expect(result.current.studioActions).toHaveLength(2);
+
+    act(() => {
+      result.current.removeStudioAction(0);
+    });
+
+    expect(result.current.studioActions).toHaveLength(1);
+    expect(result.current.studioActions[0].action).toBe("apply_effect");
+  });
+
+  it("setPreviewUrl updates scene edit", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+    act(() => {
+      result.current.setPreviewUrl("http://preview.mp4");
+    });
+
+    expect(result.current.previewUrl).toBe("http://preview.mp4");
+  });
+
+  it("setPreviewLoading updates scene edit", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+    act(() => {
+      result.current.setPreviewLoading(true);
+    });
+
+    expect(result.current.previewLoading).toBe(true);
+  });
+
+  it("setPreviewError updates scene edit", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+    act(() => {
+      result.current.setPreviewError("Failed to render");
+    });
+
+    expect(result.current.previewError).toBe("Failed to render");
+  });
+
+  it("canGoToStep for chat requires selectedSceneIndex", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+
+    expect(result.current.canGoToStep("chat")).toBe(false);
+
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+
+    expect(result.current.canGoToStep("chat")).toBe(true);
+  });
+
+  it("reset clears chat messages and studio actions", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+    act(() => {
+      result.current.selectScene(0);
+    });
+    act(() => {
+      result.current.addChatMessage({ id: "1", role: "user", content: "test", timestamp: new Date() });
+      result.current.setStudioActions([{ action: "set_speed", rate: 2, preservePitch: true }]);
+    });
+
+    act(() => {
+      result.current.reset();
+    });
+
+    expect(result.current.chatMessages).toEqual([]);
+    expect(result.current.studioActions).toEqual([]);
+  });
+
+  it("addCustomScene appends scene and selects it", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+
+    act(() => {
+      result.current.addCustomScene(5, 15, false);
+    });
+
+    expect(result.current.scenes).toHaveLength(4);
+    expect(result.current.selectedSceneIndex).toBe(3);
+  });
+
+  it("addCustomScene replace=true replaces all scenes", () => {
+    const { result } = renderHook(() => useStudio());
+
+    act(() => {
+      result.current.setPlatform(mockPlatform);
+    });
+    act(() => {
+      result.current.initFromJob(mockScenes);
+    });
+
+    act(() => {
+      result.current.addCustomScene(5, 15, true);
+    });
+
+    expect(result.current.scenes).toHaveLength(1);
+    expect(result.current.selectedSceneIndex).toBe(0);
+  });
+
+  it("setOutputFormat updates state", () => {
+    const { result } = renderHook(() => useStudio());
+    act(() => {
+      result.current.setOutputFormat("webm");
+    });
+    expect(result.current.outputFormat).toBe("webm");
+  });
+
+  it("setOutputQuality updates state", () => {
+    const { result } = renderHook(() => useStudio());
+    act(() => {
+      result.current.setOutputQuality("720p");
+    });
+    expect(result.current.outputQuality).toBe("720p");
+  });
+
+  it("sendChatMessage with no platform or scene does nothing", () => {
+    const { result } = renderHook(() => useStudio());
+    act(() => {
+      result.current.sendChatMessage("Hello");
+    });
+    expect(result.current.chatMessages).toHaveLength(0);
   });
 });

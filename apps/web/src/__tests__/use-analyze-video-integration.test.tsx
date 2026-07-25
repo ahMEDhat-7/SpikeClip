@@ -1,5 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { useAnalyzeVideo } from "@/application/hooks/use-analyze-video";
+import { ApiProvider } from "@/application/providers/api-provider";
+import { jobApi } from "@/infrastructure/api/job-api.client";
 
 jest.mock("@/infrastructure/api/job-api.client", () => ({
   jobApi: {
@@ -7,10 +9,18 @@ jest.mock("@/infrastructure/api/job-api.client", () => ({
     getJob: jest.fn(),
     processJob: jest.fn(),
   },
+  authApi: {},
 }));
 
-import { jobApi } from "@/infrastructure/api/job-api.client";
+jest.mock("@/infrastructure/api/auth-api.client", () => ({
+  authApi: {},
+}));
+
 const mockJobApi = jobApi as jest.Mocked<typeof jobApi>;
+
+function wrapper({ children }: { children: React.ReactNode }) {
+  return <ApiProvider>{children}</ApiProvider>;
+}
 
 describe("useAnalyzeVideo", () => {
   beforeEach(() => {
@@ -18,7 +28,7 @@ describe("useAnalyzeVideo", () => {
   });
 
   it("initializes with default values", () => {
-    const { result } = renderHook(() => useAnalyzeVideo());
+    const { result } = renderHook(() => useAnalyzeVideo(), { wrapper });
     expect(result.current.job).toBeNull();
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
@@ -29,7 +39,7 @@ describe("useAnalyzeVideo", () => {
     mockJobApi.createJob.mockResolvedValue(mockJob as any);
     mockJobApi.processJob.mockResolvedValue(mockJob as any);
 
-    const { result } = renderHook(() => useAnalyzeVideo());
+    const { result } = renderHook(() => useAnalyzeVideo(), { wrapper });
 
     await act(async () => {
       await result.current.analyze("https://youtube.com/watch?v=test");
@@ -43,7 +53,7 @@ describe("useAnalyzeVideo", () => {
   it("handles analysis error", async () => {
     mockJobApi.createJob.mockRejectedValue(new Error("Invalid URL"));
 
-    const { result } = renderHook(() => useAnalyzeVideo());
+    const { result } = renderHook(() => useAnalyzeVideo(), { wrapper });
 
     await act(async () => {
       await result.current.analyze("invalid-url");
@@ -57,7 +67,7 @@ describe("useAnalyzeVideo", () => {
     const mockJob = { id: "job-123", status: "completed" };
     mockJobApi.getJob.mockResolvedValue(mockJob as any);
 
-    const { result } = renderHook(() => useAnalyzeVideo());
+    const { result } = renderHook(() => useAnalyzeVideo(), { wrapper });
 
     await act(async () => {
       await result.current.loadJob("job-123");
@@ -68,7 +78,7 @@ describe("useAnalyzeVideo", () => {
   });
 
   it("resets state", () => {
-    const { result } = renderHook(() => useAnalyzeVideo());
+    const { result } = renderHook(() => useAnalyzeVideo(), { wrapper });
     act(() => { result.current.reset(); });
     expect(result.current.job).toBeNull();
     expect(result.current.isLoading).toBe(false);

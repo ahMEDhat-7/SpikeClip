@@ -3,6 +3,8 @@
 import { useRef, useEffect, useState } from "react";
 import { Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 
+import { formatTime } from "@/lib/format";
+
 interface PreviewPanelProps {
   previewUrl: string | null;
   loading?: boolean;
@@ -29,12 +31,6 @@ export function PreviewPanel({
       videoRef.current.load();
     }
   }, [previewUrl]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
 
   return (
     <div className="flex flex-col h-full border rounded-xl bg-background">

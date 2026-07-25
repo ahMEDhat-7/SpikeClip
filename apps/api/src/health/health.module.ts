@@ -3,22 +3,11 @@ import { HealthController } from "./health.controller";
 import { HealthService } from "./health.service";
 import { PrismaModule } from "../infrastructure/database/prisma.module";
 import { StorageModule } from "../infrastructure/storage/storage.module";
-import Redis from "ioredis";
-
-const redisProvider = {
-  provide: "REDIS_CLIENT",
-  useFactory: () => {
-    const host = process.env.REDIS_HOST || "localhost";
-    const port = parseInt(process.env.REDIS_PORT || "6379");
-    const password = process.env.REDIS_PASSWORD || undefined;
-    return new Redis({ host, port, password, maxRetriesPerRequest: 3 });
-  },
-};
+import { RedisModule } from "../infrastructure/redis/redis.module";
 
 @Module({
-  imports: [PrismaModule, StorageModule],
+  imports: [PrismaModule, StorageModule, RedisModule],
   controllers: [HealthController],
-  providers: [HealthService, redisProvider],
-  exports: [redisProvider],
+  providers: [HealthService],
 })
 export class HealthModule {}

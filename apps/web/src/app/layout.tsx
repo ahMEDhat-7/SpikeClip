@@ -69,6 +69,13 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrains.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=JSON.parse(localStorage.getItem('theme')||'{}');if(t.theme==='dark'||(!('theme' in t)&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="antialiased">
         <ThemeProvider
           attribute="class"

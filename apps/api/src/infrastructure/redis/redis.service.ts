@@ -60,6 +60,11 @@ export class RedisService {
     }
   }
 
+  async ping(): Promise<string> {
+    if (!this.client) throw new Error("Redis not configured");
+    return this.client.ping();
+  }
+
   async disconnect(): Promise<void> {
     if (this.client) {
       await this.client.quit();

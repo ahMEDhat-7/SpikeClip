@@ -34,7 +34,7 @@ const mockScenes: ScoredBlock[] = [
 describe("CompositePreview", () => {
   const defaultProps = {
     job: mockJob,
-    platform: { id: "tiktok", label: "TikTok", ratio: "9:16" } as any,
+    platform: { id: "tiktok", name: "TikTok", icon: "Music2", aspectRatio: "9:16", maxDuration: 180, description: "Short-form video" } as any,
     captions: [],
     selectedTemplate: null,
     scenes: mockScenes,
@@ -51,30 +51,59 @@ describe("CompositePreview", () => {
     expect(screen.getByTestId("youtube-player")).toBeTruthy();
   });
 
-  it("renders scene count", () => {
-    render(<CompositePreview {...defaultProps} />);
-    expect(screen.getByText(/scenes/)).toBeTruthy();
+  it("renders scene info bar with current scene", () => {
+    const { container } = render(<CompositePreview {...defaultProps} />);
+    expect(container.textContent).toContain("S1");
+    expect(container.textContent).toContain("0:00");
+    expect(container.textContent).toContain("0:05");
   });
 
-  it("renders scene time-range buttons", () => {
-    render(<CompositePreview {...defaultProps} />);
-    expect(screen.getByText("0:00 — 0:05")).toBeTruthy();
-    expect(screen.getByText("0:10 — 0:15")).toBeTruthy();
+  it("renders scene duration display", () => {
+    const { container } = render(<CompositePreview {...defaultProps} />);
+    expect(container.textContent).toContain("0.0s / 5.0s");
   });
 
-  it("highlights active scene button", () => {
-    render(<CompositePreview {...defaultProps} />);
-    const sceneBtn = screen.getByText("0:00 — 0:05");
-    expect(sceneBtn.className).toContain("primary");
+  it("renders play button", () => {
+    const { container } = render(<CompositePreview {...defaultProps} />);
+    const playBtn = container.querySelector("button[aria-label='Play']");
+    expect(playBtn).toBeTruthy();
   });
 
   it("renders preview header", () => {
+    const { container } = render(<CompositePreview {...defaultProps} />);
+    const header = container.querySelector(".border-b .text-xs.font-medium.text-muted-foreground");
+    expect(header?.textContent).toBe("Preview");
+  });
+
+  it("renders platform name", () => {
     render(<CompositePreview {...defaultProps} />);
-    expect(screen.getByText("Preview")).toBeTruthy();
+    expect(screen.getByText("TikTok")).toBeTruthy();
   });
 
   it("renders with no platform", () => {
     render(<CompositePreview {...defaultProps} platform={null} />);
     expect(screen.getByTestId("youtube-player")).toBeTruthy();
+  });
+
+  it("renders 9:16 aspect ratio for platform", () => {
+    const { container } = render(<CompositePreview {...defaultProps} />);
+    expect(container.querySelector(".aspect-\\[9\\/16\\]")).toBeTruthy();
+  });
+
+  it("renders 16:9 aspect ratio without platform", () => {
+    const { container } = render(<CompositePreview {...defaultProps} platform={null} />);
+    expect(container.querySelector(".aspect-video")).toBeTruthy();
+  });
+
+  it("does not render scene info when no scenes selected", () => {
+    const { container } = render(<CompositePreview {...defaultProps} selectedScenes={[]} />);
+    expect(container.textContent).not.toContain("S1");
+  });
+
+  it("returns null when video URL is invalid", () => {
+    const { container } = render(
+      <CompositePreview {...defaultProps} job={{ ...mockJob, url: "invalid" }} />
+    );
+    expect(container.firstChild).toBeNull();
   });
 });

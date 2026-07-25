@@ -80,7 +80,7 @@ export function Header() {
       <div className="container mx-auto grid grid-cols-3 h-16 items-center px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2.5 font-bold text-xl justify-self-start">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <img src="/logo.svg" alt="" className="h-5 w-5" />
+            <img src="/logo.svg" alt="SpikeClip" className="h-5 w-5" />
           </div>
           <span>
             <span className="text-primary">Spike</span>
@@ -170,7 +170,7 @@ export function Header() {
             </div>
           )}
 
-          {!isLoading && !user && (
+          {!user && (
             <>
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">Sign In</Link>
@@ -301,7 +301,7 @@ export function Header() {
             </div>
           )}
 
-          {!isLoading && !user && (
+          {!user && (
             <div className="space-y-2 pt-2 border-t">
               <Button
                 asChild

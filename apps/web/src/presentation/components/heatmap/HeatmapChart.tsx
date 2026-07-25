@@ -13,7 +13,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { HeatmapSpike, ScoredBlock } from "@/domain/entities/job";
-import { formatTime, parseTimeLabel } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 
 interface HeatmapChartProps {
   heatmap: HeatmapSpike[];

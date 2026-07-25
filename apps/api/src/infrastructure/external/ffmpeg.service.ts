@@ -15,28 +15,13 @@ import {
   PlatformId,
   OutputQuality,
   OutputFormat,
+  FONT_MAP,
 } from "@spikeclips/shared";
+import { withTimeout } from "./utils/timeout";
 
 const execFileAsync = promisify(execFile);
 const TMP_DIR = "/tmp/spikeclips-ffmpeg";
 const FFMPEG_TIMEOUT_MS = 300_000; // 5 minutes
-
-const FONT_MAP: Record<string, string> = {
-  inter: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-  impact: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-  bebas: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-  playfair: "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-  mono: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-};
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`FFmpeg timeout: ${label} exceeded ${ms}ms`)), ms)
-    ),
-  ]);
-}
 
 @Injectable()
 export class FfmpegService implements VideoProcessor {
@@ -118,36 +103,41 @@ export class FfmpegService implements VideoProcessor {
       return;
     }
 
-    const fps = 30;
+    const hasStyling = captions.some(
+      (c) => c.font !== "inter" || c.color !== "#FFFFFF" || c.position !== "center" ||
+             c.animation !== "none" || c.backgroundEnabled || c.strokeWidth
+    );
 
-    // Try SRT-based rendering first (industry standard)
-    const srtPath = join(TMP_DIR, `${Date.now()}-captions.srt`);
-    const srtContent = generateSrt(captions, fps, videoDuration);
-    await writeFile(srtPath, srtContent, "utf-8");
+    if (!hasStyling) {
+      const fps = 30;
+      const srtPath = join(TMP_DIR, `${Date.now()}-captions.srt`);
+      const srtContent = generateSrt(captions, fps, videoDuration);
+      await writeFile(srtPath, srtContent, "utf-8");
 
-    try {
-      const forceStyle = `FontSize=20,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,Shadow=1,Alignment=2,MarginV=40`;
-      await withTimeout(
-        execFileAsync("ffmpeg", [
-          "-y",
-          "-i", inputPath,
-          "-vf", `subtitles=${srtPath}:force_style='${forceStyle}'`,
-          "-c:v", "libx264",
-          "-pix_fmt", "yuv420p",
-          "-movflags", "+faststart",
-          "-c:a", "copy",
-          outputPath,
-        ]),
-        FFMPEG_TIMEOUT_MS,
-        "captions-srt"
-      );
-      await unlink(srtPath).catch(() => {});
-      return;
-    } catch {
-      this.logger.warn("SRT subtitles filter failed, falling back to drawtext");
+      try {
+        const forceStyle = `FontSize=20,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,Shadow=1,Alignment=2,MarginV=40`;
+        await withTimeout(
+          execFileAsync("ffmpeg", [
+            "-y",
+            "-i", inputPath,
+            "-vf", `subtitles=${srtPath}:force_style='${forceStyle}'`,
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+            "-c:a", "copy",
+            outputPath,
+          ]),
+          FFMPEG_TIMEOUT_MS,
+          "captions-srt"
+        );
+        await unlink(srtPath).catch(() => {});
+        return;
+      } catch {
+        this.logger.warn("SRT subtitles filter failed, falling back to drawtext");
+        await unlink(srtPath).catch(() => {});
+      }
     }
 
-    // Fallback: drawtext with per-caption timing
     const filters: string[] = [];
     for (const cap of captions) {
       const escapedText = cap.text
@@ -183,19 +173,28 @@ export class FfmpegService implements VideoProcessor {
       }
 
       const startFrame = cap.startFrame ?? 0;
-      const endFrame = cap.endFrame ?? Math.round(fps * videoDuration);
-      const startSec = startFrame / fps;
-      const endSec = endFrame / fps;
+      const endFrame = cap.endFrame ?? Math.round(30 * videoDuration);
+      const startSec = startFrame / 30;
+      const endSec = endFrame / 30;
 
-      filters.push(
+      let drawtext =
         `drawtext=text='${escapedText}'` +
         `:fontfile=${fontFile}` +
         `:fontsize=${fontSize}` +
         `:fontcolor=${color}` +
         `:x=${xExpr}` +
         `:y=${yExpr}` +
-        `:enable='between(t\\,${startSec.toFixed(3)}\\,${endSec.toFixed(3)})'`
-      );
+        `:enable='between(t\\,${startSec.toFixed(3)}\\,${endSec.toFixed(3)})'`;
+
+      if (cap.strokeWidth) {
+        drawtext += `:borderw=${cap.strokeWidth}:bordercolor=black`;
+      }
+
+      if (cap.backgroundEnabled && cap.backgroundColor) {
+        drawtext += `:box=1:boxcolor=${cap.backgroundColor}@0.5:boxborderw=10`;
+      }
+
+      filters.push(drawtext);
     }
 
     const filterComplex = filters.join(",");
@@ -219,8 +218,6 @@ export class FfmpegService implements VideoProcessor {
       this.logger.error(`Caption overlay failed: ${err instanceof Error ? err.message : err}`);
       throw err;
     }
-
-    await unlink(srtPath).catch(() => {});
   }
 
   async mixAudio(

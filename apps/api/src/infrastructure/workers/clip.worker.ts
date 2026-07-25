@@ -7,7 +7,7 @@ import { CaptionOverlay, MusicMixConfig } from "../../domain/services/video-proc
 import { randomUUID } from "crypto";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { unlink, mkdir, stat, access } from "fs/promises";
+import { unlink, mkdir, stat, access, rename, writeFile } from "fs/promises";
 import { join } from "path";
 import type { StudioAction } from "@spikeclips/shared";
 
@@ -141,7 +141,11 @@ export function createClipWorker(
               currentFile,
               actionsOutput,
               actions,
-              (bullJob.data.platform as "youtube-shorts" | "instagram-reels" | "tiktok") || "youtube-shorts"
+              (bullJob.data.platform as "youtube-shorts" | "instagram-reels" | "tiktok") || "youtube-shorts",
+              (bullJob.data.quality as "720p" | "1080p") || "1080p",
+              (bullJob.data.format as "mp4" | "webm") || "mp4",
+              startTime,
+              duration
             );
             currentFile = actionsOutput;
             logger.log(`Applied ${actions.length} studio action(s) to clip ${clipId}`);
@@ -153,13 +157,12 @@ export function createClipWorker(
         // Step 5: Music mix (with correct fade-out and -shortest)
         if (music) {
           try {
-            const musicSignedUrl = await storage.getSignedUrl(music.fileKey, 300);
+            const musicSignedUrl = await storage.getSignedUrl(music.fileKey, 600);
             const sanitizedKey = music.fileKey.replace(/[^a-zA-Z0-9._-]/g, "_");
             const musicPath = join(TMP_DIR, `${clipId}-music-${sanitizedKey}`);
             const response = await fetch(musicSignedUrl);
             if (!response.ok) throw new Error(`Failed to download music: ${response.status}`);
             const buffer = Buffer.from(await response.arrayBuffer());
-            const { writeFile } = await import("fs/promises");
             await writeFile(musicPath, buffer);
             if (await fileExists(musicPath)) {
               await ffmpeg?.mixAudio(currentFile, musicPath, tmpOutput, music, duration);
@@ -175,7 +178,7 @@ export function createClipWorker(
 
         // Step 6: If no music mix wrote to tmpOutput, copy current state there
         if (currentFile !== tmpOutput) {
-          await execFileAsync("cp", [currentFile, tmpOutput]);
+          await rename(currentFile, tmpOutput);
         }
 
         // Step 7: Upload to storage

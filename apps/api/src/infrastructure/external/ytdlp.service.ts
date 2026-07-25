@@ -6,18 +6,10 @@ import {
   VideoMetadata,
 } from "../../domain/services/video-extractor";
 import { HeatmapSpike } from "@spikeclips/shared";
+import { withTimeout } from "./utils/timeout";
 
 const execFileAsync = promisify(execFile);
 const YTDLP_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new RequestTimeoutException(`${label} timed out after ${ms}ms`)), ms)
-    ),
-  ]);
-}
 
 @Injectable()
 export class YtdlpService implements VideoExtractor {

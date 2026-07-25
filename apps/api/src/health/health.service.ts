@@ -1,7 +1,7 @@
 import { Injectable, Logger, Inject } from "@nestjs/common";
 import { PrismaService } from "../infrastructure/database/prisma.service";
 import { STORAGE_SERVICE, StorageService } from "../infrastructure/storage/storage.interface";
-import Redis from "ioredis";
+import { RedisService } from "../infrastructure/redis/redis.service";
 
 @Injectable()
 export class HealthService {
@@ -10,7 +10,7 @@ export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
-    @Inject("REDIS_CLIENT") private readonly redis: Redis
+    private readonly redis: RedisService
   ) {}
 
   async check() {

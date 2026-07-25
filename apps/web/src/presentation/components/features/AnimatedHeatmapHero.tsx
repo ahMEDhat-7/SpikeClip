@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { formatTime } from "@/lib/format";
 import { HERO_ANIMATION_DURATION_MS } from "@/lib/constants";
 
 export function AnimatedHeatmapHero({
@@ -11,6 +10,8 @@ export function AnimatedHeatmapHero({
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const animationRef = useRef<number>(0);
@@ -49,15 +50,15 @@ export function AnimatedHeatmapHero({
       const elapsed = now - startTimeRef.current;
       const p = (elapsed % duration) / duration;
       setProgress(p);
+      // Directly update progress bar DOM (bypasses React render cycle)
+      if (fillRef.current) fillRef.current.style.transform = `scaleX(${p})`;
+      if (thumbRef.current) thumbRef.current.style.transform = `translateX(calc(${p * 100}% - 6px))`;
       animationRef.current = requestAnimationFrame(animate);
     };
 
     animationRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationRef.current);
   }, [isPaused]);
-
-  const currentTime = useMemo(() => formatTime(progress * 635), [progress]);
-  const totalTime = useMemo(() => formatTime(635), []);
 
   const playBarX = 8 + progress * 48;
 
@@ -79,17 +80,7 @@ export function AnimatedHeatmapHero({
           }}
         />
 
-        {/* YouTube watermark */}
-        <div className="absolute top-4 right-4 opacity-20 z-10">
-          <div className="flex items-center gap-1">
-            <div className="w-0 h-0 border-l-[6px] border-l-[#E63946] border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent" />
-            <span className="text-[10px] font-bold text-white/60">
-              YouTube
-            </span>
-          </div>
-        </div>
-
-        {/* Main heatmap SVG — matches logo.svg animation style */}
+        {/* Main heatmap SVG */}
         <svg
           viewBox="0 0 64 64"
           className="absolute inset-0 w-full h-full"
@@ -119,7 +110,7 @@ export function AnimatedHeatmapHero({
             </linearGradient>
           </defs>
 
-          {/* Baseline — persistent, theme-adaptive */}
+          {/* Baseline */}
           <line
             x1="4"
             y1="48"
@@ -131,7 +122,7 @@ export function AnimatedHeatmapHero({
             strokeOpacity="0.3"
           />
 
-          {/* Fill path — animated spikes (lower, filled) */}
+          {/* Fill path */}
           <path
             d="M4 48 Q32 48 60 48 L60 48 L4 48 Z"
             fill="url(#heroFillGrad)"
@@ -167,7 +158,7 @@ export function AnimatedHeatmapHero({
             />
           </path>
 
-          {/* Stroke path — animated, rises higher than fill */}
+          {/* Stroke path */}
           <path
             d="M4 48 Q32 48 60 48 L60 48 L4 48"
             fill="none"
@@ -241,61 +232,25 @@ export function AnimatedHeatmapHero({
         {/* Play bar at bottom of player */}
         <div className="absolute bottom-8 left-4 right-4 h-1 rounded-full bg-white/10">
           <div
-            className="absolute top-0 left-0 h-full rounded-full"
+            ref={fillRef}
+            className="absolute top-0 left-0 h-full rounded-full origin-left"
             style={{
-              width: `${progress * 100}%`,
+              width: "100%",
+              transform: `scaleX(${progress})`,
               background: "linear-gradient(90deg, #E63946 0%, #FF6B35 100%)",
               boxShadow: "0 0 10px #E6394680",
             }}
           />
           <div
+            ref={thumbRef}
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
             style={{
-              left: `calc(${progress * 100}% - 6px)`,
+              left: 0,
+              transform: `translateX(calc(${progress * 100}% - 6px))`,
               background: "#E63946",
               boxShadow: "0 0 8px #E63946, 0 0 16px #E6394660",
             }}
           />
-        </div>
-
-        {/* Controls bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/60 to-transparent flex items-center px-4 gap-3">
-          <div className="w-0 h-0 border-l-[5px] border-l-white border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent" />
-          <span className="text-[10px] font-mono text-white/70">
-            {currentTime}
-          </span>
-          <span className="text-[10px] text-white/40">/</span>
-          <span className="text-[10px] font-mono text-white/50">
-            {totalTime}
-          </span>
-          <div className="flex-1" />
-          <span className="text-[9px] font-medium text-white/60 px-1 py-0.5 border border-white/20 rounded">
-            HD
-          </span>
-          <span className="text-[9px] text-white/50">CC</span>
-        </div>
-      </div>
-
-      {/* Bottom info bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-card/80 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <div className="w-0 h-0 border-l-[5px] border-l-primary border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent ml-0.5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-foreground line-clamp-1">
-              How I Built a SaaS in 30 Days — Full Breakdown
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              2.4M views · 3 weeks ago
-            </p>
-          </div>
-        </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground font-mono">
-            Heatmap extracted
-          </span>
-          <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
         </div>
       </div>
     </div>

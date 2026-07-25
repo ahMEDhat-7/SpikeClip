@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/application/hooks/use-auth";
@@ -32,7 +32,7 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawCallbackUrl = searchParams.get("callbackUrl") || "/dashboard";
@@ -113,11 +113,25 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-muted-foreground">
           By continuing, you agree to our{" "}
-          <Link href="/about" className="text-primary hover:underline">
+          <Link href="/terms" className="text-primary hover:underline">
             Terms of Service
           </Link>
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </main>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

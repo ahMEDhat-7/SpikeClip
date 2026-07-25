@@ -1,6 +1,5 @@
-import { Controller, Post, Body, Param, UseGuards, Req, HttpCode, HttpStatus } from "@nestjs/common";
+import { Controller, Post, Body, Param, Req, HttpCode, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
-import { JwtAuthGuard } from "../../infrastructure/auth/jwt-auth.guard";
 import { StudioService } from "./studio.service";
 
 interface TranslatePromptDto {
@@ -18,8 +17,7 @@ interface GeneratePreviewDto {
 
 @ApiTags("studio")
 @ApiBearerAuth()
-@Controller("api/studio")
-@UseGuards(JwtAuthGuard)
+@Controller("studio")
 export class StudioController {
   constructor(private readonly studioService: StudioService) {}
 
@@ -40,8 +38,8 @@ export class StudioController {
       },
     },
   })
-  async translatePrompt(@Req() req: { user: { sub: string } }, @Body() dto: TranslatePromptDto) {
-    return this.studioService.translatePrompt(req.user.sub, dto);
+  async translatePrompt(@Req() req: { user: { userId: string } }, @Body() dto: TranslatePromptDto) {
+    return this.studioService.translatePrompt(req.user.userId, dto);
   }
 
   @Post("preview")
@@ -49,8 +47,8 @@ export class StudioController {
   @ApiOperation({ summary: "Generate a preview video with applied actions" })
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 400, description: "Invalid actions or scene" })
-  async generatePreview(@Req() req: { user: { sub: string } }, @Body() dto: GeneratePreviewDto) {
-    return this.studioService.generatePreview(req.user.sub, dto);
+  async generatePreview(@Req() req: { user: { userId: string } }, @Body() dto: GeneratePreviewDto) {
+    return this.studioService.generatePreview(req.user.userId, dto);
   }
 
   @Post("preview/:jobId/:sceneIndex")
@@ -59,11 +57,11 @@ export class StudioController {
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 404, description: "Job or scene not found" })
   async generatePreviewForScene(
-    @Req() req: { user: { sub: string } },
+    @Req() req: { user: { userId: string } },
     @Param("jobId") jobId: string,
     @Param("sceneIndex") sceneIndex: string,
     @Body() dto: Omit<GeneratePreviewDto, "sceneId">
   ) {
-    return this.studioService.generatePreviewForScene(req.user.sub, jobId, parseInt(sceneIndex, 10), dto);
+    return this.studioService.generatePreviewForScene(req.user.userId, jobId, parseInt(sceneIndex, 10), dto);
   }
 }

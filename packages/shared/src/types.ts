@@ -60,59 +60,10 @@ export const DEFAULT_ALGORITHM_CONFIG: AlgorithmConfig = {
 
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
 
-export interface Job {
-  id: string;
-  userId: string;
-  url: string;
-  videoTitle?: string;
-  videoThumbnail?: string;
-  videoDuration?: number;
-  videoViewCount?: number;
-  videoUploadDate?: string;
-  videoChannelName?: string;
-  status: JobStatus;
-  scenes?: ScoredBlock[];
-  heatmapData?: HeatmapSpike[];
-  errorMessage?: string;
-  createdAt: Date;
-  completedAt?: Date;
-}
-
 // Clip types
 
 export type ClipStatus = "pending" | "processing" | "completed" | "failed";
 
-export interface Clip {
-  id: string;
-  jobId: string;
-  sceneIndex: number;
-  startTime: number;
-  endTime: number;
-  peakIntensity?: number;
-  status: ClipStatus;
-  fileUrl?: string;
-  fileSize?: number;
-  duration?: number;
-  errorMessage?: string;
-  createdAt: Date;
-  completedAt?: Date;
-}
-
 // User types
 
 export type PlanTier = "free" | "pro" | "team";
-
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  plan: PlanTier;
-  stripeCustomerId?: string;
-  analysesUsed: number;
-  analysesLimit: number;
-  scenesLimit: number;
-  clipsUsed: number;
-  clipsLimit: number;
-  createdAt: Date;
-  updatedAt: Date;
-}

@@ -5,6 +5,7 @@ import { STEP_LABELS } from "@/presentation/constants/studio";
 import {
   LayoutGrid,
   Film,
+  MessageSquare,
   Type,
   Music,
   Sparkles,
@@ -16,6 +17,7 @@ import {
 const TOOL_ICONS: Record<StudioStep, React.ElementType> = {
   platform: LayoutGrid,
   scenes: Film,
+  chat: MessageSquare,
   captions: Type,
   music: Music,
   templates: Sparkles,

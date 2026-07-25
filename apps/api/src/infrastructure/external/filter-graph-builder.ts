@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   StudioAction,
   AddCaptionsAction,
@@ -15,19 +15,15 @@ import {
   getPlatformEncodingPreset,
   getQualityPreset,
   getFormatCodecs,
+  FONT_MAP,
 } from "@spikeclips/shared";
-
-const FONT_MAP: Record<string, string> = {
-  inter: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-  impact: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-  bebas: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-  playfair: "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
-  mono: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-};
 
 interface FilterChain {
   videoFilters: string[];
   audioFilters: string[];
+  duration?: number;
+  trimStart?: number;
+  trimDuration?: number;
 }
 
 interface BuildCommandInput {
@@ -48,21 +44,22 @@ interface BuildCommandResult {
 
 @Injectable()
 export class FilterGraphBuilder {
-  private readonly logger = new Logger(FilterGraphBuilder.name);
-
   buildCommand(input: BuildCommandInput): BuildCommandResult {
     const { actions, platform, quality, format, inputPath, outputPath, startTime, duration } = input;
     const preset = getPlatformEncodingPreset(platform);
     const qualityPreset = getQualityPreset(quality);
     const formatCodecs = getFormatCodecs(format);
 
-    const chain: FilterChain = { videoFilters: [], audioFilters: [] };
+    const chain: FilterChain = { videoFilters: [], audioFilters: [], duration };
 
     chain.videoFilters.push(`crop=ih*9/16:ih,scale=${preset.resolution.width}:${preset.resolution.height}`);
 
     for (const action of actions) {
       this.applyAction(action, chain);
     }
+
+    const effectiveStartTime = chain.trimStart ?? startTime;
+    const effectiveDuration = chain.trimDuration ?? duration;
 
     const videoFilterStr = chain.videoFilters.join(",");
     const hasAudioFilters = chain.audioFilters.length > 0;
@@ -75,14 +72,14 @@ export class FilterGraphBuilder {
 
     const args: string[] = ["-y"];
 
-    if (startTime !== undefined) {
-      args.push("-ss", startTime.toString());
+    if (effectiveStartTime !== undefined) {
+      args.push("-ss", effectiveStartTime.toString());
     }
 
     args.push("-i", inputPath);
 
-    if (duration !== undefined) {
-      args.push("-t", duration.toString());
+    if (effectiveDuration !== undefined) {
+      args.push("-t", effectiveDuration.toString());
     }
 
     args.push("-filter_complex", filterComplex);
@@ -187,49 +184,49 @@ export class FilterGraphBuilder {
 
   private applyEffect(action: ApplyEffectAction, chain: FilterChain): void {
     const intensity = action.intensity;
+    const enableStr = action.startTime !== undefined && action.endTime !== undefined
+      ? `:enable='between(t,${action.startTime},${action.endTime})'`
+      : "";
 
     switch (action.type) {
       case "vignette": {
         const angle = intensity * Math.PI / 2;
-        chain.videoFilters.push(`vignette=angle=${angle}`);
+        chain.videoFilters.push(`vignette=angle=${angle}${enableStr}`);
         break;
       }
       case "zoom_in": {
         const targetZoom = 1 + intensity * 0.5;
-        chain.videoFilters.push(`zoompan=z='min(zoom+0.001,${targetZoom})':d=1:s=1080x1920:fps=30:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`);
+        chain.videoFilters.push(`zoompan=z='min(zoom+0.001,${targetZoom})':d=1:s=1080x1920:fps=30:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'${enableStr}`);
         break;
       }
       case "zoom_out": {
         const targetZoom = 1 + intensity * 0.5;
-        chain.videoFilters.push(`zoompan=z='if(eq(on,1),${targetZoom},max(zoom-0.001,1.0))':d=1:s=1080x1920:fps=30:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`);
+        chain.videoFilters.push(`zoompan=z='if(eq(on,1),${targetZoom},max(zoom-0.001,1.0))':d=1:s=1080x1920:fps=30:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'${enableStr}`);
         break;
       }
       case "blur": {
         const radius = Math.round(intensity * 20);
-        chain.videoFilters.push(`boxblur=${radius}:${radius}`);
+        chain.videoFilters.push(`boxblur=${radius}:${radius}${enableStr}`);
         break;
       }
       case "sharpen": {
         const amount = intensity * 1.5;
-        chain.videoFilters.push(`unsharp=5:5:${amount}:5:5:${amount}`);
+        chain.videoFilters.push(`unsharp=5:5:${amount}:5:5:${amount}${enableStr}`);
         break;
       }
       case "sepia":
-        chain.videoFilters.push("colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131");
+        chain.videoFilters.push(`colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131${enableStr}`);
         break;
       case "bw":
-        chain.videoFilters.push("hue=s=0");
+        chain.videoFilters.push(`hue=s=0${enableStr}`);
         break;
       case "glitch": {
-        const enableStr = action.startTime !== undefined && action.endTime !== undefined
-          ? `:enable='between(t,${action.startTime},${action.endTime})'`
-          : "";
         chain.videoFilters.push(`rgbashift=rh=3:bh=-3${enableStr}`);
-        chain.videoFilters.push(`noise=alls=20:allf=t`);
+        chain.videoFilters.push(`noise=alls=20:allf=t${enableStr}`);
         break;
       }
       case "glow":
-        chain.videoFilters.push("gblur=sigma=20,format=rgba,colorchannelmixer=aa=0.5,overlay");
+        chain.videoFilters.push(`gblur=sigma=20,format=rgba,colorchannelmixer=aa=0.5,overlay${enableStr}`);
         break;
     }
   }
@@ -248,17 +245,20 @@ export class FilterGraphBuilder {
   private applyOverlay(action: AddOverlayAction, chain: FilterChain): void {
     const x = `${action.x}*iw/100`;
     const y = `${action.y}*ih/100`;
+    const scale = action.scale ?? 1.0;
     const enableStr = action.startTime !== undefined && action.endTime !== undefined
       ? `:enable='between(t,${action.startTime},${action.endTime})'`
       : "";
-    chain.videoFilters.push(`overlay=x=${x}:y=${y}${enableStr}`);
+    chain.videoFilters.push(`scale=${scale}:flags=lanczos[overlay];overlay=x=${x}:y=${y}${enableStr}`);
   }
 
   private applyTransition(action: SetTransitionAction, chain: FilterChain): void {
     if (action.position === "start") {
       chain.videoFilters.push(`fade=t=in:d=${action.duration}:st=0`);
     } else {
-      chain.videoFilters.push(`fade=t=out:d=${action.duration}:st=999`);
+      const videoDuration = chain.duration ?? 60;
+      const fadeStart = Math.max(0, videoDuration - action.duration);
+      chain.videoFilters.push(`fade=t=out:d=${action.duration}:st=${fadeStart}`);
     }
   }
 
@@ -267,7 +267,14 @@ export class FilterGraphBuilder {
   }
 
   private applyTrim(action: TrimAction, chain: FilterChain): void {
-    // Trim is handled via -ss and -t args, not filter
+    if (action.startTime !== undefined) {
+      chain.trimStart = action.startTime;
+    }
+    if (action.endTime !== undefined && chain.trimStart !== undefined) {
+      chain.trimDuration = action.endTime - chain.trimStart;
+    } else if (action.endTime !== undefined) {
+      chain.trimDuration = action.endTime;
+    }
   }
 
   buildPreviewCommand(input: BuildCommandInput): BuildCommandResult {

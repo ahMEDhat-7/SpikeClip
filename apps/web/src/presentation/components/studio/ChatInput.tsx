@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -32,9 +33,13 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
       <button
         type="submit"
         disabled={disabled || !input.trim()}
-        className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed min-w-[72px] flex items-center justify-center"
       >
-        Send
+        {disabled ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          "Send"
+        )}
       </button>
     </form>
   );

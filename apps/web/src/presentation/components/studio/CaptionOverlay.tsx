@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useId, useRef } from "react";
+import { memo, useMemo, useEffect, useId, useRef } from "react";
 import { Caption } from "@/domain/entities/caption";
 import { CAPTION_FONTS } from "@/presentation/constants/caption";
 import { FPS } from "@/lib/constants";
@@ -54,7 +54,7 @@ function getAnimationKeyframes(animation: Caption["animation"]): React.CSSProper
   }
 }
 
-export function CaptionOverlay({
+export const CaptionOverlay = memo(function CaptionOverlay({
   caption,
   sceneElapsed,
   containerWidth,
@@ -196,4 +196,4 @@ export function CaptionOverlay({
         : caption.text}
     </div>
   );
-}
+});

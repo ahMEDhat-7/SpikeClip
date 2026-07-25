@@ -83,48 +83,59 @@ export class ExportClipsUseCase {
     }
 
     const clipJobIds: string[] = [];
+    const createdClipIds: string[] = [];
 
-    for (let idx = 0; idx < scenes.length; idx++) {
-      const scene = scenes[idx];
+    try {
+      for (let idx = 0; idx < scenes.length; idx++) {
+        const scene = scenes[idx];
 
-      const clipId = randomUUID();
+        const clipId = randomUUID();
 
-      await this.prisma.clip.create({
-        data: {
-          id: clipId,
-          jobId,
+        await this.prisma.clip.create({
+          data: {
+            id: clipId,
+            jobId,
+            sceneIndex: idx,
+            startTime: scene.start_time,
+            endTime: scene.end_time,
+            peakIntensity: scene.peak_intensity ?? null,
+            status: "pending",
+          },
+        });
+        createdClipIds.push(clipId);
+
+        const exportConfig: ExportJobConfig = {
+          clipId,
           sceneIndex: idx,
+          videoUrl: job.url,
           startTime: scene.start_time,
           endTime: scene.end_time,
-          peakIntensity: scene.peak_intensity ?? null,
-          status: "pending",
-        },
-      });
+          vertical: true,
+          platform: studioConfig?.platform,
+          format: studioConfig?.format,
+          quality: studioConfig?.quality,
+          captions: studioConfig?.captions,
+          music: studioConfig?.music,
+          templateId: studioConfig?.templateId,
+          templateConfig: studioConfig?.templateConfig,
+          actions: studioConfig?.actions,
+        };
 
-      const exportConfig: ExportJobConfig = {
-        clipId,
-        sceneIndex: idx,
-        videoUrl: job.url,
-        startTime: scene.start_time,
-        endTime: scene.end_time,
-        vertical: true,
-        platform: studioConfig?.platform,
-        format: studioConfig?.format,
-        quality: studioConfig?.quality,
-        captions: studioConfig?.captions,
-        music: studioConfig?.music,
-        templateId: studioConfig?.templateId,
-        templateConfig: studioConfig?.templateConfig,
-        actions: studioConfig?.actions,
-      };
+        await this.queueService.addExportJob(jobId, exportConfig);
 
-      await this.queueService.addExportJob(jobId, exportConfig);
+        clipJobIds.push(clipId);
+      }
 
-      clipJobIds.push(clipId);
+      user.incrementClipUsage(scenes.length);
+      await this.userRepository.save(user);
+    } catch (error) {
+      if (createdClipIds.length > 0) {
+        await this.prisma.clip.deleteMany({
+          where: { id: { in: createdClipIds } },
+        }).catch(() => {});
+      }
+      throw error;
     }
-
-    user.incrementClipUsage(scenes.length);
-    await this.userRepository.save(user);
 
     return { jobId, clipJobIds };
   }

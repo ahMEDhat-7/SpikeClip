@@ -8,21 +8,6 @@ describe("Job", () => {
     expect(job.heatmapData).toBeUndefined();
   });
 
-  it("canProcess returns true for pending", () => {
-    const job = new Job("job-1", "user-1", "url", undefined, undefined, undefined, undefined, undefined, undefined, "pending");
-    expect(job.canProcess()).toBe(true);
-  });
-
-  it("canProcess returns true for processing", () => {
-    const job = new Job("job-1", "user-1", "url", undefined, undefined, undefined, undefined, undefined, undefined, "processing");
-    expect(job.canProcess()).toBe(true);
-  });
-
-  it("canProcess returns false for completed", () => {
-    const job = new Job("job-1", "user-1", "url", undefined, undefined, undefined, undefined, undefined, undefined, "completed");
-    expect(job.canProcess()).toBe(false);
-  });
-
   it("markProcessing sets status", () => {
     const job = new Job("job-1", "user-1", "url");
     job.markProcessing();
@@ -43,15 +28,5 @@ describe("Job", () => {
     job.markFailed("something broke");
     expect(job.status).toBe("failed");
     expect(job.errorMessage).toBe("something broke");
-  });
-
-  it("hasHeatmapData returns true when data exists", () => {
-    const job = new Job("job-1", "user-1", "url", undefined, undefined, undefined, undefined, undefined, undefined, "pending", undefined, [{ start_time: 0, end_time: 10, value: 0.5 }]);
-    expect(job.hasHeatmapData()).toBe(true);
-  });
-
-  it("hasHeatmapData returns false when no data", () => {
-    const job = new Job("job-1", "user-1", "url");
-    expect(job.hasHeatmapData()).toBe(false);
   });
 });

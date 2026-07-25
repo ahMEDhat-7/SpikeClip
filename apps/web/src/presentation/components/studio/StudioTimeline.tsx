@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { ScoredBlock } from "@/domain/entities/job";
 import { formatTime } from "@/lib/format";
 
@@ -10,7 +11,7 @@ interface StudioTimelineProps {
   onToggleScene: (index: number) => void;
 }
 
-export function StudioTimeline({
+export const StudioTimeline = memo(function StudioTimeline({
   scenes,
   selectedScenes,
   totalDuration,
@@ -50,4 +51,4 @@ export function StudioTimeline({
       </div>
     </div>
   );
-}
+});

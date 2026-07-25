@@ -10,6 +10,8 @@ import { StudioStep, STUDIO_STEPS } from "@/domain/entities/studio";
 import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
 import type { StudioAction as StudioActionType } from "@spikeclips/shared";
 
+export type ChatLoadingPhase = "analyzing" | "generating" | null;
+
 export interface ChatMessage {
   id: string;
   role: "user" | "system";
@@ -38,7 +40,7 @@ export interface StudioState {
   outputQuality: OutputQuality;
   customTimeRange: { start: number; end: number } | null;
   chatMessages: ChatMessage[];
-  chatLoading: boolean;
+  chatLoadingPhase: ChatLoadingPhase;
 }
 
 type StudioAction =
@@ -57,7 +59,7 @@ type StudioAction =
   | { type: "SET_ORIGINAL_VOLUME"; index: number; volume: number }
   | { type: "SET_TEMPLATE"; index: number; template: EditTemplate | null }
   | { type: "ADD_CHAT_MESSAGE"; message: ChatMessage }
-  | { type: "SET_CHAT_LOADING"; loading: boolean }
+  | { type: "SET_CHAT_LOADING_PHASE"; phase: ChatLoadingPhase }
   | { type: "SET_STUDIO_ACTIONS"; index: number; actions: StudioActionType[] }
   | { type: "ADD_STUDIO_ACTION"; index: number; action: StudioActionType }
   | { type: "REMOVE_STUDIO_ACTION"; index: number; actionIndex: number }
@@ -91,10 +93,17 @@ const initialState: StudioState = {
   outputQuality: DEFAULT_OUTPUT_QUALITY,
   customTimeRange: null,
   chatMessages: [],
-  chatLoading: false,
+  chatLoadingPhase: null,
 };
 
 function studioReducer(state: StudioState, action: StudioAction): StudioState {
+  function updateSceneEdit(index: number, updater: (edit: SceneEdit) => SceneEdit): StudioState {
+    const nextEdits = new Map(state.sceneEdits);
+    const existing = nextEdits.get(index) ?? createDefaultSceneEdit();
+    nextEdits.set(index, updater(existing));
+    return { ...state, sceneEdits: nextEdits };
+  }
+
   switch (action.type) {
     case "SET_PLATFORM":
       return { ...state, platform: action.platform };
@@ -153,65 +162,35 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
       };
     }
 
-    case "UPDATE_SCENE_EDIT": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, { ...existing, ...action.updates });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "UPDATE_SCENE_EDIT":
+      return updateSceneEdit(action.index, (e) => ({ ...e, ...action.updates }));
 
-    case "ADD_CAPTION": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, {
-        ...existing,
-        captions: [...existing.captions, action.caption],
-      });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "ADD_CAPTION":
+      return updateSceneEdit(action.index, (e) => ({
+        ...e,
+        captions: [...e.captions, action.caption],
+      }));
 
-    case "UPDATE_CAPTION": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, {
-        ...existing,
-        captions: existing.captions.map((c) =>
-          c.id === action.id ? { ...c, ...action.updates } : c
-        ),
-      });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "UPDATE_CAPTION":
+      return updateSceneEdit(action.index, (e) => ({
+        ...e,
+        captions: e.captions.map((c) => (c.id === action.id ? { ...c, ...action.updates } : c)),
+      }));
 
-    case "REMOVE_CAPTION": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, {
-        ...existing,
-        captions: existing.captions.filter((c) => c.id !== action.id),
-      });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "REMOVE_CAPTION":
+      return updateSceneEdit(action.index, (e) => ({
+        ...e,
+        captions: e.captions.filter((c) => c.id !== action.id),
+      }));
 
-    case "SET_MUSIC": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, { ...existing, musicTrack: action.track });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "SET_MUSIC":
+      return updateSceneEdit(action.index, (e) => ({ ...e, musicTrack: action.track }));
 
-    case "SET_ORIGINAL_VOLUME": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, { ...existing, originalVolume: action.volume });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "SET_ORIGINAL_VOLUME":
+      return updateSceneEdit(action.index, (e) => ({ ...e, originalVolume: action.volume }));
 
-    case "SET_TEMPLATE": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, { ...existing, selectedTemplate: action.template });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "SET_TEMPLATE":
+      return updateSceneEdit(action.index, (e) => ({ ...e, selectedTemplate: action.template }));
 
     case "ADD_CHAT_MESSAGE":
       return {
@@ -219,35 +198,23 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
         chatMessages: [...state.chatMessages, action.message],
       };
 
-    case "SET_CHAT_LOADING":
-      return { ...state, chatLoading: action.loading };
+    case "SET_CHAT_LOADING_PHASE":
+      return { ...state, chatLoadingPhase: action.phase };
 
-    case "SET_STUDIO_ACTIONS": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, { ...existing, studioActions: action.actions });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "SET_STUDIO_ACTIONS":
+      return updateSceneEdit(action.index, (e) => ({ ...e, studioActions: action.actions }));
 
-    case "ADD_STUDIO_ACTION": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, {
-        ...existing,
-        studioActions: [...existing.studioActions, action.action],
-      });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "ADD_STUDIO_ACTION":
+      return updateSceneEdit(action.index, (e) => ({
+        ...e,
+        studioActions: [...e.studioActions, action.action],
+      }));
 
-    case "REMOVE_STUDIO_ACTION": {
-      const nextEdits = new Map(state.sceneEdits);
-      const existing = nextEdits.get(action.index) ?? createDefaultSceneEdit();
-      nextEdits.set(action.index, {
-        ...existing,
-        studioActions: existing.studioActions.filter((_, i) => i !== action.actionIndex),
-      });
-      return { ...state, sceneEdits: nextEdits };
-    }
+    case "REMOVE_STUDIO_ACTION":
+      return updateSceneEdit(action.index, (e) => ({
+        ...e,
+        studioActions: e.studioActions.filter((_, i) => i !== action.index),
+      }));
 
     case "SET_PREVIEW_URL": {
       const nextEdits = new Map(state.sceneEdits);
@@ -281,7 +248,7 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
 export function useStudio() {
   const [state, dispatch] = useReducer(studioReducer, initialState);
 
-  const { platform, scenes, selectedSceneIndex, sceneEdits, currentStep, outputFormat, outputQuality, customTimeRange } = state;
+  const { platform, scenes, selectedSceneIndex, sceneEdits, currentStep, outputFormat, outputQuality, customTimeRange, chatMessages, chatLoadingPhase } = state;
 
   const currentStepIndex = STEPS.indexOf(currentStep);
   const isFirstStep = currentStepIndex === 0;
@@ -394,76 +361,9 @@ export function useStudio() {
     dispatch({ type: "ADD_CHAT_MESSAGE", message });
   }, []);
 
-  const setChatLoading = useCallback((loading: boolean) => {
-    dispatch({ type: "SET_CHAT_LOADING", loading });
+  const setChatLoadingPhase = useCallback((phase: ChatLoadingPhase) => {
+    dispatch({ type: "SET_CHAT_LOADING_PHASE", phase });
   }, []);
-
-  const sendChatMessage = useCallback(async (prompt: string) => {
-    if (selectedSceneIndex === null || !platform) return;
-
-    const scene = scenes[selectedSceneIndex];
-    if (!scene) return;
-
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: prompt,
-      timestamp: new Date(),
-    };
-    addChatMessage(userMessage);
-    setChatLoading(true);
-
-    try {
-      const { jobApi } = await import("@/infrastructure/api/job-api.client");
-      const result = await jobApi.translatePrompt(
-        prompt,
-        scene.start_time,
-        scene.end_time,
-        platform.id
-      );
-
-      if (result.clarification) {
-        const systemMessage: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "system",
-          content: result.clarification.question,
-          timestamp: new Date(),
-        };
-        addChatMessage(systemMessage);
-      } else if (result.actions.length > 0) {
-        setStudioActions(result.actions);
-
-        const systemMessage: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "system",
-          content: `Applied ${result.actions.length} action(s): ${result.actions.map(a => a.action).join(", ")}`,
-          timestamp: new Date(),
-        };
-        addChatMessage(systemMessage);
-
-        setPreviewLoading(true);
-        try {
-          const sceneId = `${scenes[selectedSceneIndex]?.start_time}-${scenes[selectedSceneIndex]?.end_time}`;
-          const preview = await jobApi.generatePreview(sceneId, result.actions, platform.id);
-          setPreviewUrl(preview.previewUrl);
-        } catch (previewErr) {
-          setPreviewError(previewErr instanceof Error ? previewErr.message : "Preview failed");
-        } finally {
-          setPreviewLoading(false);
-        }
-      }
-    } catch (err) {
-      const errorMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "system",
-        content: err instanceof Error ? err.message : "Failed to process prompt",
-        timestamp: new Date(),
-      };
-      addChatMessage(errorMessage);
-    } finally {
-      setChatLoading(false);
-    }
-  }, [selectedSceneIndex, platform, scenes, addChatMessage, setChatLoading, setStudioActions, setPreviewLoading, setPreviewUrl, setPreviewError]);
 
   const studioActions = useMemo(
     () => (selectedSceneIndex !== null ? sceneEdits.get(selectedSceneIndex)?.studioActions ?? [] : []),
@@ -515,6 +415,73 @@ export function useStudio() {
     dispatch({ type: "SET_PREVIEW_ERROR", index: selectedSceneIndex, error });
   }, [selectedSceneIndex]);
 
+  const sendChatMessage = useCallback(async (prompt: string) => {
+    if (selectedSceneIndex === null || !platform) return;
+
+    const scene = scenes[selectedSceneIndex];
+    if (!scene) return;
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: prompt,
+      timestamp: new Date(),
+    };
+    addChatMessage(userMessage);
+    setChatLoadingPhase("analyzing");
+
+    try {
+      const { jobApi } = await import("@/infrastructure/api/job-api.client");
+      const result = await jobApi.translatePrompt(
+        prompt,
+        scene.start_time,
+        scene.end_time,
+        platform.id
+      );
+
+      if (result.clarification) {
+        const systemMessage: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "system",
+          content: result.clarification.question,
+          timestamp: new Date(),
+        };
+        addChatMessage(systemMessage);
+      } else if (result.actions.length > 0) {
+        setStudioActions(result.actions);
+
+        const systemMessage: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "system",
+          content: `Applied ${result.actions.length} action(s): ${result.actions.map(a => a.action).join(", ")}`,
+          timestamp: new Date(),
+        };
+        addChatMessage(systemMessage);
+
+        setChatLoadingPhase("generating");
+        try {
+          const sceneId = `${scenes[selectedSceneIndex]?.start_time}-${scenes[selectedSceneIndex]?.end_time}`;
+          const preview = await jobApi.generatePreview(sceneId, result.actions, platform.id);
+          setPreviewUrl(preview.previewUrl);
+        } catch (previewErr) {
+          setPreviewError(previewErr instanceof Error ? previewErr.message : "Preview failed");
+        } finally {
+          setChatLoadingPhase(null);
+        }
+      }
+    } catch (err) {
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "system",
+        content: err instanceof Error ? err.message : "Failed to process prompt",
+        timestamp: new Date(),
+      };
+      addChatMessage(errorMessage);
+    } finally {
+      setChatLoadingPhase(null);
+    }
+  }, [selectedSceneIndex, platform, scenes, addChatMessage, setChatLoadingPhase, setStudioActions, setPreviewUrl, setPreviewError]);
+
   const reset = useCallback(() => {
     dispatch({ type: "RESET" });
   }, []);
@@ -561,9 +528,9 @@ export function useStudio() {
     customTimeRange,
     addCustomScene,
     chatMessages,
-    chatLoading,
+    chatLoadingPhase,
     addChatMessage,
-    setChatLoading,
+    setChatLoadingPhase,
     sendChatMessage,
     setStudioActions,
     addStudioAction,

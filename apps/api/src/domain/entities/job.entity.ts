@@ -23,10 +23,6 @@ export class Job {
     public completedAt?: Date
   ) {}
 
-  canProcess(): boolean {
-    return this.status === "pending" || this.status === "processing";
-  }
-
   markProcessing(): void {
     this.status = "processing";
   }
@@ -41,9 +37,5 @@ export class Job {
     this.status = "failed";
     this.errorMessage = error;
     this.completedAt = new Date();
-  }
-
-  hasHeatmapData(): boolean {
-    return Boolean(this.heatmapData && this.heatmapData.length > 0);
   }
 }

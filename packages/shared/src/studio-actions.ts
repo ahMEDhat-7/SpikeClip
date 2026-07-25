@@ -21,10 +21,10 @@ export const CaptionPositionSchema = z.enum(["top", "center", "bottom"]);
 export type CaptionPosition = z.infer<typeof CaptionPositionSchema>;
 
 export const CaptionAnimationSchema = z.enum(["fade", "slide", "pop", "typewriter", "none"]);
-export type CaptionAnimation = z.infer<typeof CaptionAnimationSchema>;
+type CaptionAnimation = z.infer<typeof CaptionAnimationSchema>;
 
 export const CaptionStyleSchema = z.enum(["normal", "bold", "outlined", "shadow", "neon"]);
-export type CaptionStyle = z.infer<typeof CaptionStyleSchema>;
+type CaptionStyle = z.infer<typeof CaptionStyleSchema>;
 
 export const AddCaptionsActionSchema = z.object({
   action: z.literal("add_captions"),
@@ -44,14 +44,14 @@ export const AddCaptionsActionSchema = z.object({
   shadowRadius: z.number().min(1).max(20).default(2),
   x: z.number().min(0).max(100).optional(),
   y: z.number().min(0).max(100).optional(),
-});
+}).refine((data) => data.end > data.start, { message: "end must be greater than start" });
 
 export type AddCaptionsAction = z.infer<typeof AddCaptionsActionSchema>;
 
 // ─── MixAudio ───────────────────────────────────────────────────────────────
 
 export const AudioToneSchema = z.enum(["normal", "bass_boost", "treble_boost", "warm"]);
-export type AudioTone = z.infer<typeof AudioToneSchema>;
+type AudioTone = z.infer<typeof AudioToneSchema>;
 
 export const MixAudioActionSchema = z.object({
   action: z.literal("mix_audio"),
@@ -71,7 +71,7 @@ export const EffectTypeSchema = z.enum([
   "vignette", "zoom_in", "zoom_out", "blur", "sharpen",
   "sepia", "bw", "glitch", "glow",
 ]);
-export type EffectType = z.infer<typeof EffectTypeSchema>;
+type EffectType = z.infer<typeof EffectTypeSchema>;
 
 export const ApplyEffectActionSchema = z.object({
   action: z.literal("apply_effect"),
@@ -131,7 +131,7 @@ export const AddBackgroundActionSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   startTime: z.number().min(0),
   endTime: z.number().min(0),
-});
+}).refine((data) => data.endTime > data.startTime, { message: "endTime must be greater than startTime" });
 
 export type AddBackgroundAction = z.infer<typeof AddBackgroundActionSchema>;
 
@@ -141,7 +141,7 @@ export const TrimActionSchema = z.object({
   action: z.literal("trim"),
   startTime: z.number().min(0),
   endTime: z.number().min(0),
-});
+}).refine((data) => data.endTime > data.startTime, { message: "endTime must be greater than startTime" });
 
 export type TrimAction = z.infer<typeof TrimActionSchema>;
 
@@ -172,7 +172,7 @@ export type ClarificationResponse = z.infer<typeof ClarificationResponseSchema>;
 
 // ─── Platform Types ─────────────────────────────────────────────────────────
 
-export const PlatformIdSchema = z.enum(["youtube-shorts", "instagram-reels", "tiktok"]);
+const PlatformIdSchema = z.enum(["youtube-shorts", "instagram-reels", "tiktok"]);
 export type PlatformId = z.infer<typeof PlatformIdSchema>;
 
 // ─── Output Config ──────────────────────────────────────────────────────────
@@ -182,13 +182,6 @@ export type OutputQuality = z.infer<typeof OutputQualitySchema>;
 
 export const OutputFormatSchema = z.enum(["mp4", "webm"]);
 export type OutputFormat = z.infer<typeof OutputFormatSchema>;
-
-export const OutputConfigSchema = z.object({
-  quality: OutputQualitySchema.default("1080p"),
-  format: OutputFormatSchema.default("mp4"),
-});
-
-export type OutputConfig = z.infer<typeof OutputConfigSchema>;
 
 // ─── Platform Encoding Presets ──────────────────────────────────────────────
 
