@@ -28,9 +28,9 @@ export default function HomePage() {
         <GlowOrb className="bottom-20 right-1/4" size={200} color="hsl(210, 80%, 50%)" />
 
         {/* Floating icons */}
-        <FloatingIcon icon="film" className="top-24 left-[10%] hidden lg:block" delay={0} duration={5} />
-        <FloatingIcon icon="scissors" className="top-32 right-[12%] hidden lg:block" delay={1.5} duration={6} />
-        <FloatingIcon icon="play" className="bottom-24 left-[15%] hidden lg:block" delay={0.8} duration={5.5} />
+        <FloatingIcon icon="film" className="top-24 left-[10%]" delay={0} duration={5} />
+        <FloatingIcon icon="scissors" className="top-32 right-[12%]" delay={1.5} duration={6} />
+        <FloatingIcon icon="play" className="bottom-24 left-[15%]" delay={0.8} duration={5.5} />
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10 min-h-[calc(100vh-64px)] flex flex-col justify-center">
           <div className="flex flex-col items-center text-center space-y-8 max-w-3xl mx-auto">
@@ -158,13 +158,18 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {LANDING_FEATURES.map((feature) => (
+            {LANDING_FEATURES.map((feature, i) => (
               <Card
                 key={feature.title}
                 className="group transition-colors hover:border-hairline-strong"
               >
                 <CardContent className="p-6 space-y-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                    style={{
+                      animation: `icon-orbit ${4 + i * 0.5}s ease-in-out ${i * 0.6}s infinite`,
+                    }}
+                  >
                     <feature.icon className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="font-semibold text-lg">{feature.title}</h3>

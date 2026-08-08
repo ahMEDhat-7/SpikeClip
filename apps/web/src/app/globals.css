@@ -264,6 +264,32 @@ a {
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 
+/* ── Icon orbit animation (subtle circular motion for feature icons) ── */
+@keyframes icon-orbit {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  25%  { transform: translate(4px, -6px) scale(1.08) rotate(8deg); }
+  50%  { transform: translate(-2px, -3px) scale(1.04) rotate(-4deg); }
+  75%  { transform: translate(3px, 2px) scale(1.06) rotate(6deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+
+/* ── Hero floating icon circular orbit (visible on all screens) ── */
+@keyframes hero-orbit {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+  14%  { transform: translate(18px, -28px) rotate(12deg) scale(1.1); }
+  28%  { transform: translate(24px, -10px) rotate(-5deg) scale(1.05); }
+  42%  { transform: translate(8px, 18px) rotate(8deg) scale(1.08); }
+  57%  { transform: translate(-16px, 12px) rotate(-10deg) scale(1.12); }
+  71%  { transform: translate(-22px, -8px) rotate(6deg) scale(1.06); }
+  85%  { transform: translate(-10px, -22px) rotate(-8deg) scale(1.1); }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+.floating-icon {
+  animation: hero-orbit var(--orbit-duration, 5s) ease-in-out var(--orbit-delay, 0s) infinite;
+  will-change: transform;
+}
+
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.4; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.05); }

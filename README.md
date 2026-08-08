@@ -30,6 +30,7 @@ A walkthrough of SpikeClip running locally — landing page, the heatmap analysi
 
 - **Real heatmap data** — extracts per-second viewer engagement directly from YouTube's heatmap via `yt-dlp`. Every recommendation is backed by actual human attention.
 - **Spike Merging Algorithm v2** — gap-tolerant clustering (5s tolerance) + intensity scoring (0.25 delta) merges adjacent high-engagement moments into coherent, naturally-bounded clips. Configurable 3–60s duration.
+- **Animated hero heatmap** — procedurally generated realistic engagement visualization (seeded PRNG, 200 data points) with a single synced playhead, floating orbit icons (Web Animations API), and glassmorphism UI. SVG paths updated via refs to bypass React render at 60fps.
 - **Interactive heatmap visualization** — see exactly where viewers rewatched, with detected scenes highlighted and clickable timestamps.
 - **Clip Studio editor** — pick scenes, add captions (SRT / drawtext), layer background music with fades, apply curated templates (kinetic typography, split-screen, POV, collages, and more).
 - **Vertical reformatting** — automatically crops and reformats to 9:16 (1080×1920) from a single downloaded source, with keyframe-accurate cuts and no black bars.
