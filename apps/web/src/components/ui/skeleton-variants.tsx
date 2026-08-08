@@ -16,7 +16,7 @@ function SkeletonCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-6 space-y-4",
+        "rounded-lg border border-hairline bg-card p-6 space-y-4",
         className
       )}
     >
@@ -58,7 +58,7 @@ function SkeletonChart({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-6 space-y-4",
+        "rounded-lg border border-hairline bg-card p-6 space-y-4",
         className
       )}
     >
@@ -98,11 +98,11 @@ function SkeletonDashboard({ className }: { className?: string }) {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-6 w-20 rounded-full" />
       </div>
-      <Skeleton className="h-14 w-full rounded-xl" />
+      <Skeleton className="h-14 w-full rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
+        <Skeleton className="h-24 rounded-lg" />
+        <Skeleton className="h-24 rounded-lg" />
+        <Skeleton className="h-24 rounded-lg" />
       </div>
       <SkeletonChart />
       <SkeletonGrid />

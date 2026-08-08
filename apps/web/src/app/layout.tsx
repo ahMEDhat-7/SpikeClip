@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { ThemeProvider } from "@/presentation/providers/ThemeProvider";
 import { Header } from "@/presentation/components/layout/Header";
@@ -48,13 +50,23 @@ export const metadata: Metadata = {
     follow: true,
   },
   other: {
-    "application/ld+json": JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "SpikeClip",
-      url: "https://spikeclips.com",
-      logo: "https://spikeclips.com/logo.svg",
-    }),
+    "application/ld+json": JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "SpikeClip",
+        url: process.env.NEXT_PUBLIC_SITE_URL || "https://spikeclips.com",
+        logo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://spikeclips.com"}/logo.svg`,
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "SpikeClip",
+        url: process.env.NEXT_PUBLIC_SITE_URL || "https://spikeclips.com",
+        description:
+          "Extract the most-replayed moments from YouTube videos using real audience heatmap data.",
+      },
+    ]),
   },
 };
 
@@ -98,6 +110,8 @@ export default function RootLayout({
           </Providers>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

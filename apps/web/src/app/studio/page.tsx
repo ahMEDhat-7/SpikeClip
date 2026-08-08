@@ -189,7 +189,7 @@ function StudioContent() {
           return (
             <div className="max-w-xl mx-auto space-y-4 py-6">
               <div className="text-center space-y-1">
-                <h1 className="text-xl font-bold">Clip Studio</h1>
+                <h1 className="text-xl font-normal tracking-tight">Clip Studio</h1>
                 <p className="text-sm text-muted-foreground">
                   Paste a YouTube URL to start creating your clip.
                 </p>

@@ -18,7 +18,7 @@ export function EditableSceneCard({ scene, index, onUpdate, onRemove }: Editable
   const duration = scene.end_time - scene.start_time;
 
   return (
-    <Card className={`transition-all ${scene.isCustom ? "border-green-500/30 bg-green-500/5" : "border-orange-500/30 bg-orange-500/5"}`}>
+    <Card className={`transition-all ${scene.isCustom ? "border-green-500/30 bg-green-500/5 dark:border-green-500/20 dark:bg-green-500/5" : "border-orange-500/30 bg-orange-500/5 dark:border-orange-500/20 dark:bg-orange-500/5"}`}>
       <CardContent className="p-3">
         <div className="flex items-center gap-3">
           <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -26,7 +26,7 @@ export function EditableSceneCard({ scene, index, onUpdate, onRemove }: Editable
             <div className="flex items-center gap-2 flex-wrap">
               <Badge
                 variant="secondary"
-                className={`text-xs font-mono ${scene.isCustom ? "bg-green-500/10 text-green-600" : "bg-orange-500/10 text-orange-600"}`}
+                className={`text-xs font-mono ${scene.isCustom ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-orange-500/10 text-orange-600 dark:text-orange-400"}`}
               >
                 {scene.isCustom ? "Custom" : "Suggested"}
               </Badge>

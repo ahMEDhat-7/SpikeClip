@@ -73,7 +73,7 @@ function LoginContent() {
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mx-auto">
             <img src="/logo.svg" alt="SpikeClip logo" className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold">Welcome to SpikeClip</h1>
+          <h1 className="text-2xl font-normal tracking-tight">Welcome to SpikeClip</h1>
           <p className="text-sm text-muted-foreground">
             Extract the most replayed moments from any YouTube video
           </p>

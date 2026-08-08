@@ -26,6 +26,7 @@ import { AuthService } from "./auth.service";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { UserResponseDto } from "./dto/user-response.dto";
 import { Public } from "./jwt-auth.guard";
+import { GoogleOAuthGuard } from "./google-auth.guard";
 
 const COOKIE_NAME = "access_token";
 const COOKIE_MAX_AGE = 15 * 60 * 1000; // 15 minutes
@@ -95,13 +96,13 @@ export class AuthController {
   @Get("google")
   @Public()
   @Throttle({ default: { limit: 100, ttl: 60_000 } })
-  @UseGuards(AuthGuard("google"))
+  @UseGuards(GoogleOAuthGuard, AuthGuard("google"))
   async googleAuth() {}
 
   @Get("google/callback")
   @Public()
   @Throttle({ default: { limit: 100, ttl: 60_000 } })
-  @UseGuards(AuthGuard("google"))
+  @UseGuards(GoogleOAuthGuard, AuthGuard("google"))
   async googleCallback(@Req() req: ExpressRequest & { user?: { accessToken?: string } }, @Res() res: Response) {
     try {
       const result = req.user;

@@ -97,7 +97,7 @@ const initialState: StudioState = {
 };
 
 function studioReducer(state: StudioState, action: StudioAction): StudioState {
-  function updateSceneEdit(index: number, updater: (edit: SceneEdit) => SceneEdit): StudioState {
+  function updateSceneEdit(index: number, updater: (edit: SceneEditState) => SceneEditState): StudioState {
     const nextEdits = new Map(state.sceneEdits);
     const existing = nextEdits.get(index) ?? createDefaultSceneEdit();
     nextEdits.set(index, updater(existing));
@@ -174,13 +174,13 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
     case "UPDATE_CAPTION":
       return updateSceneEdit(action.index, (e) => ({
         ...e,
-        captions: e.captions.map((c) => (c.id === action.id ? { ...c, ...action.updates } : c)),
+        captions: e.captions.map((c: Caption) => (c.id === action.id ? { ...c, ...action.updates } : c)),
       }));
 
     case "REMOVE_CAPTION":
       return updateSceneEdit(action.index, (e) => ({
         ...e,
-        captions: e.captions.filter((c) => c.id !== action.id),
+        captions: e.captions.filter((c: Caption) => c.id !== action.id),
       }));
 
     case "SET_MUSIC":
@@ -213,7 +213,7 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
     case "REMOVE_STUDIO_ACTION":
       return updateSceneEdit(action.index, (e) => ({
         ...e,
-        studioActions: e.studioActions.filter((_, i) => i !== action.index),
+        studioActions: e.studioActions.filter((_action: StudioActionType, i: number) => i !== action.index),
       }));
 
     case "SET_PREVIEW_URL": {

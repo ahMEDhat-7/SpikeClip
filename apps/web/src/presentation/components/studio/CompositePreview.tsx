@@ -133,12 +133,13 @@ function BgOverlayOverlay() {
   );
 }
 
-function ZoomShakeOverlay({ elapsed }: { elapsed: number }) {
-  const shake = elapsed < 0.3 ? Math.sin(elapsed * 60) * 3 : 0;
-  const scale = elapsed < 0.3 ? 1.02 : 1;
+function ZoomShakeOverlay({ elapsed, duration }: { elapsed: number; duration: number }) {
+  const progress = duration > 0 ? Math.min(elapsed / duration, 1) : 0;
+  const scale = 1 + progress * 0.5;
+  const shake = elapsed < 0.3 ? Math.sin(elapsed * 60) * 2 : 0;
   return (
     <div
-      className="absolute inset-0 z-[4] pointer-events-none border-4 border-primary/30 rounded-lg"
+      className="absolute inset-0 z-[4] pointer-events-none overflow-hidden"
       style={{
         transform: `scale(${scale}) translateX(${shake}px)`,
         transition: "transform 0.05s",
@@ -570,7 +571,7 @@ export const CompositePreview = memo(function CompositePreview({
             {hasGridSync && <GridSyncOverlay elapsed={sceneElapsed} />}
             {hasReactionCam && <ReactionCamOverlay />}
             {hasBgOverlay && <BgOverlayOverlay />}
-            {hasZoomShake && <ZoomShakeOverlay elapsed={sceneElapsed} />}
+            {hasZoomShake && <ZoomShakeOverlay elapsed={sceneElapsed} duration={sceneDuration} />}
             {hasImpactText && <ImpactTextOverlay />}
             {hasCountdownNumbers && <CountdownNumbersOverlay elapsed={sceneElapsed} />}
             {hasFlashTransition && <FlashTransitionOverlay elapsed={sceneElapsed} duration={sceneDuration} />}

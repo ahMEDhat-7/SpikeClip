@@ -15,7 +15,7 @@ export const TEMPLATES: EditTemplate[] = [
       layout: "full",
       textPosition: "center",
       textStyle: "bold",
-      overlayEffects: ["word-by-word", "color-highlight"],
+      overlayEffects: ["countdown-numbers", "vignette"],
     },
   },
   {
@@ -49,7 +49,7 @@ export const TEMPLATES: EditTemplate[] = [
       layout: "split-horizontal",
       textPosition: "top",
       textStyle: "shadow",
-      overlayEffects: ["dual-content", "reaction-cam"],
+      overlayEffects: ["grid-sync", "photo-flash", "bg-overlay"],
     },
   },
   {
@@ -83,7 +83,7 @@ export const TEMPLATES: EditTemplate[] = [
       layout: "full",
       textPosition: "bottom",
       textStyle: "bold",
-      overlayEffects: ["seamless-loop", "crossfade-blend"],
+      overlayEffects: ["flash-transition", "bg-overlay"],
     },
   },
   {
@@ -168,7 +168,7 @@ export const TEMPLATES: EditTemplate[] = [
       layout: "split-vertical",
       textPosition: "bottom",
       textStyle: "bold",
-      overlayEffects: ["split-labels", "slider-reveal"],
+      overlayEffects: ["split-labels", "bg-overlay"],
     },
   },
 ];

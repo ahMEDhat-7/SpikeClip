@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
 import { GlowOrb } from "@/presentation/components/features/GlowOrb";
+import { ScrollReveal } from "@/presentation/components/features/ScrollReveal";
 import { BarChart3, Users, Target, Zap, DollarSign, TrendingUp, Award } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -83,13 +84,13 @@ const storySections = [
 
 export default function AboutPage() {
   return (
-    <main className="space-y-0">
+    <main>
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-section">
         <DotsBackground opacity={0.3} />
         <GlowOrb className="top-20 right-1/4" size={250} />
-        <div className="container mx-auto px-4 sm:px-6 pt-16 pb-12 relative z-10 text-center space-y-6">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 text-center space-y-6">
+          <h1 className="text-4xl sm:text-5xl font-normal tracking-tight">
             Built for creators who{" "}
             <span className="text-primary">measure</span>
           </h1>
@@ -100,134 +101,141 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 3-Column Grid: What / Why / Who */}
-      <section className="relative bg-surface py-16">
-        <DotsBackground opacity={0.2} />
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {whatWhyWho.map((section) => (
-              <Card key={section.title} className="glow-crimson-subtle">
+      <ScrollReveal>
+        {/* 3-Column Grid: What / Why / Who */}
+        <section className="relative bg-surface py-section">
+          <DotsBackground opacity={0.2} />
+          <div className="container mx-auto px-4 sm:px-6 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {whatWhyWho.map((section) => (
+                <Card key={section.title} className="group transition-colors hover:border-hairline-strong">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <section.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-semibold text-lg">{section.title}</h3>
+                    <ul className="space-y-2">
+                      {section.items.map((item) => (
+                        <li key={item} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      </ScrollReveal>
+
+      <ScrollReveal>
+        {/* Story Sections */}
+        <section className="container mx-auto px-4 sm:px-6 py-section">
+          <div className="max-w-3xl mx-auto space-y-10">
+            {storySections.map((section) => (
+              <div key={section.label} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 rounded-full bg-primary" />
+                  <h2 className="text-xl sm:text-2xl font-normal">{section.label}</h2>
+                </div>
+                <p className="text-muted-foreground leading-relaxed pl-4">
+                  {section.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </ScrollReveal>
+
+      <ScrollReveal>
+        {/* Earn Money Section */}
+        <section className="relative bg-surface py-section">
+          <DotsBackground opacity={0.2} />
+          <GlowOrb className="bottom-10 left-1/4" size={300} color="hsl(142, 71%, 45%)" />
+          <div className="container mx-auto px-4 sm:px-6 relative z-10">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-normal">
+                Earn money with <span className="text-primary">SpikeClip</span>
+              </h2>
+              <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+                Shorts are discovery engines that funnel viewers to your long-form content.
+                Here&apos;s how creators monetize across platforms.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {/* Platform RPMs */}
+              <Card className="group transition-colors hover:border-hairline-strong">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <section.icon className="h-5 w-5" />
+                    <TrendingUp className="h-5 w-5" />
                   </div>
-                  <h3 className="font-semibold text-lg">{section.title}</h3>
+                  <h3 className="font-semibold text-lg">Platform RPMs</h3>
+                  <div className="space-y-3">
+                    {monetizationData.platforms.map((platform) => (
+                      <div key={platform.name} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{platform.name}</span>
+                          <span className="font-mono font-bold text-primary">{platform.rpm}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{platform.views}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Sponsorships */}
+              <Card className="group transition-colors hover:border-hairline-strong">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <DollarSign className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-semibold text-lg">Sponsorships</h3>
+                  <div className="space-y-3">
+                    {monetizationData.sponsorships.map((sponsor) => (
+                      <div key={sponsor.tier} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{sponsor.tier}</span>
+                          <span className="font-mono font-bold text-primary">{sponsor.rate}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{sponsor.per}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Revenue Streams */}
+              <Card className="group transition-colors hover:border-hairline-strong">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Award className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-semibold text-lg">Revenue Streams</h3>
                   <ul className="space-y-2">
-                    {section.items.map((item) => (
-                      <li key={item} className="text-sm text-muted-foreground flex items-start gap-2">
+                    {monetizationData.streams.map((stream) => (
+                      <li key={stream} className="text-sm text-muted-foreground flex items-start gap-2">
                         <span className="text-primary mt-1">•</span>
-                        {item}
+                        {stream}
                       </li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Story Sections */}
-      <section className="container mx-auto px-4 sm:px-6 py-16">
-        <div className="max-w-3xl mx-auto space-y-10">
-          {storySections.map((section) => (
-            <div key={section.label} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-1 rounded-full bg-primary" />
-                <h2 className="text-xl sm:text-2xl font-bold">{section.label}</h2>
-              </div>
-              <p className="text-muted-foreground leading-relaxed pl-4">
-                {section.text}
-              </p>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Earn Money Section */}
-      <section className="relative bg-surface py-16">
-        <DotsBackground opacity={0.2} />
-        <GlowOrb className="bottom-10 left-1/4" size={300} color="hsl(142, 71%, 45%)" />
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold">
-              Earn money with <span className="text-primary">SpikeClip</span>
-            </h2>
-            <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-              Shorts are discovery engines that funnel viewers to your long-form content.
-              Here&apos;s how creators monetize across platforms.
-            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Platform RPMs */}
-            <Card className="glow-crimson-subtle">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-                <h3 className="font-semibold text-lg">Platform RPMs</h3>
-                <div className="space-y-3">
-                  {monetizationData.platforms.map((platform) => (
-                    <div key={platform.name} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{platform.name}</span>
-                        <span className="font-mono font-bold text-primary">{platform.rpm}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{platform.views}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Sponsorships */}
-            <Card className="glow-crimson-subtle">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <h3 className="font-semibold text-lg">Sponsorships</h3>
-                <div className="space-y-3">
-                  {monetizationData.sponsorships.map((sponsor) => (
-                    <div key={sponsor.tier} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{sponsor.tier}</span>
-                        <span className="font-mono font-bold text-primary">{sponsor.rate}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{sponsor.per}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Revenue Streams */}
-            <Card className="glow-crimson-subtle">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Award className="h-5 w-5" />
-                </div>
-                <h3 className="font-semibold text-lg">Revenue Streams</h3>
-                <ul className="space-y-2">
-                  {monetizationData.streams.map((stream) => (
-                    <li key={stream} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      {stream}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+        </section>
+      </ScrollReveal>
 
       {/* CTA Section */}
-      <section className="relative container mx-auto px-4 sm:px-6 py-16 text-center space-y-6">
+      <ScrollReveal>
+      <section className="relative container mx-auto px-4 sm:px-6 py-section text-center space-y-6">
         <GlowOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" size={350} />
         <div className="relative z-10 space-y-6">
-          <h2 className="text-2xl sm:text-3xl font-bold">
+          <h2 className="text-2xl sm:text-3xl font-normal">
             Ready to clip with data?
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
@@ -238,6 +246,7 @@ export default function AboutPage() {
           </Button>
         </div>
       </section>
+      </ScrollReveal>
     </main>
   );
 }

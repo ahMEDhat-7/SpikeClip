@@ -9,8 +9,8 @@ export function Footer() {
   if (pathname.startsWith("/studio")) return null;
 
   return (
-    <footer className="border-t border-border/50 bg-background">
-      <div className="container mx-auto px-4 md:px-6 py-8">
+    <footer className="border-t border-hairline bg-background">
+      <div className="container mx-auto px-6 md:px-12 py-section">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">

@@ -17,7 +17,7 @@ export type StudioAction =
 export const CaptionFontSchema = z.enum(["inter", "impact", "bebas", "playfair", "mono"]);
 export type CaptionFont = z.infer<typeof CaptionFontSchema>;
 
-export const CaptionPositionSchema = z.enum(["top", "center", "bottom"]);
+export const CaptionPositionSchema = z.enum(["top", "center", "bottom", "left", "right"]);
 export type CaptionPosition = z.infer<typeof CaptionPositionSchema>;
 
 export const CaptionAnimationSchema = z.enum(["fade", "slide", "pop", "typewriter", "none"]);

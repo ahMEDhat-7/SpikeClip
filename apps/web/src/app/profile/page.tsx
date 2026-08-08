@@ -98,7 +98,7 @@ export default function ProfilePage() {
     <main className="container mx-auto p-4 sm:p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Profile</h1>
+          <h1 className="text-2xl sm:text-3xl font-normal tracking-tight">Profile</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage your account settings
           </p>
@@ -122,7 +122,7 @@ export default function ProfilePage() {
                 </div>
               )}
               {profileSuccess && (
-                <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg dark:text-green-400 dark:bg-green-950 dark:border-green-800">
+                <div className="p-3 text-sm text-success bg-success/10 border border-success/20 rounded-lg">
                   Profile updated successfully
                 </div>
               )}

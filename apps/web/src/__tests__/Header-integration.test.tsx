@@ -25,14 +25,14 @@ describe("Header", () => {
 
   it("renders Sign In and Sign Up when not authenticated", () => {
     render(<Header />);
-    expect(screen.getByText("Sign In")).toBeTruthy();
-    expect(screen.getByText("Sign Up")).toBeTruthy();
+    expect(screen.getAllByText("Sign In").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Sign Up").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders navigation links", () => {
     render(<Header />);
-    expect(screen.getByText("Features")).toBeTruthy();
-    expect(screen.getByText("Pricing")).toBeTruthy();
+    expect(screen.getAllByText("Features").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Pricing").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders theme toggle", () => {

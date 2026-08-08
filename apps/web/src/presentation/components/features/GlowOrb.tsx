@@ -2,12 +2,14 @@ interface GlowOrbProps {
   className?: string;
   color?: string;
   size?: number;
+  opacity?: number;
 }
 
 export function GlowOrb({
   className = "",
   color = "hsl(354, 79%, 59%)",
   size = 200,
+  opacity = 0.1,
 }: GlowOrbProps) {
   return (
     <div
@@ -16,8 +18,8 @@ export function GlowOrb({
         width: size,
         height: size,
         background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-        opacity: 0.15,
-        animation: "pulse-glow 4s ease-in-out infinite",
+        opacity,
+        animation: "pulse-glow 6s ease-in-out infinite",
       }}
       aria-hidden="true"
     />

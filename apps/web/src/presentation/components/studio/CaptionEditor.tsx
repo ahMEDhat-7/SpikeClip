@@ -325,7 +325,7 @@ export function CaptionEditor({
                       <button
                         key={p}
                         onClick={() => {
-                          const posMap = { top: { x: 50, y: 15 }, center: { x: 50, y: 50 }, bottom: { x: 50, y: 85 } };
+                          const posMap: Record<string, { x: number; y: number }> = { top: { x: 50, y: 15 }, center: { x: 50, y: 50 }, bottom: { x: 50, y: 85 }, left: { x: 15, y: 50 }, right: { x: 85, y: 50 } };
                           onUpdate(selected.id, { position: p, ...posMap[p] });
                         }}
                         className={`flex-1 px-1.5 py-1 rounded text-[10px] capitalize transition-colors ${

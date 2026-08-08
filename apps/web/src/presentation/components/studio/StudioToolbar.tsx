@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { StudioStep } from "@/domain/entities/studio";
-import { STEP_LABELS } from "@/presentation/constants/studio";
+import { STEP_LABELS, STEP_TIMELINE_COLORS } from "@/presentation/constants/studio";
 import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
 import {
   ArrowLeft,
@@ -58,7 +58,7 @@ export const StudioToolbar = memo(function StudioToolbar({
   useEffect(() => setMounted(true), []);
 
   return (
-    <div className="flex items-center justify-between px-3 py-1.5 border-b bg-background">
+    <div className="flex items-center justify-between px-3 py-1.5 border-b border-hairline bg-background">
       <div className="flex items-center gap-2">
         <Link
           href="/dashboard"
@@ -100,14 +100,15 @@ export const StudioToolbar = memo(function StudioToolbar({
         {steps.map((step, i) => {
           const isCurrent = i === currentStepIndex;
           const isCompleted = i < currentStepIndex;
+          const timelineColor = STEP_TIMELINE_COLORS[step];
           return (
             <div key={step} className="flex items-center">
               <button
                 className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-medium transition-all ${
                   isCurrent
-                    ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
+                    ? `${timelineColor} text-foreground ring-2 ring-primary/30`
                     : isCompleted
-                    ? "bg-primary/20 text-primary"
+                    ? `${timelineColor}/60 text-foreground`
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
                 onClick={() => onGoToStep(step)}
@@ -118,7 +119,7 @@ export const StudioToolbar = memo(function StudioToolbar({
               </button>
               {i < steps.length - 1 && (
                 <div
-                  className={`w-2.5 h-0.5 mx-0.5 ${
+                  className={`w-2.5 h-0.5 mx-0.5 rounded-full ${
                     i < currentStepIndex ? "bg-primary/40" : "bg-muted"
                   }`}
                 />
@@ -153,7 +154,7 @@ export const StudioToolbar = memo(function StudioToolbar({
             size="sm"
             onClick={() => onExport({ format: outputFormat, quality: outputQuality })}
             disabled={isExporting}
-            className="h-7 px-3 text-xs bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-white font-semibold"
+            className="h-7 px-3 text-xs bg-timeline-done text-primary-foreground hover:bg-timeline-done/90 font-semibold"
           >
             <Download className="h-3.5 w-3.5 mr-1" />
             Export

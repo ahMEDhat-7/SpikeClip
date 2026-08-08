@@ -1,5 +1,5 @@
 export type CaptionFont = "inter" | "impact" | "bebas" | "playfair" | "mono";
-export type CaptionPosition = "top" | "center" | "bottom";
+export type CaptionPosition = "top" | "center" | "bottom" | "left" | "right";
 export type CaptionTextStyle = "bold" | "outlined" | "shadow" | "neon";
 export type CaptionTextAlign = "left" | "center" | "right";
 

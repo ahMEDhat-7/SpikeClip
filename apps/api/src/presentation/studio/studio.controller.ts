@@ -1,5 +1,21 @@
-import { Controller, Post, Body, Param, Req, HttpCode, HttpStatus } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Req,
+  Res,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import { Response } from "express";
+import { createReadStream, existsSync } from "fs";
+import { join } from "path";
 import { StudioService } from "./studio.service";
 
 interface TranslatePromptDto {
@@ -15,10 +31,14 @@ interface GeneratePreviewDto {
   platform: string;
 }
 
+const PREVIEW_TMP = "/tmp/spikeclips-preview";
+
 @ApiTags("studio")
 @ApiBearerAuth()
 @Controller("studio")
 export class StudioController {
+  private readonly logger = new Logger(StudioController.name);
+
   constructor(private readonly studioService: StudioService) {}
 
   @Post("translate")
@@ -63,5 +83,36 @@ export class StudioController {
     @Body() dto: Omit<GeneratePreviewDto, "sceneId">
   ) {
     return this.studioService.generatePreviewForScene(req.user.userId, jobId, parseInt(sceneIndex, 10), dto);
+  }
+
+  @Get("preview/:jobId/:sceneIndex/file")
+  @ApiOperation({ summary: "Serve a generated preview video file" })
+  @ApiResponse({ status: 200, description: "Serves the preview video" })
+  @ApiResponse({ status: 404, description: "Preview file not found" })
+  async servePreview(
+    @Req() req: { user?: { userId?: string } },
+    @Param("jobId") jobId: string,
+    @Param("sceneIndex") sceneIndex: string,
+    @Res() res: Response
+  ) {
+    const previewFile = join(PREVIEW_TMP, `${jobId}-${sceneIndex}-preview.mp4`);
+
+    if (!existsSync(previewFile)) {
+      throw new NotFoundException("Preview file not found. Generate a preview first.");
+    }
+
+    res.set({
+      "Content-Type": "video/mp4",
+      "Cache-Control": "private, max-age=3600",
+    });
+
+    const stream = createReadStream(previewFile);
+    stream.on("error", (err) => {
+      this.logger.error(`Error serving preview: ${err.message}`);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to serve preview" });
+      }
+    });
+    stream.pipe(res);
   }
 }

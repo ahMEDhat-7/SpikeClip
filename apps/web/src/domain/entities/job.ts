@@ -1,4 +1,4 @@
-export type { ScoredBlock, HeatmapSpike, JobStatus, Clip, ClipStatus } from "@spikeclips/shared";
+export type { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "@spikeclips/shared";
 
 import type { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclips/shared";
 

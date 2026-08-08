@@ -41,7 +41,7 @@ services:
       SENTRY_ENVIRONMENT: development
       HEATMAP_WORKER_CONCURRENCY: ${HEATMAP_WORKER_CONCURRENCY:-5}
       CLIP_WORKER_CONCURRENCY: ${CLIP_WORKER_CONCURRENCY:-3}
-      UV_THREADOUT_SIZE: ${UV_THREADPOOL_SIZE:-4}
+      UV_THREADPOOL_SIZE: ${UV_THREADPOOL_SIZE:-4}
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./apps/api/prisma:/app/apps/api/prisma

@@ -44,6 +44,12 @@ export function AnimatedHeatmapHero({
       return;
     }
 
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      cancelAnimationFrame(animationRef.current);
+      return;
+    }
+
     startTimeRef.current = performance.now() - progress * duration;
 
     const animate = (now: number) => {
@@ -67,9 +73,11 @@ export function AnimatedHeatmapHero({
       ref={containerRef}
       className={cn(
         "relative w-full max-w-4xl mx-auto overflow-hidden rounded-2xl",
-        "border border-border/50 bg-card shadow-2xl shadow-primary/5",
+        "border border-hairline/50 bg-card shadow-2xl shadow-primary/5",
         className
       )}
+      role="img"
+      aria-label="Animated heatmap visualization showing viewer engagement"
     >
       <div className="relative aspect-video overflow-hidden bg-[#0f0f1a]">
         {/* Subtle background glow */}
@@ -86,6 +94,7 @@ export function AnimatedHeatmapHero({
           className="absolute inset-0 w-full h-full"
           preserveAspectRatio="xMidYMid meet"
           style={{ filter: "drop-shadow(0 0 8px #E6394630)" }}
+          aria-hidden="true"
         >
           <defs>
             <linearGradient

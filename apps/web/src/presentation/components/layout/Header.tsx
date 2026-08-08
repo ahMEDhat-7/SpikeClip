@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ function NavLink({ href, active, children }: { href: string; active?: boolean; c
   return (
     <Link
       href={href}
+      aria-current={active ? "page" : undefined}
       className={`text-sm font-medium transition-colors ${
         active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
       }`}
@@ -56,9 +57,13 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileNavRef = useRef<HTMLElement>(null);
+  const mobileMenuBtnRef = useRef<HTMLButtonElement>(null);
+  const dropdownMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
 
+  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -70,6 +75,72 @@ export function Header() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [dropdownOpen]);
+
+  // Close mobile menu on Escape + focus trap
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        mobileMenuBtnRef.current?.focus();
+        return;
+      }
+      if (e.key === "Tab" && mobileNavRef.current) {
+        const focusable = mobileNavRef.current.querySelectorAll<HTMLElement>(
+          'a, button, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    // Focus first link when menu opens
+    const timer = setTimeout(() => {
+      const firstLink = mobileNavRef.current?.querySelector<HTMLElement>("a, button");
+      firstLink?.focus();
+    }, 50);
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(timer);
+    };
+  }, [mobileOpen]);
+
+  // Desktop dropdown arrow-key navigation
+  const handleDropdownKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!dropdownMenuRef.current) return;
+    const items = dropdownMenuRef.current.querySelectorAll<HTMLElement>(
+      'a, button:not([disabled])'
+    );
+    const currentIndex = Array.from(items).indexOf(document.activeElement as HTMLElement);
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+      items[next]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+      items[prev]?.focus();
+    } else if (e.key === "Escape") {
+      setDropdownOpen(false);
+    }
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   if (pathname.startsWith("/studio")) return null;
 
@@ -108,7 +179,12 @@ export function Header() {
               </button>
 
               {dropdownOpen && (
-                <div role="menu" className="absolute right-0 top-full mt-2 w-56 rounded-xl border bg-background shadow-lg p-1.5 space-y-0.5">
+                <div
+                  ref={dropdownMenuRef}
+                  role="menu"
+                  onKeyDown={handleDropdownKeyDown}
+                  className="absolute right-0 top-full mt-2 w-56 rounded-lg border bg-background shadow-lg p-1.5 space-y-0.5"
+                >
                   <div className="px-3 py-2 border-b mb-1">
                     <p className="text-sm font-medium truncate">{user.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -121,6 +197,7 @@ export function Header() {
 
                   <Link
                     href="/dashboard"
+                    role="menuitem"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
                   >
@@ -129,6 +206,7 @@ export function Header() {
                   </Link>
                   <Link
                     href="/studio"
+                    role="menuitem"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
                   >
@@ -138,6 +216,7 @@ export function Header() {
                   {user.plan === "free" && (
                     <Link
                       href="/pricing"
+                      role="menuitem"
                       onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors text-primary font-medium"
                     >
@@ -146,6 +225,7 @@ export function Header() {
                   )}
                   <Link
                     href="/profile"
+                    role="menuitem"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
                   >
@@ -156,6 +236,7 @@ export function Header() {
                   <div className="h-px bg-border my-1" />
 
                   <button
+                    role="menuitem"
                     onClick={() => {
                       setDropdownOpen(false);
                       logout();
@@ -197,6 +278,7 @@ export function Header() {
           )}
 
           <Button
+            ref={mobileMenuBtnRef}
             variant="ghost"
             size="icon"
             className="md:hidden"
@@ -213,33 +295,47 @@ export function Header() {
         </div>
       </div>
 
-      {mobileOpen && (
-        <nav className="md:hidden border-t bg-background px-4 py-4 space-y-3" aria-label="Mobile navigation">
+      {/* Mobile navigation — animated with CSS transitions */}
+      <nav
+        ref={mobileNavRef}
+        className={`md:hidden border-t bg-background overflow-hidden transition-all duration-200 ease-out ${
+          mobileOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0 pointer-events-none border-t-0"
+        }`}
+        aria-label="Mobile navigation"
+        aria-hidden={!mobileOpen}
+      >
+        <div className="px-4 py-4 space-y-1">
           <Link
             href="/features"
-            className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+            className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              isActive("/features") ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
             onClick={() => setMobileOpen(false)}
           >
             Features
           </Link>
           <Link
             href="/pricing"
-            className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+            className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              isActive("/pricing") ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
             onClick={() => setMobileOpen(false)}
           >
             Pricing
           </Link>
           <Link
             href="/about"
-            className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+            className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              isActive("/about") ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
             onClick={() => setMobileOpen(false)}
           >
             About
           </Link>
 
           {!isLoading && user && (
-            <div className="space-y-2 pt-2 border-t">
-              <div className="flex items-center gap-3 pb-2">
+            <div className="space-y-1 pt-2 border-t mt-2">
+              <div className="flex items-center gap-3 px-3 py-2">
                 <UserAvatar name={user.name || user.email} className="h-10 w-10 text-sm" />
                 <div>
                   <p className="text-sm font-medium">{user.name}</p>
@@ -248,7 +344,7 @@ export function Header() {
               </div>
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 <LayoutDashboard className="h-4 w-4" />
@@ -256,7 +352,7 @@ export function Header() {
               </Link>
               <Link
                 href="/studio"
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 <Film className="h-4 w-4" />
@@ -265,7 +361,7 @@ export function Header() {
               {user.plan === "free" && (
                 <Link
                   href="/pricing"
-                  className="flex items-center gap-2 text-sm font-medium text-primary"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   Upgrade Plan
@@ -273,13 +369,13 @@ export function Header() {
               )}
               <Link
                 href="/profile"
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 <User className="h-4 w-4" />
                 Profile
               </Link>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 px-3 py-1">
                 <Badge variant="secondary" className="text-xs font-mono">
                   {user.plan === "free"
                     ? `${user.analysesUsed}/${user.analysesLimit} analyses`
@@ -302,7 +398,7 @@ export function Header() {
           )}
 
           {!user && (
-            <div className="space-y-2 pt-2 border-t">
+            <div className="space-y-1 pt-2 border-t mt-2">
               <Button
                 asChild
                 variant="ghost"
@@ -331,6 +427,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="sm"
+              className="w-full justify-start"
               onClick={() => {
                 setTheme(theme === "dark" ? "light" : "dark");
                 setMobileOpen(false);
@@ -344,8 +441,8 @@ export function Header() {
               {theme === "dark" ? "Light Mode" : "Dark Mode"}
             </Button>
           )}
-        </nav>
-      )}
+        </div>
+      </nav>
     </header>
   );
 }

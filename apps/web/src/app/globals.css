@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -11,6 +12,33 @@ html {
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
   --radius: 0.5rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-pill: 9999px;
+
+  /* ── Section rhythm (80px — Cursor convention) ── */
+  --spacing-section: 5rem;
+
+  /* ── Max-width scale (Tailwind v4 requires explicit tokens) ── */
+  --max-width-xs: 20rem;
+  --max-width-sm: 24rem;
+  --max-width-md: 28rem;
+  --max-width-lg: 32rem;
+  --max-width-xl: 36rem;
+  --max-width-2xl: 42rem;
+  --max-width-3xl: 48rem;
+  --max-width-4xl: 56rem;
+  --max-width-5xl: 64rem;
+  --max-width-6xl: 72rem;
+  --max-width-7xl: 80rem;
+  --max-width-prose: 65ch;
+  --max-width-screen-sm: 640px;
+  --max-width-screen-md: 768px;
+  --max-width-screen-lg: 1024px;
+  --max-width-screen-xl: 1280px;
+  --max-width-screen-2xl: 1536px;
 
   /* ── Light mode (default) ── */
   --color-background: hsl(0 0% 98%);
@@ -37,22 +65,33 @@ html {
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
+  /* Hairline system — 1px borders as primary depth device */
   --color-border: hsl(220 13% 91%);
+  --color-hairline: hsl(220 13% 91%);
+  --color-hairline-strong: hsl(220 13% 82%);
   --color-input: hsl(220 13% 91%);
   --color-ring: hsl(354 79% 59%);
 
   --color-surface: hsl(220 20% 96%);
   --color-surface-hover: hsl(220 16% 93%);
   --color-surface-active: hsl(220 14% 90%);
+  --color-surface-card: hsl(0 0% 100%);
 
   --color-chart-primary: hsl(354 79% 59%);
   --color-chart-secondary: hsl(354 60% 70%);
 
   --color-success: hsl(142 71% 45%);
   --color-warning: hsl(38 92% 50%);
+
+  /* ── Cursor-inspired AI Timeline pastels ── */
+  --color-timeline-thinking: hsl(18 55% 78%);
+  --color-timeline-grep: hsl(130 30% 71%);
+  --color-timeline-read: hsl(214 52% 75%);
+  --color-timeline-edit: hsl(270 35% 74%);
+  --color-timeline-done: hsl(36 55% 50%);
 }
 
-/* ── Dark mode ── */
+/* ── Dark mode (Cursor-inspired warm dark surfaces) ── */
 .dark {
   --color-background: hsl(222 47% 6%);
   --color-foreground: hsl(210 40% 98%);
@@ -78,19 +117,30 @@ html {
   --color-destructive: hsl(0 62% 50%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
+  /* Hairline system — refined for dark mode */
   --color-border: hsl(217 20% 18%);
+  --color-hairline: hsl(217 20% 18%);
+  --color-hairline-strong: hsl(217 20% 25%);
   --color-input: hsl(217 20% 18%);
   --color-ring: hsl(354 79% 65%);
 
   --color-surface: hsl(222 47% 13%);
   --color-surface-hover: hsl(217 30% 16%);
   --color-surface-active: hsl(217 25% 20%);
+  --color-surface-card: hsl(222 47% 11%);
 
   --color-chart-primary: hsl(354 79% 65%);
   --color-chart-secondary: hsl(354 60% 50%);
 
   --color-success: hsl(142 71% 55%);
   --color-warning: hsl(38 92% 55%);
+
+  /* Cursor-inspired AI Timeline pastels (dark mode variants) */
+  --color-timeline-thinking: hsl(18 50% 45%);
+  --color-timeline-grep: hsl(130 25% 40%);
+  --color-timeline-read: hsl(214 45% 45%);
+  --color-timeline-edit: hsl(270 30% 45%);
+  --color-timeline-done: hsl(36 50% 35%);
 }
 
 html,
@@ -132,7 +182,7 @@ a {
 }
 
 *:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--color-ring);
   outline-offset: 2px;
 }
 
@@ -156,36 +206,65 @@ a {
   background-image: radial-gradient(circle, hsl(217 20% 20% / 0.4) 1px, transparent 1px);
   background-size: 24px 24px;
 }
+.dark .dots-bg {
+  background-image: radial-gradient(circle, hsl(217 20% 30% / 0.5) 1px, transparent 1px);
+}
 
-/* ── Glow effects ── */
+/* ── Glow effects (refined — subtler per Cursor's restraint) ── */
 .glow-crimson {
-  box-shadow: 0 0 60px hsl(354 79% 59% / 0.15), 0 0 120px hsl(354 79% 59% / 0.05);
+  box-shadow: 0 0 40px hsl(354 79% 59% / 0.1), 0 0 80px hsl(354 79% 59% / 0.04);
 }
 
-.glow-crimson-subtle {
-  box-shadow: 0 0 40px hsl(354 79% 59% / 0.08);
+/* ── Hairline divider (Cursor-inspired section separator) ── */
+.hairline-divider {
+  height: 1px;
+  background: var(--color-hairline);
 }
 
-/* ── Floating animation ── */
+.hairline-divider-strong {
+  height: 1px;
+  background: var(--color-hairline-strong);
+}
+
+/* ── Scroll reveal (fade-in + slide-up on viewport entry) ── */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(2rem);
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+}
+.scroll-reveal[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Accessibility: show content when user prefers reduced motion or JS is unavailable */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Show content when JavaScript is disabled */
+@media (scripting: none) {
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Floating animation (elliptical orbit) ── */
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-8px) rotate(1deg); }
-  50% { transform: translateY(-12px) rotate(0deg); }
-  75% { transform: translateY(-6px) rotate(-1deg); }
-}
-
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(2deg); }
-  66% { transform: translateY(-5px) rotate(-1deg); }
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(12px, -16px) rotate(3deg); }
+  50%  { transform: translate(-4px, -24px) rotate(-1deg); }
+  75%  { transform: translate(-12px, -10px) rotate(-3deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
 }
 
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.4; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.05); }
-}
-
-@keyframes typing-cursor {
-  0%, 50% { border-right-color: hsl(354 79% 65%); }
-  51%, 100% { border-right-color: transparent; }
 }

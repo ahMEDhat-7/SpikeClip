@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -8,7 +9,7 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' https://i.ytimg.com https://img.youtube.com data: blob:",
   "font-src 'self' https://fonts.gstatic.com data:",
-  `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
+  `connect-src 'self'${isDev ? " ws: wss:" : ""} https://*.sentry.io`,
   "frame-src https://www.youtube.com http://www.youtube.com",
   "frame-ancestors 'none'",
 ];
@@ -30,6 +31,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
@@ -55,4 +57,8 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+});

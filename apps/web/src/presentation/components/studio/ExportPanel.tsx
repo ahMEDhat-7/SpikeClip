@@ -196,7 +196,7 @@ export function ExportPanel({
 
       <div className="flex justify-center">
         <Button
-          className="bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-white font-semibold px-6"
+          className="bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-primary-foreground font-semibold px-6"
           size="sm"
           onClick={() => onExport({ format, quality })}
           disabled={isExporting || selectedScenes.length === 0}

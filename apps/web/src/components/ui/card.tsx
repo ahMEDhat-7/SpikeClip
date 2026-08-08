@@ -8,7 +8,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border bg-card text-card-foreground shadow",
+      "rounded-lg border border-hairline bg-card text-card-foreground",
       className
     )}
     {...props}
@@ -72,4 +72,28 @@ const CardFooter = React.forwardRef<
 ));
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+/* Cursor-inspired: featured card with 3px hairline border for emphasis */
+const CardFeatured = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border-[3px] border-hairline-strong bg-card text-card-foreground",
+      className
+    )}
+    {...props}
+  />
+));
+CardFeatured.displayName = "CardFeatured";
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFeatured,
+};

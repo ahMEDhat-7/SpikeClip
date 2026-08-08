@@ -75,7 +75,7 @@ export function HeatmapChart({
   return (
     <div
       ref={chartRef}
-      className={`w-full h-full ${interactive ? "cursor-crosshair" : ""}`}
+      className={`w-full h-full ${interactive ? "cursor-crosshair" : ""} transition-opacity duration-500`}
     >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
@@ -87,15 +87,21 @@ export function HeatmapChart({
         >
           <defs>
             <linearGradient id="intensityGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#E63946" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#E63946" stopOpacity={0.1} />
+              <stop offset="0%" stopColor="#E63946" stopOpacity={0.9} />
+              <stop offset="40%" stopColor="#E63946" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="#E63946" stopOpacity={0.02} />
+            </linearGradient>
+            <linearGradient id="intensityGlow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#E63946" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="#E63946" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="sceneGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#FF6B35" stopOpacity={0.05} />
+              <stop offset="0%" stopColor="#FF6B35" stopOpacity={0.5} />
+              <stop offset="50%" stopColor="#FF6B35" stopOpacity={0.15} />
+              <stop offset="100%" stopColor="#FF6B35" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" strokeOpacity={0.15} />
           <XAxis
             dataKey="label"
             stroke="var(--color-muted-foreground)"
@@ -112,11 +118,14 @@ export function HeatmapChart({
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "var(--color-card)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "8px",
+              backgroundColor: "color-mix(in srgb, var(--color-card) 85%, transparent)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--color-hairline-strong)",
+              borderRadius: "10px",
               fontFamily: "var(--font-mono)",
               fontSize: "12px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)",
+              padding: "8px 12px",
             }}
             formatter={(value: number) => [
               `${(value * 100).toFixed(0)}%`,
@@ -127,9 +136,23 @@ export function HeatmapChart({
           <Area
             type="monotone"
             dataKey="intensity"
+            stroke="none"
+            fill="url(#intensityGlow)"
+            strokeWidth={0}
+          />
+          <Area
+            type="monotone"
+            dataKey="intensity"
             stroke="#E63946"
             fill="url(#intensityGradient)"
             strokeWidth={2}
+            activeDot={{
+              r: 5,
+              fill: "#E63946",
+              stroke: "#fff",
+              strokeWidth: 2,
+              style: { filter: "drop-shadow(0 0 6px rgba(230,57,70,0.5))" },
+            }}
           />
           {scenes.map((scene, i) => (
             <ReferenceArea
@@ -142,7 +165,16 @@ export function HeatmapChart({
               strokeWidth={1}
               strokeDasharray="4 2"
               onClick={() => onSceneClick?.(scene)}
-              style={{ cursor: onSceneClick ? "pointer" : "default" }}
+              style={{
+                cursor: onSceneClick ? "pointer" : "default",
+                transition: "stroke-opacity 200ms ease, fill-opacity 200ms ease",
+              }}
+              onMouseEnter={(e: React.MouseEvent<SVGRectElement>) => {
+                e.currentTarget.style.strokeOpacity = "1";
+              }}
+              onMouseLeave={(e: React.MouseEvent<SVGRectElement>) => {
+                e.currentTarget.style.strokeOpacity = "0.6";
+              }}
             />
           ))}
           {addStartMarker !== null && (

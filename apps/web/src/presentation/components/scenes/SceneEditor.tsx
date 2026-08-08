@@ -114,7 +114,8 @@ export function SceneEditor({
         </div>
       )}
 
-      <div className="w-full h-[200px] sm:h-[280px]">
+      <div className="w-full h-[200px] sm:h-[280px] relative rounded-xl border border-hairline bg-gradient-to-b from-card/80 to-card p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-300 animate-in fade-in zoom-in-95 duration-500">
+        <div className="absolute inset-x-4 top-0 h-[2px] rounded-full bg-gradient-to-r from-[#E63946] via-[#FF6B35] to-[#E63946] opacity-60" />
         <HeatmapChart
           heatmap={heatmap}
           scenes={scenes.map((s) => ({

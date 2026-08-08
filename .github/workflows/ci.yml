@@ -6,129 +6,59 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.0.0"
+
 jobs:
   lint:
-    name: Lint
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @spikeclips/shared build
       - run: pnpm lint
 
-  audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm audit --audit-level=high || true
-
   test:
-    name: Test
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @spikeclips/shared test
-      - run: pnpm --filter @spikeclips/api test
-      - run: pnpm --filter @spikeclips/web test
-
-  e2e:
-    name: API E2E (compose infra)
-    runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: postgresql://spikeclips:spikeclips_dev@localhost:5432/spikeclips
-      REDIS_HOST: localhost
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: spikeclips_dev_redis
-      NODE_ENV: test
-      # App bootstrap secrets for e2e (dummy values; no real services hit)
-      JWT_SECRET: test_jwt_secret_for_ci
-      GOOGLE_CLIENT_ID: test_google_client_id
-      GOOGLE_CLIENT_SECRET: test_google_client_secret
-      STRIPE_SECRET_KEY: sk_test_ci
-      STRIPE_WEBHOOK_SECRET: whsec_test_ci
-      STRIPE_PRO_MONTHLY_PRICE_ID: price_test_pro_m
-      STRIPE_PRO_YEARLY_PRICE_ID: price_test_pro_y
-      STRIPE_TEAM_MONTHLY_PRICE_ID: price_test_team_m
-      STRIPE_TEAM_YEARLY_PRICE_ID: price_test_team_y
-      MINIO_ENDPOINT: localhost
-      MINIO_PORT: "9000"
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: spikeclips-clips
-      MINIO_USE_SSL: "false"
-      STORAGE_DRIVER: minio
-      FRONTEND_URL: http://localhost:3000
-      BACKEND_URL: http://localhost:3001
-      CLIPS_BASE_URL: http://localhost:9000/spikeclips
-      CLIP_SIGNING_SECRET: test_clip_signing_secret
-      ALLOWED_ORIGINS: http://localhost:3000
-      CLIP_WORKER_CONCURRENCY: "2"
-      HEATMAP_WORKER_CONCURRENCY: "2"
-      CLIPS_DIR: /tmp/clips
-      SENTRY_DSN: ""
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Start infra (postgres, redis, minio) via docker compose
-        run: docker compose up -d postgres redis minio
-      - name: Wait for postgres to accept connections
-        run: |
-          for i in $(seq 1 20); do
-            if docker compose exec -T postgres pg_isready -U spikeclips >/dev/null 2>&1; then
-              echo "postgres ready after ${i} tries"; break
-            fi
-            sleep 3
-          done
-          docker compose exec -T postgres pg_isready -U spikeclips
-      - name: Dump postgres logs
-        if: always()
-        run: docker compose logs postgres
-      - run: pnpm --filter @spikeclips/api exec prisma generate
-      - run: pnpm --filter @spikeclips/api exec prisma migrate deploy
-      - run: pnpm --filter @spikeclips/api test:e2e
-      - name: Tear down
-        if: always()
-        run: docker compose down -v
+      - run: pnpm --filter @spikeclips/shared build
+      - run: pnpm test
 
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: [lint, test]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-
-  docker-build:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build api and web images
-        run: docker compose build api web

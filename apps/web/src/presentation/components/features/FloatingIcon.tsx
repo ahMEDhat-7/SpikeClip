@@ -26,11 +26,12 @@ export function FloatingIcon({
   return (
     <div
       className={`absolute pointer-events-none ${className}`}
+      aria-hidden="true"
       style={{
         animation: `float ${duration}s ease-in-out ${delay}s infinite`,
       }}
     >
-      <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+      <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
         <Icon className="h-5 w-5 text-primary/60" />
       </div>
     </div>
