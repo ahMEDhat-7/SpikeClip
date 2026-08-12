@@ -42,6 +42,8 @@ model Job {
   status           String   @default("pending")
   scenes           Json?
   heatmapData      Json?
+  studioEdits      Json?
+  project          Json?
   errorMessage     String?
   createdAt        DateTime @default(now())
   completedAt      DateTime?

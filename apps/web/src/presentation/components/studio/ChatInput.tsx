@@ -11,10 +11,13 @@ interface ChatInputProps {
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [input, setInput] = useState("");
 
+  const isValid = /[\p{L}\p{N}]/u.test(input);
+  const canSend = isValid && !disabled;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
-    if (trimmed && !disabled) {
+    if (trimmed && isValid && !disabled) {
       onSend(trimmed);
       setInput("");
     }
@@ -27,12 +30,13 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Describe your edit..."
+        maxLength={500}
         disabled={disabled}
         className="flex-1 px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
       />
       <button
         type="submit"
-        disabled={disabled || !input.trim()}
+        disabled={!canSend}
         className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed min-w-[72px] flex items-center justify-center"
       >
         {disabled ? (

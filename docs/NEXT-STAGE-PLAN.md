@@ -4,6 +4,8 @@
 
 This plan covers the evolution from the current working product into a prompt-driven editing studio with LLM-powered translation, server-side preview rendering, and full export pipeline.
 
+> **Editing engine direction — OpenReel integration.** The Studio editing layer is being re-architected on the open-source [OpenReel](https://openreel.video) architecture ([MIT](https://github.com/Augani/openreel-video)): a non-destructive multi-track timeline as the single source of truth, a typed editing-tool registry shared by manual *and* AI edits, a model-agnostic AI agent (OpenAI / Anthropic / local, dry-run planning, undo-a-turn), and hybrid rendering (server ingest/transcode + in-browser WebCodecs/WebGPU compositing/export). The tasks below are being refactored onto this model; `StudioAction` remains as a legacy/translation layer during the transition.
+
 ---
 
 ## 0. Git Setup

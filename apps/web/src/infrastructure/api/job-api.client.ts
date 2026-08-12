@@ -1,4 +1,13 @@
-import { JobApiPort, JobResponse, ClipResponse, StudioExportConfig, MusicUploadResponse } from "../../domain/ports/job-api.port";
+import {
+  JobApiPort,
+  JobResponse,
+  ClipResponse,
+  StudioExportConfig,
+  MusicUploadResponse,
+  TranslateResponse,
+  PreviewResponse,
+  TranslateContext,
+} from "../../domain/ports/job-api.port";
 import type { StudioAction } from "@spikeclips/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -8,20 +17,6 @@ interface ApiResponseError {
   statusCode?: number;
   timestamp?: string;
   path?: string;
-}
-
-interface TranslateResponse {
-  actions: StudioAction[];
-  ffmpegCommand: string;
-  clarification: {
-    question: string;
-    suggestions: string[];
-  } | null;
-}
-
-interface PreviewResponse {
-  previewUrl: string;
-  cached: boolean;
 }
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -148,12 +143,19 @@ export class JobApiClient implements JobApiPort {
     }
   }
 
-  async translatePrompt(prompt: string, sceneStart: number, sceneEnd: number, platform: string): Promise<TranslateResponse> {
+  async translatePrompt(
+    prompt: string,
+    sceneStart: number,
+    sceneEnd: number,
+    platform: string,
+    context?: TranslateContext,
+    history?: Array<{ role: "user" | "assistant"; content: string }>
+  ): Promise<TranslateResponse> {
     const res = await fetch(`${API_BASE}/studio/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ prompt, sceneStart, sceneEnd, platform }),
+      body: JSON.stringify({ prompt, sceneStart, sceneEnd, platform, ...context, history }),
     });
 
     if (!res.ok) {
@@ -178,6 +180,20 @@ export class JobApiClient implements JobApiPort {
     }
 
     return parseJson<PreviewResponse>(res);
+  }
+
+  async saveActions(jobId: string, studioEdits: Record<number, StudioAction[]>): Promise<void> {
+    const res = await fetch(`${API_BASE}/studio/${jobId}/actions`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ studioEdits }),
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to save revisions" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
   }
 }
 

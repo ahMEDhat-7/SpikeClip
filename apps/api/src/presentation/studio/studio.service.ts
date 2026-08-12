@@ -5,8 +5,14 @@ import { FFMPEG_SERVICE } from "../../infrastructure/external/external.module";
 import { FfmpegService } from "../../infrastructure/external/ffmpeg.service";
 import { JOB_REPOSITORY, JobRepository } from "../../domain/repositories/job.repository";
 import { RedisService } from "../../infrastructure/redis/redis.service";
+import { PrismaService } from "../../infrastructure/database/prisma.service";
+import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { withTimeout } from "../../infrastructure/external/utils/timeout";
-import type { StudioAction, PlatformId } from "@spikeclips/shared";
+import {
+  type StudioAction,
+  type PlatformId,
+  type StudioEditContext,
+} from "@spikeclips/shared";
 import { createHash } from "crypto";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -28,6 +34,12 @@ interface TranslatePromptDto {
   sceneStart: number;
   sceneEnd: number;
   platform: string;
+  currentActions?: Array<Record<string, unknown>>;
+  captions?: Array<{ text: string; start?: number; end?: number }>;
+  music?: { name: string; volume: number } | null;
+  template?: { id: string; name: string } | null;
+  availableTemplates?: Array<{ id: string; name: string }>;
+  history?: Array<{ role: string; content: string }>;
 }
 
 interface GeneratePreviewDto {
@@ -45,7 +57,9 @@ export class StudioService {
     private readonly filterGraphBuilder: FilterGraphBuilder,
     @Inject(FFMPEG_SERVICE) private readonly ffmpegService: FfmpegService,
     @Inject(JOB_REPOSITORY) private readonly jobRepo: JobRepository,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
+    @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
+    private readonly prisma: PrismaService
   ) {}
 
   async translatePrompt(userId: string, dto: TranslatePromptDto) {
@@ -53,7 +67,7 @@ export class StudioService {
     const defaults = PLATFORM_DEFAULTS[dto.platform] ?? { aspectRatio: "9:16", maxDuration: 60 };
 
     try {
-      const result = await this.promptTranslation.translate(dto.prompt, {
+      const context: StudioEditContext = {
         platform: platformId,
         aspectRatio: defaults.aspectRatio,
         maxDuration: defaults.maxDuration,
@@ -61,16 +75,38 @@ export class StudioService {
         sceneEnd: dto.sceneEnd,
         sceneDuration: dto.sceneEnd - dto.sceneStart,
         availableAssets: [],
-      });
+        currentActions: (dto.currentActions ?? []) as StudioAction[],
+        captions: dto.captions ?? [],
+        music: dto.music ?? null,
+        template: dto.template ?? null,
+        availableTemplates: dto.availableTemplates ?? [],
+      };
+
+      const history = (dto.history ?? []).map((h) => ({
+        role: (h.role === "assistant" ? "assistant" : "user") as "user" | "assistant",
+        content: h.content,
+      }));
+
+      const result = await this.promptTranslation.translate(dto.prompt, context, history);
 
       if (!result.success) {
         return {
           actions: [],
           ffmpegCommand: "",
+          summary: undefined,
           clarification: result.clarification ?? {
             question: result.error ?? "Could not process your request",
             suggestions: ["Try rephrasing", "Be more specific"],
           },
+        };
+      }
+
+      if (result.clarification) {
+        return {
+          actions: [],
+          ffmpegCommand: "",
+          summary: undefined,
+          clarification: result.clarification,
         };
       }
 
@@ -88,6 +124,7 @@ export class StudioService {
       return {
         actions,
         ffmpegCommand,
+        summary: result.summary,
         clarification: null,
       };
     } catch (error) {
@@ -95,6 +132,7 @@ export class StudioService {
       return {
         actions: [],
         ffmpegCommand: "",
+        summary: undefined,
         clarification: {
           question: "Could you process your request. Please try again.",
           suggestions: ["Try rephrasing", "Be more specific"],
@@ -183,5 +221,151 @@ export class StudioService {
       .digest("hex")
       .slice(0, 16);
     return `preview:${hash}`;
+  }
+
+  async saveActions(userId: string, jobId: string, studioEdits: Record<number, StudioAction[]> | null) {
+    const job = await this.jobRepo.findById(jobId);
+    if (!job) {
+      throw new BadRequestException("Job not found");
+    }
+    if (job.userId !== userId) {
+      throw new BadRequestException("Unauthorized");
+    }
+
+    return this.jobRepo.update(jobId, { studioEdits });
+  }
+
+  async getProject(userId: string, jobId: string): Promise<Record<string, unknown> | null> {
+    const job = await this.jobRepo.findById(jobId);
+    if (!job) {
+      throw new BadRequestException("Job not found");
+    }
+    if (job.userId !== userId) {
+      throw new BadRequestException("Unauthorized");
+    }
+    return job.project ?? null;
+  }
+
+  async saveProject(
+    userId: string,
+    jobId: string,
+    project: Record<string, unknown> | null
+  ): Promise<void> {
+    const job = await this.jobRepo.findById(jobId);
+    if (!job) {
+      throw new BadRequestException("Job not found");
+    }
+    if (job.userId !== userId) {
+      throw new BadRequestException("Unauthorized");
+    }
+    await this.jobRepo.update(jobId, { project });
+  }
+
+  /**
+   * Download the requested source section once, cache it in storage, and return
+   * a signed URL the OpenReel editor can import directly.
+   */
+  async prepareSource(
+    userId: string,
+    jobId: string,
+    start: number,
+    end: number,
+    force = false
+  ): Promise<{ url: string; key: string }> {
+    const job = await this.jobRepo.findById(jobId);
+    if (!job) {
+      throw new BadRequestException("Job not found");
+    }
+    if (job.userId !== userId) {
+      throw new BadRequestException("Unauthorized");
+    }
+
+    const safeStart = Math.max(0, Math.min(start, end - 0.1));
+    const safeEnd = Math.max(end, start + 0.1);
+    const storageKey = `sources/${jobId}/${Math.round(safeStart * 1000)}-${Math.round(safeEnd * 1000)}.mp4`;
+
+    if (!force) {
+      try {
+        await this.storage.createReadStream(storageKey);
+        return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };
+      } catch {
+        // Not cached yet — fall through to download.
+      }
+    }
+
+    const tmpInput = join(PREVIEW_TMP, `${jobId}-${Date.now()}-source.mp4`);
+    await mkdir(PREVIEW_TMP, { recursive: true });
+    try {
+      await withTimeout(
+        execFileAsync("yt-dlp", [
+          job.url,
+          "--no-warnings",
+          "--force-keyframes-at-cuts",
+          "-f",
+          "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+          "--download-sections",
+          `*${safeStart}-${safeEnd}`,
+          "-o",
+          tmpInput,
+          "--no-playlist",
+        ]),
+        YTDLP_TIMEOUT_MS,
+        "prepareSource yt-dlp"
+      );
+      await this.storage.uploadFromFile(tmpInput, storageKey, "video/mp4");
+    } finally {
+      await unlink(tmpInput).catch(() => {});
+    }
+
+    return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };
+  }
+
+  /**
+   * Store an exported clip produced by the OpenReel editor and register a Clip
+   * record. The file bytes are uploaded to storage under a generated key.
+   */
+  async saveExportedClip(
+    userId: string,
+    jobId: string,
+    file: { buffer: Buffer; originalname: string; mimetype: string },
+    meta: {
+      sceneIndex?: number;
+      startTime?: number;
+      endTime?: number;
+      duration?: number;
+      fileSize?: number;
+      peakIntensity?: number;
+    }
+  ): Promise<{ id: string; fileUrl: string }> {
+    const job = await this.jobRepo.findById(jobId);
+    if (!job) {
+      throw new BadRequestException("Job not found");
+    }
+    if (job.userId !== userId) {
+      throw new BadRequestException("Unauthorized");
+    }
+
+    const ext = file.originalname.split(".").pop()?.toLowerCase() || "mp4";
+    const contentType = file.mimetype || (ext === "webm" ? "video/webm" : "video/mp4");
+    const storageKey = `clips/${jobId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+
+    await this.storage.upload(file.buffer, storageKey, contentType);
+
+    const created = await this.prisma.clip.create({
+      data: {
+        jobId,
+        sceneIndex: meta.sceneIndex ?? 0,
+        startTime: meta.startTime ?? 0,
+        endTime: meta.endTime ?? meta.duration ?? 0,
+        peakIntensity: meta.peakIntensity,
+        status: "completed",
+        fileUrl: storageKey,
+        fileSize: file.buffer.length,
+        duration: meta.duration,
+        completedAt: new Date(),
+      },
+    });
+
+    return { id: created.id, fileUrl: storageKey };
   }
 }

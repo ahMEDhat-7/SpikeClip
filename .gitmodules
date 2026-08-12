@@ -1,0 +1,3 @@
+[submodule "vendor/openreel-video"]
+	path = vendor/openreel-video
+	url = https://github.com/Augani/openreel-video

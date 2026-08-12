@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { X } from "lucide-react";
 import type { StudioAction } from "@spikeclips/shared";
+import { describeAction } from "@spikeclips/shared";
 
 const ACTION_ICONS: Record<string, string> = {
   add_captions: "Aa",
@@ -26,29 +27,6 @@ const ACTION_LABELS: Record<string, string> = {
   trim: "Trim",
 };
 
-function getActionSummary(action: StudioAction): string {
-  switch (action.action) {
-    case "add_captions":
-      return `"${action.text}" (${action.start}s-${action.end}s)`;
-    case "mix_audio":
-      return `Volume ${Math.round(action.volume * 100)}%`;
-    case "apply_effect":
-      return `${action.type} (${Math.round(action.intensity * 100)}%)`;
-    case "set_speed":
-      return `${action.rate}x speed`;
-    case "add_overlay":
-      return action.assetKey;
-    case "set_transition":
-      return `${action.type} (${action.duration}s)`;
-    case "add_background":
-      return action.color;
-    case "trim":
-      return `${action.startTime}s-${action.endTime}s`;
-    default:
-      return "";
-  }
-}
-
 interface ActionCardProps {
   action: StudioAction;
   index: number;
@@ -62,7 +40,7 @@ export const ActionCard = memo(function ActionCard({ action, index, onRemove }: 
       <div className="flex-1 min-w-0">
         <span className="font-medium">{ACTION_LABELS[action.action]}</span>
         <span className="text-muted-foreground ml-2 text-xs truncate">
-          {getActionSummary(action)}
+          {describeAction(action)}
         </span>
       </div>
       <button

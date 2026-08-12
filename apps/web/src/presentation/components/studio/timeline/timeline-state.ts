@@ -38,11 +38,6 @@ type TimelineAction =
   | { type: "REDO" }
   | { type: "RESET"; state: TimelineState };
 
-interface HistoryEntry {
-  state: TimelineState;
-  timestamp: number;
-}
-
 export function timelineReducer(
   state: TimelineState,
   action: TimelineAction
@@ -120,44 +115,57 @@ export function timelineReducer(
   }
 }
 
-export class UndoRedoManager {
-  private history: HistoryEntry[] = [];
-  private currentIndex = -1;
+export class UndoRedoManager<T = TimelineState> {
+  private present: T;
+  private past: T[] = [];
+  private future: T[] = [];
   private maxHistory = 50;
 
-  push(state: TimelineState): void {
-    this.history = this.history.slice(0, this.currentIndex + 1);
-    this.history.push({ state: structuredClone(state), timestamp: Date.now() });
-
-    if (this.history.length > this.maxHistory) {
-      this.history.shift();
-    } else {
-      this.currentIndex++;
-    }
+  constructor(initial: T) {
+    this.present = structuredClone(initial);
   }
 
-  undo(): TimelineState | null {
-    if (this.currentIndex <= 0) return null;
-    this.currentIndex--;
-    return structuredClone(this.history[this.currentIndex].state);
+  push(state: T): void {
+    this.past.push(this.present);
+    if (this.past.length > this.maxHistory) this.past.shift();
+    this.present = structuredClone(state);
+    this.future = [];
   }
 
-  redo(): TimelineState | null {
-    if (this.currentIndex >= this.history.length - 1) return null;
-    this.currentIndex++;
-    return structuredClone(this.history[this.currentIndex].state);
+  undo(): T | null {
+    if (this.past.length === 0) return null;
+    const prev = this.past.pop() as T;
+    this.future.push(this.present);
+    this.present = prev;
+    return structuredClone(prev);
+  }
+
+  redo(): T | null {
+    if (this.future.length === 0) return null;
+    const next = this.future.pop() as T;
+    this.past.push(this.present);
+    this.present = next;
+    return structuredClone(next);
   }
 
   canUndo(): boolean {
-    return this.currentIndex > 0;
+    return this.past.length > 0;
   }
 
   canRedo(): boolean {
-    return this.currentIndex < this.history.length - 1;
+    return this.future.length > 0;
+  }
+
+  peek(): T {
+    return this.present;
+  }
+
+  depth(): number {
+    return this.past.length;
   }
 
   clear(): void {
-    this.history = [];
-    this.currentIndex = -1;
+    this.past = [];
+    this.future = [];
   }
 }

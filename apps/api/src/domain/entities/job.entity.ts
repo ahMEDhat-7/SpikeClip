@@ -2,6 +2,7 @@ import {
   JobStatus,
   ScoredBlock,
   HeatmapSpike,
+  StudioAction,
 } from "@spikeclips/shared";
 
 export class Job {
@@ -20,7 +21,9 @@ export class Job {
     public heatmapData?: HeatmapSpike[],
     public errorMessage?: string,
     public readonly createdAt: Date = new Date(),
-    public completedAt?: Date
+    public completedAt?: Date,
+    public studioEdits?: Record<number, StudioAction[]> | null,
+    public project?: Record<string, unknown> | null
   ) {}
 
   markProcessing(): void {

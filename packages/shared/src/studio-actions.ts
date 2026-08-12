@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 // ─── Action Types ───────────────────────────────────────────────────────────
+//
+// @deprecated Use the OpenReel-style timeline + editing-tool registry
+// (`packages/shared/src/timeline`) instead. `StudioAction` remains as a
+// legacy/translation layer; `Job.studioEdits` is auto-seeded into a Timeline
+// via `timelineFromStudioEdits`.
 
 export type StudioAction =
   | AddCaptionsAction
@@ -172,7 +177,7 @@ export type ClarificationResponse = z.infer<typeof ClarificationResponseSchema>;
 
 // ─── Platform Types ─────────────────────────────────────────────────────────
 
-const PlatformIdSchema = z.enum(["youtube-shorts", "instagram-reels", "tiktok"]);
+export const PlatformIdSchema = z.enum(["youtube-shorts", "instagram-reels", "tiktok"]);
 export type PlatformId = z.infer<typeof PlatformIdSchema>;
 
 // ─── Output Config ──────────────────────────────────────────────────────────

@@ -1,14 +1,17 @@
 "use client";
 
-import { useReducer, useCallback, useMemo } from "react";
+import { useReducer, useCallback, useMemo, useRef, useEffect } from "react";
 import { Platform } from "@/domain/entities/platform";
 import { Caption, createCaption } from "@/domain/entities/caption";
 import { MusicTrack } from "@/domain/entities/music";
 import { EditTemplate } from "@/domain/entities/template";
+import { TEMPLATES } from "@/domain/data/templates";
 import { ScoredBlock } from "@/domain/entities/job";
 import { StudioStep, STUDIO_STEPS } from "@/domain/entities/studio";
 import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
 import type { StudioAction as StudioActionType } from "@spikeclips/shared";
+import { DESTRUCTIVE_ACTIONS } from "@spikeclips/shared";
+import { UndoRedoManager } from "@/presentation/components/studio/timeline/timeline-state";
 
 export type ChatLoadingPhase = "analyzing" | "generating" | null;
 
@@ -17,6 +20,7 @@ export interface ChatMessage {
   role: "user" | "system";
   content: string;
   timestamp: Date;
+  variant?: "user" | "assistant" | "clarification" | "summary";
 }
 
 export interface SceneEditState {
@@ -30,6 +34,16 @@ export interface SceneEditState {
   previewError: string | null;
 }
 
+export interface PendingClarification {
+  question: string;
+  suggestions: string[];
+}
+
+export interface PendingPreview {
+  actions: StudioActionType[];
+  summary?: string;
+}
+
 export interface StudioState {
   platform: Platform | null;
   scenes: ScoredBlock[];
@@ -41,6 +55,9 @@ export interface StudioState {
   customTimeRange: { start: number; end: number } | null;
   chatMessages: ChatMessage[];
   chatLoadingPhase: ChatLoadingPhase;
+  pendingClarification: PendingClarification | null;
+  pendingPreview: PendingPreview | null;
+  jobId: string | null;
 }
 
 type StudioAction =
@@ -48,7 +65,7 @@ type StudioAction =
   | { type: "SET_STEP"; step: StudioStep }
   | { type: "SET_OUTPUT_FORMAT"; format: OutputFormat }
   | { type: "SET_OUTPUT_QUALITY"; quality: OutputQuality }
-  | { type: "INIT_FROM_JOB"; scenes: ScoredBlock[] }
+  | { type: "INIT_FROM_JOB"; scenes: ScoredBlock[]; jobId?: string | null; studioEdits?: Record<number, StudioActionType[]> }
   | { type: "SELECT_SCENE"; index: number }
   | { type: "ADD_CUSTOM_SCENE"; scene: ScoredBlock; replace: boolean; start: number; end: number }
   | { type: "UPDATE_SCENE_EDIT"; index: number; updates: Partial<SceneEditState> }
@@ -66,9 +83,15 @@ type StudioAction =
   | { type: "SET_PREVIEW_URL"; index: number; url: string | null }
   | { type: "SET_PREVIEW_LOADING"; index: number; loading: boolean }
   | { type: "SET_PREVIEW_ERROR"; index: number; error: string | null }
+  | { type: "SET_PENDING_CLARIFICATION"; clarification: PendingClarification | null }
+  | { type: "SET_PENDING_PREVIEW"; preview: PendingPreview | null }
+  | { type: "APPLY_PENDING_PREVIEW" }
+  | { type: "CANCEL_PENDING_PREVIEW" }
   | { type: "RESET" };
 
 const STEPS = STUDIO_STEPS;
+
+const FALLBACK_SUGGESTIONS = ["Make it more subtle", "Make it bolder", "Apply to the whole clip"];
 
 function createDefaultSceneEdit(): SceneEditState {
   return {
@@ -94,6 +117,9 @@ const initialState: StudioState = {
   customTimeRange: null,
   chatMessages: [],
   chatLoadingPhase: null,
+  pendingClarification: null,
+  pendingPreview: null,
+  jobId: null,
 };
 
 function studioReducer(state: StudioState, action: StudioAction): StudioState {
@@ -118,11 +144,18 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
       return { ...state, outputQuality: action.quality };
 
     case "INIT_FROM_JOB": {
+      const sceneEdits = new Map<number, SceneEditState>();
+      if (action.studioEdits) {
+        for (const [index, actions] of Object.entries(action.studioEdits)) {
+          sceneEdits.set(Number(index), { ...createDefaultSceneEdit(), studioActions: actions });
+        }
+      }
       return {
         ...state,
         scenes: action.scenes,
         selectedSceneIndex: null,
-        sceneEdits: new Map(),
+        sceneEdits,
+        jobId: action.jobId ?? null,
       };
     }
 
@@ -240,6 +273,27 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
     case "RESET":
       return initialState;
 
+    case "SET_PENDING_CLARIFICATION":
+      return { ...state, pendingClarification: action.clarification };
+
+    case "SET_PENDING_PREVIEW":
+      return { ...state, pendingPreview: action.preview };
+
+    case "APPLY_PENDING_PREVIEW": {
+      if (state.selectedSceneIndex === null || !state.pendingPreview) return state;
+      const idx = state.selectedSceneIndex;
+      const nextEdits = new Map(state.sceneEdits);
+      const existing = nextEdits.get(idx) ?? createDefaultSceneEdit();
+      nextEdits.set(idx, {
+        ...existing,
+        studioActions: [...existing.studioActions, ...state.pendingPreview.actions],
+      });
+      return { ...state, sceneEdits: nextEdits, pendingPreview: null };
+    }
+
+    case "CANCEL_PENDING_PREVIEW":
+      return { ...state, pendingPreview: null };
+
     default:
       return state;
   }
@@ -248,7 +302,18 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
 export function useStudio() {
   const [state, dispatch] = useReducer(studioReducer, initialState);
 
-  const { platform, scenes, selectedSceneIndex, sceneEdits, currentStep, outputFormat, outputQuality, customTimeRange, chatMessages, chatLoadingPhase } = state;
+  const revisionManagers = useRef<Map<number, UndoRedoManager<StudioActionType[]>>>(new Map());
+
+  const getManager = (index: number): UndoRedoManager<StudioActionType[]> => {
+    let mgr = revisionManagers.current.get(index);
+    if (!mgr) {
+      mgr = new UndoRedoManager<StudioActionType[]>([]);
+      revisionManagers.current.set(index, mgr);
+    }
+    return mgr;
+  };
+
+  const { platform, scenes, selectedSceneIndex, sceneEdits, currentStep, outputFormat, outputQuality, customTimeRange, chatMessages, chatLoadingPhase, pendingClarification, pendingPreview } = state;
 
   const currentStepIndex = STEPS.indexOf(currentStep);
   const isFirstStep = currentStepIndex === 0;
@@ -295,9 +360,12 @@ export function useStudio() {
     dispatch({ type: "SET_PLATFORM", platform });
   }, []);
 
-  const initFromJob = useCallback((jobScenes: ScoredBlock[]) => {
-    dispatch({ type: "INIT_FROM_JOB", scenes: jobScenes });
-  }, []);
+  const initFromJob = useCallback(
+    (jobScenes: ScoredBlock[], jobId?: string | null, studioEdits?: Record<number, StudioActionType[]>) => {
+      dispatch({ type: "INIT_FROM_JOB", scenes: jobScenes, jobId: jobId ?? null, studioEdits });
+    },
+    []
+  );
 
   const selectScene = useCallback((index: number) => {
     dispatch({ type: "SELECT_SCENE", index });
@@ -375,15 +443,55 @@ export function useStudio() {
     dispatch({ type: "SET_STUDIO_ACTIONS", index: selectedSceneIndex, actions });
   }, [selectedSceneIndex]);
 
-  const addStudioAction = useCallback((action: StudioActionType) => {
-    if (selectedSceneIndex === null) return;
-    dispatch({ type: "ADD_STUDIO_ACTION", index: selectedSceneIndex, action });
-  }, [selectedSceneIndex]);
+  const commitStudioActions = useCallback(
+    (index: number, next: StudioActionType[]) => {
+      getManager(index).push(next);
+      dispatch({ type: "SET_STUDIO_ACTIONS", index, actions: next });
+    },
+    []
+  );
 
-  const removeStudioAction = useCallback((actionIndex: number) => {
-    if (selectedSceneIndex === null) return;
-    dispatch({ type: "REMOVE_STUDIO_ACTION", index: selectedSceneIndex, actionIndex });
-  }, [selectedSceneIndex]);
+  const addStudioAction = useCallback(
+    (action: StudioActionType) => {
+      if (selectedSceneIndex === null) return;
+      const current = getManager(selectedSceneIndex).peek();
+      commitStudioActions(selectedSceneIndex, [...current, action]);
+    },
+    [selectedSceneIndex, commitStudioActions]
+  );
+
+  const removeStudioAction = useCallback(
+    (actionIndex: number) => {
+      if (selectedSceneIndex === null) return;
+      const current = getManager(selectedSceneIndex).peek();
+      commitStudioActions(
+        selectedSceneIndex,
+        current.filter((_a, i) => i !== actionIndex)
+      );
+    },
+    [selectedSceneIndex, commitStudioActions]
+  );
+
+  const undoStudioActions = useCallback((index: number) => {
+    const prev = getManager(index).undo();
+    if (prev !== null) dispatch({ type: "SET_STUDIO_ACTIONS", index, actions: prev });
+  }, []);
+
+  const redoStudioActions = useCallback((index: number) => {
+    const next = getManager(index).redo();
+    if (next !== null) dispatch({ type: "SET_STUDIO_ACTIONS", index, actions: next });
+  }, []);
+
+  const undo = useCallback(() => {
+    if (selectedSceneIndex !== null) undoStudioActions(selectedSceneIndex);
+  }, [selectedSceneIndex, undoStudioActions]);
+
+  const redo = useCallback(() => {
+    if (selectedSceneIndex !== null) redoStudioActions(selectedSceneIndex);
+  }, [selectedSceneIndex, redoStudioActions]);
+
+  const canUndo = selectedSceneIndex !== null ? getManager(selectedSceneIndex).canUndo() : false;
+  const canRedo = selectedSceneIndex !== null ? getManager(selectedSceneIndex).canRedo() : false;
 
   const previewUrl = useMemo(
     () => (selectedSceneIndex !== null ? sceneEdits.get(selectedSceneIndex)?.previewUrl ?? null : null),
@@ -415,6 +523,18 @@ export function useStudio() {
     dispatch({ type: "SET_PREVIEW_ERROR", index: selectedSceneIndex, error });
   }, [selectedSceneIndex]);
 
+  const setPendingClarification = useCallback((clarification: PendingClarification | null) => {
+    dispatch({ type: "SET_PENDING_CLARIFICATION", clarification });
+  }, []);
+
+  const setPendingPreview = useCallback((preview: PendingPreview | null) => {
+    dispatch({ type: "SET_PENDING_PREVIEW", preview });
+  }, []);
+
+  const cancelPendingPreview = useCallback(() => {
+    dispatch({ type: "CANCEL_PENDING_PREVIEW" });
+  }, []);
+
   const sendChatMessage = useCallback(async (prompt: string) => {
     if (selectedSceneIndex === null || !platform) return;
 
@@ -424,55 +544,116 @@ export function useStudio() {
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
+      variant: "user",
       content: prompt,
       timestamp: new Date(),
     };
     addChatMessage(userMessage);
     setChatLoadingPhase("analyzing");
+    setPendingClarification(null);
+    setPendingPreview(null);
 
     try {
       const { jobApi } = await import("@/infrastructure/api/job-api.client");
+      const currentEdit = sceneEdits.get(selectedSceneIndex) ?? createDefaultSceneEdit();
+
+      const context = {
+        currentActions: currentEdit.studioActions,
+        captions: currentEdit.captions.map((c) => ({ text: c.text })),
+        music: currentEdit.musicTrack
+          ? { name: currentEdit.musicTrack.name, volume: currentEdit.musicTrack.volume }
+          : null,
+        template: currentEdit.selectedTemplate
+          ? { id: currentEdit.selectedTemplate.id, name: currentEdit.selectedTemplate.name }
+          : null,
+        availableTemplates: TEMPLATES.map((t) => ({ id: t.id, name: t.name })),
+      };
+
+      const history = chatMessages.slice(-8).map((m) => ({
+        role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+        content: m.content,
+      }));
+
       const result = await jobApi.translatePrompt(
         prompt,
         scene.start_time,
         scene.end_time,
-        platform.id
+        platform.id,
+        context,
+        history
       );
 
       if (result.clarification) {
+        const suggestions =
+          result.clarification.suggestions && result.clarification.suggestions.length > 0
+            ? result.clarification.suggestions
+            : FALLBACK_SUGGESTIONS;
+        setPendingClarification({
+          question: result.clarification.question,
+          suggestions,
+        });
         const systemMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: "system",
+          variant: "clarification",
           content: result.clarification.question,
           timestamp: new Date(),
         };
         addChatMessage(systemMessage);
       } else if (result.actions.length > 0) {
-        setStudioActions(result.actions);
+        const summary =
+          result.summary ?? `Applied ${result.actions.length} action(s): ${result.actions.map((a) => a.action).join(", ")}`;
+        const hasDestructive = result.actions.some((a) => DESTRUCTIVE_ACTIONS.has(a.action));
 
+        if (hasDestructive) {
+          setPendingPreview({ actions: result.actions, summary });
+          const systemMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: "system",
+            variant: "summary",
+            content: `Preview: ${summary}. Confirm to apply.`,
+            timestamp: new Date(),
+          };
+          addChatMessage(systemMessage);
+        } else {
+          if (selectedSceneIndex !== null) {
+            commitStudioActions(selectedSceneIndex, result.actions);
+          }
+          const systemMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: "system",
+            variant: "summary",
+            content: summary,
+            timestamp: new Date(),
+          };
+          addChatMessage(systemMessage);
+
+          setChatLoadingPhase("generating");
+          try {
+            const sceneId = `${scene.start_time}-${scene.end_time}`;
+            const preview = await jobApi.generatePreview(sceneId, result.actions, platform.id);
+            setPreviewUrl(preview.previewUrl);
+          } catch (previewErr) {
+            setPreviewError(previewErr instanceof Error ? previewErr.message : "Preview failed");
+          } finally {
+            setChatLoadingPhase(null);
+          }
+        }
+      } else {
         const systemMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: "system",
-          content: `Applied ${result.actions.length} action(s): ${result.actions.map(a => a.action).join(", ")}`,
+          variant: "assistant",
+          content: "No actions were produced from that prompt.",
           timestamp: new Date(),
         };
         addChatMessage(systemMessage);
-
-        setChatLoadingPhase("generating");
-        try {
-          const sceneId = `${scenes[selectedSceneIndex]?.start_time}-${scenes[selectedSceneIndex]?.end_time}`;
-          const preview = await jobApi.generatePreview(sceneId, result.actions, platform.id);
-          setPreviewUrl(preview.previewUrl);
-        } catch (previewErr) {
-          setPreviewError(previewErr instanceof Error ? previewErr.message : "Preview failed");
-        } finally {
-          setChatLoadingPhase(null);
-        }
       }
     } catch (err) {
       const errorMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "system",
+        variant: "assistant",
         content: err instanceof Error ? err.message : "Failed to process prompt",
         timestamp: new Date(),
       };
@@ -480,11 +661,96 @@ export function useStudio() {
     } finally {
       setChatLoadingPhase(null);
     }
-  }, [selectedSceneIndex, platform, scenes, addChatMessage, setChatLoadingPhase, setStudioActions, setPreviewUrl, setPreviewError]);
+  }, [
+    selectedSceneIndex,
+    platform,
+    scenes,
+    sceneEdits,
+    chatMessages,
+    addChatMessage,
+    setChatLoadingPhase,
+    commitStudioActions,
+    setPreviewUrl,
+    setPreviewError,
+    setPendingClarification,
+    setPendingPreview,
+  ]);
+
+  const applyPendingPreview = useCallback(
+    async (actions: StudioActionType[]) => {
+      if (selectedSceneIndex === null || !platform) return;
+      const scene = scenes[selectedSceneIndex];
+      if (!scene) return;
+
+      const current = sceneEdits.get(selectedSceneIndex)?.studioActions ?? [];
+      commitStudioActions(selectedSceneIndex, [...current, ...actions]);
+      setPendingPreview(null);
+      setChatLoadingPhase("generating");
+      try {
+        const { jobApi } = await import("@/infrastructure/api/job-api.client");
+        const sceneId = `${scene.start_time}-${scene.end_time}`;
+        const preview = await jobApi.generatePreview(sceneId, actions, platform.id);
+        setPreviewUrl(preview.previewUrl);
+      } catch (previewErr) {
+        setPreviewError(previewErr instanceof Error ? previewErr.message : "Preview failed");
+      } finally {
+        setChatLoadingPhase(null);
+      }
+    },
+    [selectedSceneIndex, platform, scenes, sceneEdits, commitStudioActions, setPendingPreview, setChatLoadingPhase, setPreviewUrl, setPreviewError]
+  );
 
   const reset = useCallback(() => {
     dispatch({ type: "RESET" });
   }, []);
+
+  // Persist revisions to the backend (debounced) once a job is loaded.
+  useEffect(() => {
+    if (!state.jobId) return;
+    const serialized: Record<number, StudioActionType[]> = {};
+    sceneEdits.forEach((edit, index) => {
+      if (edit.studioActions.length > 0) {
+        serialized[index] = edit.studioActions;
+      }
+    });
+
+    const timer = setTimeout(() => {
+      void import("@/infrastructure/api/job-api.client").then(({ jobApi }) => {
+        jobApi.saveActions(state.jobId as string, serialized).catch(() => {});
+      });
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [state.jobId, sceneEdits]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      } else if (key === "y") {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undo, redo]);
+
+  const revisionDepth = selectedSceneIndex !== null ? getManager(selectedSceneIndex).depth() : 0;
 
   return {
     platform,
@@ -535,9 +801,21 @@ export function useStudio() {
     setStudioActions,
     addStudioAction,
     removeStudioAction,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    revisionDepth,
     setPreviewUrl,
     setPreviewLoading,
     setPreviewError,
+    pendingClarification,
+    pendingPreview,
+    setPendingClarification,
+    setPendingPreview,
+    applyPendingPreview,
+    cancelPendingPreview,
+    jobId: state.jobId,
     reset,
   };
 }

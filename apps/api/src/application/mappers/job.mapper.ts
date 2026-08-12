@@ -14,6 +14,8 @@ interface PrismaJob {
   status: string;
   scenes?: unknown;
   heatmapData?: unknown;
+  studioEdits?: unknown;
+  project?: unknown;
   errorMessage?: string | null;
   createdAt: Date;
   completedAt?: Date | null;
@@ -36,7 +38,9 @@ export class JobMapper {
       (prismaJob.heatmapData as HeatmapSpike[]) ?? undefined,
       prismaJob.errorMessage ?? undefined,
       prismaJob.createdAt,
-      prismaJob.completedAt ?? undefined
+      prismaJob.completedAt ?? undefined,
+      (prismaJob.studioEdits as Record<number, import("@spikeclips/shared").StudioAction[]> | null) ?? undefined,
+      (prismaJob.project as Record<string, unknown> | null) ?? undefined
     );
   }
 
@@ -54,6 +58,8 @@ export class JobMapper {
       status: job.status,
       scenes: job.scenes,
       heatmapData: job.heatmapData,
+      studioEdits: job.studioEdits,
+      project: job.project,
       errorMessage: job.errorMessage,
       createdAt: job.createdAt,
       completedAt: job.completedAt,

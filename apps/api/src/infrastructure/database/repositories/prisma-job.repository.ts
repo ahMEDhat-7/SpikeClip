@@ -30,16 +30,24 @@ export class PrismaJobRepository implements JobRepository {
   }
 
   async update(id: string, data: Partial<Job>): Promise<Job> {
-    const updated = await this.prisma.job.update({
+    const updated = await (this.prisma.job as unknown as {
+      update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<unknown>;
+    }).update({
       where: { id },
       data: {
         ...(data.status !== undefined && { status: data.status }),
         ...(data.scenes !== undefined && { scenes: data.scenes as unknown as Prisma.InputJsonValue }),
+        ...(data.studioEdits !== undefined && {
+          studioEdits: data.studioEdits as unknown as Prisma.InputJsonValue,
+        }),
+        ...(data.project !== undefined && {
+          project: data.project as unknown as Prisma.InputJsonValue,
+        }),
         ...(data.errorMessage !== undefined && { errorMessage: data.errorMessage }),
         ...(data.completedAt !== undefined && { completedAt: data.completedAt }),
       },
     });
-    return JobMapper.toEntity(updated);
+    return JobMapper.toEntity(updated as Parameters<typeof JobMapper.toEntity>[0]);
   }
 
   async updateStatus(id: string, status: JobStatus): Promise<void> {

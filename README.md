@@ -33,6 +33,7 @@ A walkthrough of SpikeClip running locally — landing page, the heatmap analysi
 - **Animated hero heatmap** — procedurally generated realistic engagement visualization (seeded PRNG, 200 data points) with a single synced playhead, floating orbit icons (Web Animations API), and glassmorphism UI. SVG paths updated via refs to bypass React render at 60fps.
 - **Interactive heatmap visualization** — see exactly where viewers rewatched, with detected scenes highlighted and clickable timestamps.
 - **Clip Studio editor** — pick scenes, add captions (SRT / drawtext), layer background music with fades, apply curated templates (kinetic typography, split-screen, POV, collages, and more).
+- **OpenReel-based editing engine** — Clip Studio is being re-architected on the open-source [OpenReel](https://openreel.video) model ([MIT](https://github.com/Augani/openreel-video)): a non-destructive multi-track timeline as the single source of truth, a typed editing-tool registry shared by manual and AI edits, and a model-agnostic AI agent — with hybrid server-ingest + in-browser WebCodecs/WebGPU rendering.
 - **Vertical reformatting** — automatically crops and reformats to 9:16 (1080×1920) from a single downloaded source, with keyframe-accurate cuts and no black bars.
 - **Multi-platform export** — one analysis, clips ready for TikTok, YouTube Shorts, and Instagram Reels.
 - **Accounts & tiers** — Google OAuth, free-tier quota enforcement, and Pro/Team subscriptions via Stripe.
@@ -83,6 +84,17 @@ A walkthrough of SpikeClip running locally — landing page, the heatmap analysi
 | Media | `yt-dlp` (heatmap + section download), `ffmpeg` (trim, 9:16 crop, caption/music mix) |
 | Infra | Docker Compose, nginx reverse proxy, self-hosted VPS |
 | Payments | Stripe (subscriptions + webhooks) |
+
+### Editing Engine & OpenReel Integration
+
+SpikeClip's Clip Studio editing engine is being rebuilt on the open-source **[OpenReel](https://openreel.video)** architecture ([MIT](https://github.com/Augani/openreel-video), [github.com/Augani/openreel-video](https://github.com/Augani/openreel-video)):
+
+- **Non-destructive multi-track timeline** as the single source of truth (replacing the per-scene flat `StudioAction[]` list).
+- **Typed editing-tool registry** — every edit (manual *or* AI) is one undoable, typed command through the same surface.
+- **Model-agnostic AI agent** — bring OpenAI / Anthropic / local models; plans via dry-run and executes tools, with "undo the whole turn".
+- **Hybrid rendering** — the server keeps YouTube ingest (`yt-dlp`), proxy/transcode, and storage (MinIO); compositing and export move to in-browser **WebCodecs / WebGPU** (mirroring OpenReel's engine), with server-side `ffmpeg` as a heavy-transcode fallback.
+
+This keeps SpikeClip's data-driven heatmap selection while giving it a professional, agent-native editing core. `StudioAction` remains as a legacy/translation layer during the transition.
 
 ---
 

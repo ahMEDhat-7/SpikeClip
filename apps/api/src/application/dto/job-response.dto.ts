@@ -42,6 +42,9 @@ export class JobResponseDto {
   @ApiPropertyOptional({ description: "Error message if job failed" })
   errorMessage?: string;
 
+  @ApiPropertyOptional({ description: "Persisted Studio action revisions keyed by scene index" })
+  studioEdits?: Record<number, import("@spikeclips/shared").StudioAction[]> | null;
+
   @ApiProperty({ description: "Job creation timestamp" })
   createdAt!: Date;
 
@@ -63,6 +66,7 @@ export class JobResponseDto {
     dto.scenes = job.scenes;
     dto.heatmapData = job.heatmapData;
     dto.errorMessage = job.errorMessage;
+    dto.studioEdits = job.studioEdits ?? null;
     dto.createdAt = job.createdAt;
     dto.completedAt = job.completedAt;
     return dto;

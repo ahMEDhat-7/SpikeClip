@@ -45,6 +45,30 @@ export interface MusicUploadResponse {
   size: number;
 }
 
+export interface TranslateContext {
+  currentActions?: StudioAction[];
+  captions?: Array<{ text: string; start?: number; end?: number }>;
+  music?: { name: string; volume: number } | null;
+  template?: { id: string; name: string } | null;
+  availableTemplates?: Array<{ id: string; name: string }>;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
+}
+
+export interface TranslateResponse {
+  actions: StudioAction[];
+  ffmpegCommand: string;
+  summary?: string | null;
+  clarification: {
+    question: string;
+    suggestions: string[];
+  } | null;
+}
+
+export interface PreviewResponse {
+  previewUrl: string;
+  cached: boolean;
+}
+
 export interface JobApiPort {
   createJob(url: string): Promise<JobResponse>;
   getJob(id: string): Promise<JobResponse>;
@@ -58,6 +82,15 @@ export interface JobApiPort {
   getClips(jobId: string): Promise<ClipResponse[]>;
   uploadMusic(file: File): Promise<MusicUploadResponse>;
   deleteMusic(key: string): Promise<void>;
+  translatePrompt(
+    prompt: string,
+    sceneStart: number,
+    sceneEnd: number,
+    platform: string,
+    context?: TranslateContext,
+    history?: Array<{ role: "user" | "assistant"; content: string }>
+  ): Promise<TranslateResponse>;
+  generatePreview(sceneId: string, actions: StudioAction[], platform: string): Promise<PreviewResponse>;
 }
 
 export interface JobResponse {
@@ -74,6 +107,7 @@ export interface JobResponse {
   scenes?: ScoredBlock[];
   heatmapData?: HeatmapSpike[];
   errorMessage?: string;
+  studioEdits?: Record<number, StudioAction[]> | null;
   createdAt: string;
   completedAt?: string;
 }

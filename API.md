@@ -192,6 +192,16 @@ Runs the spike merging algorithm on the job's heatmap data.
 
 ---
 
+## Studio (Editing)
+
+The Studio API supports natural-language prompt translation and preview generation for per-scene `StudioAction[]` edits. Rendering uses the upstream **OpenReel engine** (`@openreel/core`) vendored at `vendor/openreel-video` for client-side WebCodecs/WebGPU export, with server-side `ffmpeg` as a fallback.
+
+**Endpoints:**
+
+- `POST /api/studio/translate-prompt` — translate a natural-language prompt into `StudioAction[]` commands.
+- `POST /api/studio/generate-preview` — render a preview clip with the given actions.
+- `POST /api/studio/save-actions` — persist per-scene `StudioAction[]` revisions for a job.
+
 ## Clips
 
 | Method | Endpoint | Auth | Rate Limit | Description |

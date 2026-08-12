@@ -15,6 +15,8 @@ Two products, one sequence:
 - **Stage 1 — SpikeClip:** extracts and reformats the most-replayed moments from a YouTube video using audience heatmap data — the wedge, and the thing that makes you different from AI-guessing tools.
 - **Stage 2 — Prompt Editing Layer:** captions, cleanup, and styling on top of Stage 1's clips — a commodity layer, built once Stage 1 has demand.
 
+> **Editing engine direction — OpenReel integration.** Stage 2's Studio is being re-architected on the open-source [OpenReel](https://openreel.video) architecture ([MIT](https://github.com/Augani/openreel-video)): a non-destructive multi-track timeline as the single source of truth, a typed editing-tool registry shared by manual *and* AI edits, a model-agnostic AI agent (OpenAI / Anthropic / local, dry-run planning, undo-a-turn), and hybrid rendering (server `yt-dlp` ingest/transcode + in-browser WebCodecs/WebGPU compositing/export). `StudioAction` stays as a legacy/translation layer during the transition.
+
 **Audience lens — "elegant creative people":** design-conscious creators (film, art, fashion, lifestyle, premium tutorials) who'd be embarrassed by a clip with a generic neon caption template. This filters your ICP, your interview candidates, and every visual decision later — see Appendix B.
 
 ### Phase 0 — Define the Wedge

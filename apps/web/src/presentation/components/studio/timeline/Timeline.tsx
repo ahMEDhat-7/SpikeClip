@@ -35,7 +35,6 @@ export const Timeline = memo(function Timeline({
   totalDuration,
 }: TimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
-  const [historyManager] = useState(() => new UndoRedoManager());
   const [history, setHistory] = useState<TimelineState>({
     scenes: [],
     captions: [],
@@ -43,6 +42,7 @@ export const Timeline = memo(function Timeline({
     currentSceneIndex: 0,
     playbackPosition: 0,
   });
+  const [historyManager] = useState(() => new UndoRedoManager<TimelineState>(history));
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);

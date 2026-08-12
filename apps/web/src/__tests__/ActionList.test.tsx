@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ActionList } from "../presentation/components/studio/ActionList";
 import type { StudioAction } from "@spikeclips/shared";
@@ -51,5 +51,30 @@ describe("ActionList", () => {
   it("renders correct count with single action", () => {
     render(<ActionList {...defaultProps} actions={[mockActions[0]]} />);
     expect(screen.getByText("Applied Actions (1)")).toBeInTheDocument();
+  });
+
+  it("renders disabled undo/redo when there is no history", () => {
+    render(<ActionList {...defaultProps} actions={mockActions} canUndo={false} canRedo={false} />);
+    expect(screen.getByLabelText("Undo")).toBeDisabled();
+    expect(screen.getByLabelText("Redo")).toBeDisabled();
+  });
+
+  it("invokes onUndo and onRedo handlers", () => {
+    const onUndo = jest.fn();
+    const onRedo = jest.fn();
+    render(
+      <ActionList
+        {...defaultProps}
+        actions={mockActions}
+        canUndo
+        canRedo
+        onUndo={onUndo}
+        onRedo={onRedo}
+      />
+    );
+    fireEvent.click(screen.getByLabelText("Undo"));
+    expect(onUndo).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByLabelText("Redo"));
+    expect(onRedo).toHaveBeenCalledTimes(1);
   });
 });

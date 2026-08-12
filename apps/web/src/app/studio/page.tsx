@@ -71,7 +71,7 @@ function StudioContent() {
       if (start !== null && end !== null && !isNaN(start) && !isNaN(end) && end > start) {
         addCustomSceneRef.current(start, end);
       } else {
-        initFromJobRef.current(loaded.scenes ?? []);
+        initFromJobRef.current(loaded.scenes ?? [], loaded.id, loaded.studioEdits ?? undefined);
         goToStepRef.current("scenes");
       }
     } catch {
@@ -96,7 +96,7 @@ function StudioContent() {
         if (updated.status === JOB_STATUS.COMPLETED || updated.status === JOB_STATUS.FAILED) {
           setJob(updated);
           if (updated.status === JOB_STATUS.COMPLETED) {
-            initFromJobRef.current(updated.scenes ?? []);
+            initFromJobRef.current(updated.scenes ?? [], updated.id, updated.studioEdits ?? undefined);
             goToStepRef.current("scenes");
           }
           return;
@@ -123,7 +123,7 @@ function StudioContent() {
       const processed = await jobApi.processJob(newJob.id);
       setJob(processed);
       if (processed.status === JOB_STATUS.COMPLETED) {
-        initFromJobRef.current(processed.scenes ?? []);
+        initFromJobRef.current(processed.scenes ?? [], processed.id, processed.studioEdits ?? undefined);
         goToStepRef.current("scenes");
       } else {
         pollJob(processed.id);
@@ -256,13 +256,35 @@ function StudioContent() {
 
       case "scenes":
         return (
-          <SceneSelector
-            scenes={studio.scenes}
-            selectedSceneIndex={studio.selectedSceneIndex}
-            onSelectScene={studio.selectScene}
-            videoDuration={job?.videoDuration ?? 0}
-            onCustomRange={studio.addCustomScene}
-          />
+          <div className="space-y-3">
+            <SceneSelector
+              scenes={studio.scenes}
+              selectedSceneIndex={studio.selectedSceneIndex}
+              onSelectScene={studio.selectScene}
+              videoDuration={job?.videoDuration ?? 0}
+              onCustomRange={studio.addCustomScene}
+            />
+            {job && studio.scenes.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const scene =
+                    studio.selectedSceneIndex !== null
+                      ? studio.scenes[studio.selectedSceneIndex]
+                      : studio.scenes[0];
+                  if (!scene) return;
+                  router.push(
+                    `/studio/editor?jobId=${job.id}&start=${scene.start_time}&end=${scene.end_time}`
+                  );
+                }}
+              >
+                <Monitor className="h-4 w-4 mr-1" />
+                Open in OpenReel Editor
+              </Button>
+            )}
+          </div>
         );
 
       case "chat":
@@ -272,6 +294,11 @@ function StudioContent() {
               messages={studio.chatMessages}
               onSend={studio.sendChatMessage}
               loadingPhase={studio.chatLoadingPhase}
+              pendingClarification={studio.pendingClarification}
+              onClarificationSelect={studio.sendChatMessage}
+              pendingPreview={studio.pendingPreview}
+              onApplyPreview={studio.applyPendingPreview}
+              onCancelPreview={studio.cancelPendingPreview}
             />
           </div>
         );
@@ -349,6 +376,11 @@ function StudioContent() {
           <ActionList
             actions={studio.studioActions}
             onRemove={studio.removeStudioAction}
+            onUndo={studio.undo}
+            onRedo={studio.redo}
+            canUndo={studio.canUndo}
+            canRedo={studio.canRedo}
+            revisionDepth={studio.revisionDepth}
           />
         </div>
       );

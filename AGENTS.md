@@ -46,6 +46,7 @@ pnpm --filter @spikeclips/web test         # jest
 - **Tiers:** Free (3 analyses/mo, 3 scenes). Pro (unlimited, 10 scenes). Team (unlimited, 25 scenes). `analysesLimit = -1` means unlimited.
 - **Hero heatmap (`AnimatedHeatmapHero`):** Procedurally generated 200-point dataset via seeded PRNG (`mulberry32`, seed=42). 5 peak anchors with randomized height/width/asymmetry, Gaussian noise, micro-bumps, and smoothing. SVG paths + playhead updated via refs in `requestAnimationFrame` (bypasses React render cycle). Single synced playhead (line + circle + glow) with color shifts green→yellow→red.
 - **Floating icons (`FloatingIcon`):** Use Web Animations API (`el.animate()`) with 8-point `hero-orbit` keyframes to bypass CSS `prefers-reduced-motion` and `animation-duration: 0.01ms !important` overrides. Visible on all screen sizes.
+- **Editing engine uses upstream OpenReel.** Clip Studio uses the open-source [OpenReel](https://openreel.video) engine ([MIT](https://github.com/Augani/openreel-video)) vendored at `vendor/openreel-video`. The `@openreel/core` package provides the `Project` model, `ExportEngine` (WebCodecs/WebGPU), timeline, media, video, audio, and effects engines. `apps/web/src/lib/openreel/project.ts` maps SpikeClip data to OpenReel `Project` objects; `apps/web/src/lib/video/openreel-renderer.ts` wraps the `ExportEngine` for client-side export. `StudioAction` remains as a legacy type. Full plan: `docs/OPENREEL-INTEGRATION-PLAN.md`.
 
 ## Algorithm source of truth
 

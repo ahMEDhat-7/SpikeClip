@@ -5,7 +5,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 const cspDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://www.youtube.com http://www.youtube.com${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.youtube.com http://www.youtube.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' https://i.ytimg.com https://img.youtube.com data: blob:",
   "font-src 'self' https://fonts.gstatic.com data:",
@@ -32,6 +32,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  transpilePackages: [
+    "@openreel/core",
+    "mediabunny",
+    "three",
+    "@paper-design/shaders",
+    "gsap",
+  ],
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },

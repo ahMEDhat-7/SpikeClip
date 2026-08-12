@@ -12,6 +12,8 @@ SpikeClip is a YouTube clip extraction tool that uses **actual viewer heatmap da
 - **Stage 1 (SpikeClip):** Heatmap-driven clip extraction and vertical reformatting
 - **Stage 2 (Prompt Editing Layer):** Captions, cleanup, and styling (built only after Stage 1 has demand)
 
+> **Editing engine direction — OpenReel integration.** Stage 2's Studio is being re-architected on the open-source [OpenReel](https://openreel.video) architecture ([MIT](https://github.com/Augani/openreel-video)): a non-destructive multi-track timeline as the single source of truth, a typed editing-tool registry shared by manual and AI edits, a model-agnostic AI agent (OpenAI / Anthropic / local, dry-run planning, undo-a-turn), and hybrid rendering (server-side `yt-dlp` ingest/transcode + in-browser WebCodecs/WebGPU compositing/export). `StudioAction` remains a legacy/translation layer during the transition.
+
 ---
 
 ## 2. Problem Statement

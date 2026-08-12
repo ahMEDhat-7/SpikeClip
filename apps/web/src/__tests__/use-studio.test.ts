@@ -541,3 +541,55 @@ describe("useStudio", () => {
     expect(result.current.chatMessages).toHaveLength(0);
   });
 });
+
+jest.mock("@/infrastructure/api/job-api.client", () => ({
+  jobApi: {
+    translatePrompt: jest.fn(),
+    generatePreview: jest.fn(),
+  },
+}));
+
+import { jobApi } from "@/infrastructure/api/job-api.client";
+
+describe("useStudio clarification hardening", () => {
+  beforeEach(() => {
+    (jobApi.translatePrompt as jest.Mock).mockReset();
+    (jobApi.generatePreview as jest.Mock).mockReset();
+  });
+
+  it("falls back to default suggestions when the LLM returns none", async () => {
+    (jobApi.translatePrompt as jest.Mock).mockResolvedValue({
+      actions: [],
+      clarification: { question: "Which vibe?", suggestions: [] },
+    });
+    const { result } = renderHook(() => useStudio());
+    act(() => result.current.initFromJob(mockScenes as never));
+    act(() => result.current.setPlatform(mockPlatform as never));
+    act(() => result.current.selectScene(0));
+
+    await act(async () => {
+      await result.current.sendChatMessage("make it pop");
+    });
+
+    expect(result.current.pendingClarification).not.toBeNull();
+    expect(result.current.pendingClarification?.suggestions.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it("keeps LLM-provided suggestions when present", async () => {
+    (jobApi.translatePrompt as jest.Mock).mockResolvedValue({
+      actions: [],
+      clarification: { question: "Which vibe?", suggestions: ["Subtle", "Bold"] },
+    });
+    const { result } = renderHook(() => useStudio());
+    act(() => result.current.initFromJob(mockScenes as never));
+    act(() => result.current.setPlatform(mockPlatform as never));
+    act(() => result.current.selectScene(0));
+
+    await act(async () => {
+      await result.current.sendChatMessage("make it pop");
+    });
+
+    expect(result.current.pendingClarification?.suggestions).toEqual(["Subtle", "Bold"]);
+  });
+});
+
