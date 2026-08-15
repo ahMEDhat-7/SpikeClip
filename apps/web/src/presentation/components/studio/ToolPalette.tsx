@@ -18,9 +18,6 @@ const TOOL_ICONS: Record<StudioStep, React.ElementType> = {
   platform: LayoutGrid,
   scenes: Film,
   chat: MessageSquare,
-  captions: Type,
-  music: Music,
-  templates: Sparkles,
   export: Download,
 };
 

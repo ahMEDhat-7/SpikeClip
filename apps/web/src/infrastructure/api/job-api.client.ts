@@ -195,6 +195,49 @@ export class JobApiClient implements JobApiPort {
       throw new Error(error.message || `HTTP ${res.status}`);
     }
   }
+
+  async getProject(jobId: string): Promise<{ project: Record<string, unknown> | null }> {
+    const res = await fetch(`${API_BASE}/studio/${jobId}/project`, {
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to get project" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+
+    return parseJson<{ project: Record<string, unknown> | null }>(res);
+  }
+
+  async saveProject(jobId: string, project: Record<string, unknown> | null): Promise<void> {
+    const res = await fetch(`${API_BASE}/studio/${jobId}/project`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ project }),
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to save project" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+  }
+
+  async prepareSource(jobId: string, start: number, end: number, force = false): Promise<{ url: string; key: string }> {
+    const res = await fetch(`${API_BASE}/studio/${jobId}/source`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ start, end, force }),
+    });
+
+    if (!res.ok) {
+      const error = await parseJson<ApiResponseError>(res).catch(() => ({ message: "Failed to prepare source" }));
+      throw new Error(error.message || `HTTP ${res.status}`);
+    }
+
+    return parseJson<{ url: string; key: string }>(res);
+  }
 }
 
 export const jobApi = new JobApiClient();

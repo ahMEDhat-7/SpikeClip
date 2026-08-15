@@ -63,7 +63,7 @@ export const Timeline = memo(function Timeline({
     };
     historyManager.push(state);
     setHistory(state);
-  }, []);
+  }, [scenes, selectedScenes, currentSceneIndex, historyManager]);
 
   const handleUndo = useCallback(() => {
     const prev = historyManager.undo();

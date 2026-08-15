@@ -46,4 +46,5 @@ export interface ExportJobConfig {
 export interface QueueService {
   addAnalysisJob(jobId: string, data: { url: string; userId: string }): Promise<void>;
   addExportJob(jobId: string, data: ExportJobConfig): Promise<void>;
+  addSourceJob(jobId: string, data: { userId: string; start: number; end: number }): Promise<void>;
 }

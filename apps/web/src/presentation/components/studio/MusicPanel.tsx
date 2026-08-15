@@ -53,6 +53,12 @@ export function MusicPanel({
   }, []);
 
   useEffect(() => {
+    if (audioRef.current && musicTrack) {
+      audioRef.current.volume = musicTrack.volume;
+    }
+  }, [musicTrack?.volume]);
+
+  useEffect(() => {
     if (!audioRef.current || !isPlaying) return;
     const interval = setInterval(() => {
       if (audioRef.current) {

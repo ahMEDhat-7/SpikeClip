@@ -66,11 +66,19 @@ export class AudioSyncService {
 
       source.connect(this.originalGain);
       source.start();
-    });
+      this.state.sources.set(Date.now(), source);
+      source.onended = () => {
+        this.state.sources.delete(Date.now());
+      };
+    }).catch(() => {});
   }
 
   playMusicTrack(buffer: AudioBuffer, volume = 0.3, fadeIn = 0, fadeOut = 0): void {
     this.stopMusic();
+
+    if (this.state.audioContext.state === "suspended") {
+      this.state.audioContext.resume();
+    }
 
     const source = this.state.audioContext.createBufferSource();
     source.buffer = buffer;
@@ -157,6 +165,12 @@ export class AudioSyncService {
 
   destroy(): void {
     this.stopMusic();
+    if (this.originalGain) {
+      this.originalGain.disconnect();
+      this.originalGain = null;
+    }
+    this.masterGain.disconnect();
+    this.state.buffers.clear();
     this.state.audioContext.close();
   }
 }

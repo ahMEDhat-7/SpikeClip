@@ -124,15 +124,29 @@ export function initWebGL(canvas: HTMLCanvasElement): WebGLEffectsContext | null
   const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
   gl.shaderSource(vertexShader, VERTEX_SHADER);
   gl.compileShader(vertexShader);
+  if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+    const log = gl.getShaderInfoLog(vertexShader) ?? "unknown";
+    gl.deleteShader(vertexShader);
+    return null;
+  }
 
   const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
   gl.shaderSource(fragmentShader, FRAGMENT_SHADER);
   gl.compileShader(fragmentShader);
+  if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+    const log = gl.getShaderInfoLog(fragmentShader) ?? "unknown";
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    return null;
+  }
 
   const program = gl.createProgram()!;
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
+
+  gl.deleteShader(vertexShader);
+  gl.deleteShader(fragmentShader);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     gl.deleteProgram(program);

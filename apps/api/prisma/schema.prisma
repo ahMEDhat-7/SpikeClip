@@ -44,6 +44,8 @@ model Job {
   heatmapData      Json?
   studioEdits      Json?
   project          Json?
+  sourceKey        String?
+  sourceStart      Float?
   errorMessage     String?
   createdAt        DateTime @default(now())
   completedAt      DateTime?

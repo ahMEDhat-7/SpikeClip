@@ -31,7 +31,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // output: "standalone",
   transpilePackages: [
     "@openreel/core",
     "mediabunny",

@@ -37,7 +37,7 @@ export default function HomePage() {
             {/* Cursor-inspired: display at weight 400, tight tracking */}
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-normal tracking-[-0.04em] leading-[1.1]">
               Find what viewers{" "}
-              <span className="text-primary font-medium">actually rewatch</span>
+              <span className="text-red-400 font-medium">actually rewatch</span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed">
               Real viewer data shows which moments your audience rewatched —
@@ -198,7 +198,7 @@ export default function HomePage() {
               </div>
               <h2 className="text-2xl sm:text-3xl font-normal tracking-tight leading-tight">
                 Edit clips with
-                <span className="text-primary font-medium"> natural language</span>
+                <span className="text-red-400 font-medium"> natural language</span>
               </h2>
               <p className="text-muted-foreground text-lg leading-relaxed">
                 Type what you want in plain English. Our AI translates your prompt into
@@ -211,7 +211,7 @@ export default function HomePage() {
                     <MessageSquare className="h-4 w-4" />
                   </div>
                   <div>
-                    <h4 className="font-medium">Prompt-based workflow</h4>
+                    <h3 className="font-medium">Prompt-based workflow</h3>
                     <p className="text-sm text-muted-foreground">
                       &quot;Add bold captions centered on screen&quot; or &quot;Speed up the intro by 2x&quot;
                     </p>
@@ -222,7 +222,7 @@ export default function HomePage() {
                     <Eye className="h-4 w-4" />
                   </div>
                   <div>
-                    <h4 className="font-medium">Live preview</h4>
+                    <h3 className="font-medium">Live preview</h3>
                     <p className="text-sm text-muted-foreground">
                       See every change in real-time before exporting
                     </p>
@@ -233,7 +233,7 @@ export default function HomePage() {
                     <Code className="h-4 w-4" />
                   </div>
                   <div>
-                    <h4 className="font-medium">8 action types</h4>
+                    <h3 className="font-medium">8 action types</h3>
                     <p className="text-sm text-muted-foreground">
                       Captions, effects, overlays, transitions, speed, audio mixing, backgrounds, and trims
                     </p>

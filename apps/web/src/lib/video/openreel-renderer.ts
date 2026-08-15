@@ -3,7 +3,12 @@ import type { Project, VideoExportSettings } from "@openreel/core";
 let enginePromise: Promise<typeof import("@openreel/core")> | null = null;
 
 async function getCore() {
-  if (!enginePromise) enginePromise = import("@openreel/core");
+  if (!enginePromise) {
+    enginePromise = import("@openreel/core").catch((err) => {
+      enginePromise = null;
+      throw err;
+    });
+  }
   return enginePromise;
 }
 

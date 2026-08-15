@@ -37,12 +37,15 @@ export function buildProjectFromJob(input: BuildProjectInput): Project {
 
   const duration = segment.end - segment.start;
 
+  const musicMediaId = musicBlob ? crypto.randomUUID() : undefined;
+
   const mediaLibrary = buildMediaLibrary(
     videoMediaId,
     videoBlob,
     job,
     musicBlob,
     musicMetadata,
+    musicMediaId,
   );
 
   const timeline = buildTimeline(
@@ -53,6 +56,7 @@ export function buildProjectFromJob(input: BuildProjectInput): Project {
     duration,
     captions,
     musicBlob,
+    musicMediaId,
   );
 
   const now = Date.now();
@@ -80,6 +84,7 @@ function buildMediaLibrary(
   job: Job,
   musicBlob?: Blob,
   musicMetadata?: { duration: number; sampleRate: number; channels: number },
+  musicMediaId?: string,
 ): MediaLibrary {
   const items: MediaLibrary["items"] = [
     {
@@ -104,9 +109,9 @@ function buildMediaLibrary(
     },
   ];
 
-  if (musicBlob && musicMetadata) {
+  if (musicBlob && musicMetadata && musicMediaId) {
     items.push({
-      id: crypto.randomUUID(),
+      id: musicMediaId,
       name: "music",
       type: "audio",
       fileHandle: null,
@@ -137,6 +142,7 @@ function buildTimeline(
   duration: number,
   captions?: CaptionEntry[],
   musicBlob?: Blob,
+  musicMediaId?: string,
 ): Timeline {
   const videoClip: Clip = {
     id: videoClipId,
@@ -167,7 +173,7 @@ function buildTimeline(
     },
   ];
 
-  if (musicBlob) {
+  if (musicBlob && musicMediaId) {
     const musicTrackId = crypto.randomUUID();
     const musicClipId = crypto.randomUUID();
     tracks.push({
@@ -177,7 +183,7 @@ function buildTimeline(
       clips: [
         {
           id: musicClipId,
-          mediaId: crypto.randomUUID(),
+          mediaId: musicMediaId,
           trackId: musicTrackId,
           startTime: 0,
           duration,

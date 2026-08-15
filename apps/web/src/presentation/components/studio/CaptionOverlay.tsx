@@ -70,9 +70,10 @@ export const CaptionOverlay = memo(function CaptionOverlay({
   const isVisible = sceneElapsed >= captionStart && sceneElapsed <= captionEnd;
 
   useEffect(() => {
-    if (!isVisible) return;
+    const existing = document.getElementById(`caption-anim-global`);
+    if (existing) return;
     const style = document.createElement("style");
-    style.id = `caption-anim-${styleId}`;
+    style.id = "caption-anim-global";
     style.textContent = `
       @keyframes captionFadeIn {
         from { opacity: 0; }
@@ -89,10 +90,7 @@ export const CaptionOverlay = memo(function CaptionOverlay({
       }
     `;
     document.head.appendChild(style);
-    return () => {
-      style.remove();
-    };
-  }, [isVisible, styleId]);
+  }, []);
 
   const positionStyle = useMemo<React.CSSProperties>(() => {
     if (caption.x != null && caption.y != null) {

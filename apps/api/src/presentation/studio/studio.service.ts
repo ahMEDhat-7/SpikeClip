@@ -148,10 +148,18 @@ export class StudioService {
     const cacheKey = this.getCacheKey(dto.sceneId, actions, dto.platform);
     const cached = await this.redisService.get(cacheKey);
     if (cached) {
-      return { previewUrl: cached, cached: true };
+      try {
+        const url = await this.storage.getSignedUrl(cached, 3600);
+        return { previewUrl: url, cached: true };
+      } catch {
+        await this.redisService.del(cacheKey);
+      }
     }
 
-    const [jobId, sceneIndexStr] = dto.sceneId.split("-");
+    const lastSep = dto.sceneId.lastIndexOf("::");
+    if (lastSep === -1) throw new BadRequestException("Invalid sceneId format. Expected 'jobId::sceneIndex'");
+    const jobId = dto.sceneId.slice(0, lastSep);
+    const sceneIndexStr = dto.sceneId.slice(lastSep + 2);
     const sceneIndex = parseInt(sceneIndexStr, 10);
     const job = await this.jobRepo.findById(jobId);
     if (!job) throw new BadRequestException("Job not found");
@@ -171,6 +179,7 @@ export class StudioService {
     try {
       await withTimeout(
         execFileAsync("yt-dlp", [
+          "--js-runtimes", "node",
           "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
           "--download-sections", `*${scene.start_time}-${scene.end_time}`,
           "--force-keyframes-at-cuts",
@@ -188,10 +197,15 @@ export class StudioService {
         platformId
       );
 
-      await this.redisService.set(cacheKey, outputPath, 3600);
-      return { previewUrl: outputPath, cached: false };
+      const storageKey = `previews/${dto.sceneId.replace(/::/g, "-")}-${Date.now()}.mp4`;
+      await this.storage.uploadFromFile(outputPath, storageKey, "video/mp4");
+      await this.redisService.set(cacheKey, storageKey, 3600);
+
+      const url = await this.storage.getSignedUrl(storageKey, 3600);
+      return { previewUrl: url, cached: false };
     } finally {
       await unlink(tmpInput).catch(() => {});
+      await unlink(outputPath).catch(() => {});
     }
   }
 
@@ -211,7 +225,7 @@ export class StudioService {
       throw new BadRequestException("Scene not found");
     }
 
-    const sceneId = `${jobId}-${sceneIndex}`;
+    const sceneId = `${jobId}::${sceneIndex}`;
     return this.generatePreview(userId, { ...dto, sceneId });
   }
 
@@ -298,6 +312,7 @@ export class StudioService {
     try {
       await withTimeout(
         execFileAsync("yt-dlp", [
+          "--js-runtimes", "node",
           job.url,
           "--no-warnings",
           "--force-keyframes-at-cuts",

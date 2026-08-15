@@ -80,17 +80,53 @@ export function createClipWorker(
 
         const duration = endTime - startTime;
 
-        // Step 1: Download the specific section via yt-dlp
-        await execFileAsync("yt-dlp", [
-          "-f",
-          "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
-          "--download-sections",
-          `*${startTime}-${endTime}`,
-          "--force-keyframes-at-cuts",
-          "-o",
-          tmpInput,
-          videoUrl,
-        ]);
+        // Step 1: Reuse the pre-downloaded shared source when available,
+        // otherwise fall back to downloading this section directly.
+        const jobRecord = await prisma.job.findUnique({
+          where: { id: jobId },
+          select: { sourceKey: true, sourceStart: true },
+        });
+        const sourceKey = jobRecord?.sourceKey ?? null;
+        const sourceStart = jobRecord?.sourceStart ?? 0;
+
+        let usedSharedSource = false;
+        if (sourceKey) {
+          for (let attempt = 0; attempt < 40; attempt++) {
+            if (await fileExists(sourceKey)) {
+              usedSharedSource = true;
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
+        }
+
+        if (usedSharedSource && sourceKey) {
+          const offset = Math.max(0, startTime - sourceStart);
+          await execFileAsync("ffmpeg", [
+            "-y",
+            "-ss", String(offset),
+            "-i", sourceKey,
+            "-t", String(duration),
+            "-c:v", "libx264", "-c:a", "aac",
+            tmpInput,
+          ]);
+          logger.log(`Reused shared source for clip ${clipId} (offset ${offset}s)`);
+        } else {
+          if (sourceKey) {
+            logger.warn(`Shared source not ready for clip ${clipId}, downloading section directly`);
+          }
+          await execFileAsync("yt-dlp", [
+            "--js-runtimes", "node",
+            "-f",
+            "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+            "--download-sections",
+            `*${startTime}-${endTime}`,
+            "--force-keyframes-at-cuts",
+            "-o",
+            tmpInput,
+            videoUrl,
+          ]);
+        }
 
         // Step 2: Vertical crop or pass-through encode
         if (vertical) {
@@ -144,7 +180,7 @@ export function createClipWorker(
               (bullJob.data.platform as "youtube-shorts" | "instagram-reels" | "tiktok") || "youtube-shorts",
               (bullJob.data.quality as "720p" | "1080p") || "1080p",
               (bullJob.data.format as "mp4" | "webm") || "mp4",
-              startTime,
+              0,
               duration
             );
             currentFile = actionsOutput;

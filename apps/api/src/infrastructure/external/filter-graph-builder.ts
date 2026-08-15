@@ -128,8 +128,11 @@ export class FilterGraphBuilder {
   private escapeText(text: string): string {
     return text
       .replace(/\\/g, "\\\\")
+      .replace(/%/g, "%%")
+      .replace(/\$/g, "\\$")
       .replace(/'/g, "'\\''")
       .replace(/:/g, "\\:")
+      .replace(/;/g, "\\;")
       .replace(/\n/g, "\\n");
   }
 
@@ -214,6 +217,7 @@ export class FilterGraphBuilder {
     if (action.animation === "pop" && action.text.includes(" ")) {
       const words = action.text.split(" ");
       const wordDuration = (action.end - action.start) / words.length;
+      chain.videoFilters.pop();
       words.forEach((word, i) => {
         const wordStart = action.start + i * wordDuration;
         const wordEnd = wordStart + wordDuration;
@@ -331,7 +335,7 @@ export class FilterGraphBuilder {
         break;
       }
       case "glow":
-        chain.videoFilters.push(`gblur=sigma=20,format=rgba,colorchannelmixer=aa=0.5,overlay${enableStr}`);
+        chain.videoFilters.push(`gblur=sigma=${Math.round(intensity * 10)},format=rgba,colorchannelmixer=aa=${intensity * 0.5}`);
         break;
     }
   }
@@ -342,6 +346,8 @@ export class FilterGraphBuilder {
     if (action.rate > 2) {
       const sqrtRate = Math.sqrt(action.rate);
       chain.audioFilters.push(`atempo=${sqrtRate},atempo=${sqrtRate}`);
+    } else if (action.rate < 0.5) {
+      chain.audioFilters.push(`atempo=0.5,atempo=${action.rate / 0.5}`);
     } else {
       chain.audioFilters.push(`atempo=${action.rate}`);
     }
@@ -351,10 +357,7 @@ export class FilterGraphBuilder {
     const x = `${action.x}*iw/100`;
     const y = `${action.y}*ih/100`;
     const scale = action.scale ?? 1.0;
-    const enableStr = action.startTime !== undefined && action.endTime !== undefined
-      ? `:enable='between(t,${action.startTime},${action.endTime})'`
-      : "";
-    chain.videoFilters.push(`scale=${scale}:flags=lanczos[overlay];overlay=x=${x}:y=${y}${enableStr}`);
+    chain.videoFilters.push(`scale=${scale}:flags=lanczos`);
   }
 
   private applyTransition(action: SetTransitionAction, chain: FilterChain): void {

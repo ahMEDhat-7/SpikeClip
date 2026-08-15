@@ -143,6 +143,16 @@ export class CanvasRenderer {
     this.ctx2d = canvas.getContext("2d")!;
     this.webgl = initWebGL(canvas);
 
+    if (this.webgl) {
+      const gl = this.webgl.gl;
+      gl.canvas.addEventListener("webglcontextlost", () => {
+        this.webgl = null;
+      });
+      gl.canvas.addEventListener("webglcontextrestored", () => {
+        this.webgl = initWebGL(this.canvas);
+      });
+    }
+
     this.offscreen = document.createElement("canvas");
     this.offscreen.width = this.width;
     this.offscreen.height = this.height;
@@ -431,6 +441,13 @@ export class CanvasRenderer {
   }
 
   destroy(): void {
-    this.webgl = null;
+    if (this.webgl) {
+      const gl = this.webgl.gl;
+      gl.deleteProgram(this.webgl.program);
+      gl.deleteBuffer(this.webgl.positionBuffer);
+      gl.deleteBuffer(this.webgl.texCoordBuffer);
+      gl.deleteTexture(this.webgl.texture);
+      this.webgl = null;
+    }
   }
 }

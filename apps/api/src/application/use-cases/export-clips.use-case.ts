@@ -5,6 +5,7 @@ import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
+import { getSourcePath } from "../../infrastructure/workers/source-path";
 import type { StudioAction } from "@spikeclips/shared";
 
 interface ExportScene {
@@ -86,6 +87,24 @@ export class ExportClipsUseCase {
     const createdClipIds: string[] = [];
 
     try {
+      if (scenes.length > 0) {
+        const sourceStart = Math.max(0, Math.min(...scenes.map((s) => s.start_time)));
+        const sourceEnd = Math.max(...scenes.map((s) => s.end_time));
+        const sourceKey = getSourcePath(jobId);
+
+        await this.prisma.job.update({
+          where: { id: jobId },
+          data: { sourceKey },
+        });
+
+        await this.queueService.addSourceJob(jobId, {
+          userId,
+          start: sourceStart,
+          end: sourceEnd,
+        });
+        this.logger.log(`Enqueued shared source job for ${jobId} (${sourceStart}-${sourceEnd}s)`);
+      }
+
       for (let idx = 0; idx < scenes.length; idx++) {
         const scene = scenes[idx];
 

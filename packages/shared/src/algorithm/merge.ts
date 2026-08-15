@@ -83,6 +83,12 @@ export function normalizeHeatmapValues(spikes: HeatmapSpike[]): HeatmapSpike[] {
   }
 
   if (hasInvalid || maxVal <= 0) {
+    if (maxVal > 1.0) {
+      return spikes.map((s) => ({
+        ...s,
+        value: Number.isFinite(s.value) ? Math.max(0, Math.min(1, s.value / maxVal)) : 0,
+      }));
+    }
     return spikes.map((s) => ({
       ...s,
       value: Number.isFinite(s.value) ? Math.max(0, Math.min(1, s.value)) : 0,
@@ -416,13 +422,14 @@ export function padScenes(
     if (scene.start_time <= prev.end_time) {
       const prevDuration = prev.end_time - prev.start_time;
       const sceneDuration = scene.end_time - scene.start_time;
-      const totalDuration = prevDuration + sceneDuration;
 
       prev.end_time = Math.max(prev.end_time, scene.end_time);
       prev.duration = prev.end_time - prev.start_time;
+      const mergedDuration = prev.duration;
+
       prev.peak_intensity = Math.max(prev.peak_intensity, scene.peak_intensity);
-      prev.avg_intensity = totalDuration > 0
-        ? (prev.avg_intensity * prevDuration + scene.avg_intensity * sceneDuration) / totalDuration
+      prev.avg_intensity = mergedDuration > 0
+        ? (prev.avg_intensity * prevDuration + scene.avg_intensity * sceneDuration) / (prevDuration + sceneDuration)
         : (prev.avg_intensity + scene.avg_intensity) / 2;
       prev.score = Math.max(prev.score, scene.score);
       if (scene.capped) prev.capped = true;

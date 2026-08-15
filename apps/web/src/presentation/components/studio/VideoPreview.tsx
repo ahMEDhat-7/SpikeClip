@@ -117,7 +117,7 @@ export const VideoPreview = memo(function VideoPreview({
       );
       setIsLoading(false);
     }
-  }, [activeScene, videoId, job.id, selectedScenes, studioActions, sceneDuration]);
+  }, [activeScene, videoId, job.id, selectedScenes, sceneDuration]);
 
   useEffect(() => {
     loadVideo();
@@ -129,12 +129,19 @@ export const VideoPreview = memo(function VideoPreview({
     };
   }, [loadVideo]);
 
+  useEffect(() => {
+    if (activeScene && !isLoading) {
+      const pipeline = processActions(studioActions, activeScene.start_time, activeScene.end_time);
+      pipelineRef.current = pipeline;
+    }
+  }, [studioActions, activeScene, isLoading]);
+
   const togglePlay = useCallback(async () => {
     const decoder = decoderRef.current;
     if (!decoder) return;
 
     if (isPlaying) {
-      decoder.destroy();
+      cancelAnimationFrame(animFrameRef.current);
       setIsPlaying(false);
     } else {
       setIsPlaying(true);

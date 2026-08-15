@@ -179,7 +179,7 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
           scenes: [customScene],
           selectedSceneIndex: 0,
           sceneEdits: new Map([[0, createDefaultSceneEdit()]]),
-          currentStep: "captions",
+          currentStep: "platform",
           customTimeRange: { start: action.start, end: action.end },
         };
       }
@@ -246,7 +246,7 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
     case "REMOVE_STUDIO_ACTION":
       return updateSceneEdit(action.index, (e) => ({
         ...e,
-        studioActions: e.studioActions.filter((_action: StudioActionType, i: number) => i !== action.index),
+        studioActions: e.studioActions.filter((_action: StudioActionType, i: number) => i !== action.actionIndex),
       }));
 
     case "SET_PREVIEW_URL": {

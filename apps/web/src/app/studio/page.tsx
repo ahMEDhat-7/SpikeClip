@@ -15,11 +15,8 @@ import { ToolPalette } from "@/presentation/components/studio/ToolPalette";
 import { StudioTimeline } from "@/presentation/components/studio/StudioTimeline";
 import { PlatformSelector } from "@/presentation/components/studio/PlatformSelector";
 import { SceneSelector } from "@/presentation/components/studio/SceneSelector";
-import { CaptionEditor } from "@/presentation/components/studio/CaptionEditor";
-import { MusicPanel } from "@/presentation/components/studio/MusicPanel";
-import { TemplateLibrary } from "@/presentation/components/studio/TemplateLibrary";
 import { ExportPanel } from "@/presentation/components/studio/ExportPanel";
-import { CompositePreview } from "@/presentation/components/studio/CompositePreview";
+import { OpenReelEditor } from "@/presentation/components/studio/OpenReelEditor";
 import { ErrorBoundary } from "@/presentation/components/ui/error-boundary";
 import { ChatPanel } from "@/presentation/components/studio/ChatPanel";
 import { ActionList } from "@/presentation/components/studio/ActionList";
@@ -87,10 +84,17 @@ function StudioContent() {
     }
   }, [jobIdFromUrl, job, loadJob]);
 
+  const pollJobRef = useRef<AbortController | null>(null);
+
   const pollJob = useCallback(async (jobId: string) => {
+    pollJobRef.current?.abort();
+    const controller = new AbortController();
+    pollJobRef.current = controller;
     const maxAttempts = 120;
     for (let i = 0; i < maxAttempts; i++) {
+      if (controller.signal.aborted) return;
       await new Promise((r) => setTimeout(r, 3000));
+      if (controller.signal.aborted) return;
       try {
         const updated = await jobApi.getJob(jobId);
         if (updated.status === JOB_STATUS.COMPLETED || updated.status === JOB_STATUS.FAILED) {
@@ -107,6 +111,12 @@ function StudioContent() {
         }
       }
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      pollJobRef.current?.abort();
+    };
   }, []);
 
   const handleAnalyze = useCallback(async () => {
@@ -303,37 +313,6 @@ function StudioContent() {
           </div>
         );
 
-      case "captions":
-        return (
-          <CaptionEditor
-            captions={studio.captions}
-            sceneCount={studio.scenes.length}
-            onAdd={studio.addCaption}
-            onUpdate={studio.updateCaption}
-            onRemove={studio.removeCaption}
-          />
-        );
-
-      case "music":
-        return (
-          <MusicPanel
-            musicTrack={studio.musicTrack}
-            originalVolume={studio.originalVolume}
-            onSetMusic={studio.setMusic}
-            onSetOriginalVolume={studio.setOriginalVolume}
-            onUpload={(file) => jobApi.uploadMusic(file)}
-            onDelete={(key) => jobApi.deleteMusic(key)}
-          />
-        );
-
-      case "templates":
-        return (
-          <TemplateLibrary
-            selectedTemplate={studio.selectedTemplate}
-            onSelect={studio.selectTemplate}
-          />
-        );
-
       case "export":
         return (
           <ExportPanel
@@ -386,19 +365,17 @@ function StudioContent() {
       );
     }
     
+    // Compute the selected scene's start/end for the OpenReel editor.
+    const selectedScene = studio.selectedSceneIndex !== null ? studio.scenes[studio.selectedSceneIndex] : null;
+    const sceneStart = selectedScene?.start_time ?? 0;
+    const sceneEnd = selectedScene?.end_time ?? (job?.videoDuration ?? 0);
+
     return (
-      <ErrorBoundary>
-        <CompositePreview
-          job={job}
-          platform={studio.platform}
-          captions={studio.captions}
-          selectedTemplate={studio.selectedTemplate}
-          scenes={studio.scenes}
-          selectedScenes={studio.selectedSceneIndex !== null ? [studio.selectedSceneIndex] : []}
-          musicTrack={studio.musicTrack}
-          onCaptionDrag={(id, x, y) => studio.updateCaption(id, { x, y })}
-        />
-      </ErrorBoundary>
+      <OpenReelEditor
+        jobId={job?.id ?? ""}
+        start={sceneStart}
+        end={sceneEnd}
+      />
     );
   };
 

@@ -91,6 +91,10 @@ export interface JobApiPort {
     history?: Array<{ role: "user" | "assistant"; content: string }>
   ): Promise<TranslateResponse>;
   generatePreview(sceneId: string, actions: StudioAction[], platform: string): Promise<PreviewResponse>;
+  saveActions(jobId: string, studioEdits: Record<number, StudioAction[]>): Promise<void>;
+  getProject(jobId: string): Promise<{ project: Record<string, unknown> | null }>;
+  saveProject(jobId: string, project: Record<string, unknown> | null): Promise<void>;
+  prepareSource(jobId: string, start: number, end: number, force?: boolean): Promise<{ url: string; key: string }>;
 }
 
 export interface JobResponse {

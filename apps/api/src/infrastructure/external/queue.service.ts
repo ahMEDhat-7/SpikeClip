@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { randomUUID } from "crypto";
 import { Queue, Worker } from "bullmq";
 import { QueueService, ExportJobConfig } from "../../domain/services/queue";
 
@@ -14,10 +15,12 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
   private readonly logger = new Logger(BullMQQueueService.name);
   private readonly analysisQueue: Queue;
   private readonly exportQueue: Queue;
+  private readonly sourceQueue: Queue;
 
   constructor() {
     this.analysisQueue = new Queue("analysis", { connection: connectionOptions });
     this.exportQueue = new Queue("export", { connection: connectionOptions });
+    this.sourceQueue = new Queue("source", { connection: connectionOptions });
     this.logger.log("Queues initialized");
   }
 
@@ -37,9 +40,20 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
     data: ExportJobConfig
   ): Promise<void> {
     await this.exportQueue.add("export-clip", { ...data, jobId }, {
-      jobId: `export-${jobId}-${data.sceneIndex}`,
+      jobId: `export-${jobId}-${data.sceneIndex}-${randomUUID().slice(0, 8)}`,
       attempts: 2,
       backoff: { type: "exponential", delay: 10000 },
+    });
+  }
+
+  async addSourceJob(
+    jobId: string,
+    data: { userId: string; start: number; end: number }
+  ): Promise<void> {
+    await this.sourceQueue.add("prepare-source", { ...data, jobId }, {
+      jobId: `source-${jobId}`,
+      attempts: 3,
+      backoff: { type: "exponential", delay: 5000 },
     });
   }
 
@@ -74,6 +88,11 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       await this.exportQueue.close();
     } catch (err) {
       this.logger.error(`Failed to close export queue: ${err}`);
+    }
+    try {
+      await this.sourceQueue.close();
+    } catch (err) {
+      this.logger.error(`Failed to close source queue: ${err}`);
     }
   }
 }

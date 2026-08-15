@@ -166,6 +166,10 @@ export class VideoDecoderService {
     for (const [ts, frame] of sorted) {
       if (ts >= this.startTimestamp && ts <= this.endTimestamp) {
         frames.push(frame);
+        this.frameBuffer.delete(ts);
+      } else {
+        frame.close();
+        this.frameBuffer.delete(ts);
       }
     }
 

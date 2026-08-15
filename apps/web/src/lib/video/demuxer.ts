@@ -25,7 +25,8 @@ export async function demuxVideo(url: string): Promise<DemuxResult> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to fetch video: ${response.status}`);
 
-  const reader = response.body!.getReader();
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Failed to read video response body");
   const mp4 = createFile();
 
   const videoChunks: DemuxedChunk[] = [];
@@ -115,9 +116,17 @@ export async function demuxVideo(url: string): Promise<DemuxResult> {
     };
 
     (mp4 as any).onFlush = () => {
-      if (!videoConfig || !audioConfig) {
-        reject(new Error("No video or audio track found"));
+      if (!videoConfig) {
+        reject(new Error("No video track found"));
         return;
+      }
+      if (!audioConfig) {
+        audioConfig = {
+          codec: "mp4a.40.2",
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          description: undefined,
+        };
       }
       resolve({
         videoChunks,

@@ -111,12 +111,22 @@ export class StudioController {
   @ApiResponse({ status: 200, description: "Serves the preview video" })
   @ApiResponse({ status: 404, description: "Preview file not found" })
   async servePreview(
-    @Req() req: { user?: { userId?: string } },
+    @Req() req: { user: { userId: string } },
     @Param("jobId") jobId: string,
     @Param("sceneIndex") sceneIndex: string,
     @Res() res: Response
   ) {
-    const previewFile = join(PREVIEW_TMP, `${jobId}-${sceneIndex}-preview.mp4`);
+    const job = await this.studioService.getProject(req.user.userId, jobId);
+    if (!job) {
+      throw new NotFoundException("Job not found or unauthorized");
+    }
+
+    const safeSceneIndex = parseInt(sceneIndex, 10);
+    if (isNaN(safeSceneIndex) || safeSceneIndex < 0) {
+      throw new NotFoundException("Invalid scene index");
+    }
+
+    const previewFile = join(PREVIEW_TMP, `${jobId}-${safeSceneIndex}-preview.mp4`);
 
     if (!existsSync(previewFile)) {
       throw new NotFoundException("Preview file not found. Generate a preview first.");

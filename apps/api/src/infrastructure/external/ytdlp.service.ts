@@ -19,7 +19,7 @@ export class YtdlpService implements VideoExtractor {
     this.logger.log(`Extracting metadata for: ${url}`);
 
     const { stdout } = await withTimeout(
-      execFileAsync("yt-dlp", ["-j", "--write-info-json", "--no-download", url]),
+      execFileAsync("yt-dlp", ["--js-runtimes", "node", "-j", "--write-info-json", "--no-download", url]),
       YTDLP_TIMEOUT_MS,
       "yt-dlp metadata extraction"
     );
@@ -42,7 +42,7 @@ export class YtdlpService implements VideoExtractor {
     this.logger.log(`Extracting heatmap for: ${url}`);
 
     const { stdout } = await withTimeout(
-      execFileAsync("yt-dlp", ["-j", "--no-download", url]),
+      execFileAsync("yt-dlp", ["--js-runtimes", "node", "-j", "--no-download", url]),
       YTDLP_TIMEOUT_MS,
       "yt-dlp heatmap extraction"
     );
@@ -63,6 +63,7 @@ export class YtdlpService implements VideoExtractor {
 
     await withTimeout(
       execFileAsync("yt-dlp", [
+        "--js-runtimes", "node",
         "-f",
         "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
         `--download-sections`,

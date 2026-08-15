@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE = process.env.INTERNAL_API_URL || "http://localhost:3001";
-const PROXY_TIMEOUT_MS = 30_000;
-const MAX_REQUEST_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const PROXY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes for long-running studio operations
+const MAX_REQUEST_SIZE_BYTES = 500 * 1024 * 1024; // 500 MB for clip uploads
 
 const PUBLIC_API_PREFIXES = ["/api/auth/"];
 

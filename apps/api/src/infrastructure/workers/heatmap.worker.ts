@@ -37,6 +37,7 @@ export function createHeatmapWorker(prisma: PrismaService): Worker {
         });
 
         const { stdout } = await execFileAsync("yt-dlp", [
+          "--js-runtimes", "node",
           "-j",
           "--no-download",
           url,

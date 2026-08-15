@@ -17,7 +17,7 @@ export function Footer() {
               <img src="/logo.svg" alt="SpikeClip" className="h-4 w-4" />
             </div>
             <span className="text-sm font-semibold">
-              <span className="text-primary">Spike</span>
+              <span className="text-red-400">Spike</span>
               <span className="text-muted-foreground">Clip</span>
             </span>
           </div>
