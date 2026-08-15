@@ -1,391 +1,82 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useStudio } from "@/application/hooks/use-studio";
-import { useExportClips } from "@/application/hooks/use-export-clips";
-import { useJobApi } from "@/application/providers/api-provider";
-import { Job, JOB_STATUS } from "@/domain/entities/job";
+import { useAnalyzeVideo } from "@/application/hooks/use-analyze-video";
 import { useAuth } from "@/application/hooks/use-auth";
 import { useIsMobile } from "@/lib/hooks/use-media-query";
-import { useBeforeUnload } from "@/lib/hooks/use-before-unload";
-import { StudioLayout, ChatStudioLayout } from "@/presentation/components/studio/StudioLayout";
-import { StudioToolbar } from "@/presentation/components/studio/StudioToolbar";
-import { ToolPalette } from "@/presentation/components/studio/ToolPalette";
-import { StudioTimeline } from "@/presentation/components/studio/StudioTimeline";
 import { PlatformSelector } from "@/presentation/components/studio/PlatformSelector";
 import { SceneSelector } from "@/presentation/components/studio/SceneSelector";
-import { ExportPanel } from "@/presentation/components/studio/ExportPanel";
-import { OpenReelEditor } from "@/presentation/components/studio/OpenReelEditor";
-import { ErrorBoundary } from "@/presentation/components/ui/error-boundary";
-import { ChatPanel } from "@/presentation/components/studio/ChatPanel";
-import { ActionList } from "@/presentation/components/studio/ActionList";
-import { PreviewPanel } from "@/presentation/components/studio/PreviewPanel";
+import { Platform, PLATFORMS } from "@/domain/entities/platform";
+import { Job, JOB_STATUS } from "@/domain/entities/job";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, Monitor, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Search, ArrowLeft, AlertTriangle, Clock, Eye } from "lucide-react";
 import Link from "next/link";
-import { toastError, toastSuccess } from "@/lib/toast";
-import { OutputFormat, OutputQuality, DEFAULT_OUTPUT_FORMAT, DEFAULT_OUTPUT_QUALITY } from "@/domain/entities/export";
+import { toastError } from "@/lib/toast";
 
 function StudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobIdFromUrl = searchParams.get("jobId");
-  const startTimeFromUrl = searchParams.get("start");
-  const endTimeFromUrl = searchParams.get("end");
-  const studio = useStudio();
-  const jobApi = useJobApi();
-  const { user } = useAuth();
-
-  const [job, setJob] = useState<Job | null>(null);
-  const [isLoadingJob, setIsLoadingJob] = useState(false);
-  const [urlInput, setUrlInput] = useState("");
-  const [leftExpanded, setLeftExpanded] = useState(false);
+  const { user, refreshUser } = useAuth();
   const isMobile = useIsMobile();
 
-  const hasUnsavedEdits = studio.platform !== null || studio.scenes.length > 0 || studio.captions.length > 0 || studio.musicTrack !== null || studio.selectedTemplate !== null;
-  useBeforeUnload(hasUnsavedEdits);
+  const { job, isLoading, error, analyze, loadJob } = useAnalyzeVideo(() => {
+    void refreshUser();
+  });
 
-  const { clips, isExporting, exportClips, error: exportError } = useExportClips(job?.id ?? null);
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
+  const [urlInput, setUrlInput] = useState("");
 
-  const initFromJobRef = useRef(studio.initFromJob);
-  const goToStepRef = useRef(studio.goToStep);
-  const addCustomSceneRef = useRef(studio.addCustomScene);
-  const isAnalyzingRef = useRef(false);
-  initFromJobRef.current = studio.initFromJob;
-  goToStepRef.current = studio.goToStep;
-  addCustomSceneRef.current = studio.addCustomScene;
+  // Tab sync: when another tab exports a clip, refresh user counters
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === "clip-exported") void refreshUser();
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, [refreshUser]);
 
-  const loadJob = useCallback(async (id: string) => {
-    setIsLoadingJob(true);
-    try {
-      const loaded = await jobApi.getJob(id);
-      setJob(loaded);
-      const start = startTimeFromUrl !== null ? parseFloat(startTimeFromUrl) : null;
-      const end = endTimeFromUrl !== null ? parseFloat(endTimeFromUrl) : null;
-      if (start !== null && end !== null && !isNaN(start) && !isNaN(end) && end > start) {
-        addCustomSceneRef.current(start, end);
-      } else {
-        initFromJobRef.current(loaded.scenes ?? [], loaded.id, loaded.studioEdits ?? undefined);
-        goToStepRef.current("scenes");
-      }
-    } catch {
-      toastError("Failed to load job. Please check the URL and try again.");
-    } finally {
-      setIsLoadingJob(false);
-    }
-  }, [startTimeFromUrl, endTimeFromUrl]);
-
+  // Load job from URL params
   useEffect(() => {
     if (jobIdFromUrl && !job) {
-      loadJob(jobIdFromUrl);
+      void loadJob(jobIdFromUrl);
     }
   }, [jobIdFromUrl, job, loadJob]);
 
-  const pollJobRef = useRef<AbortController | null>(null);
-
-  const pollJob = useCallback(async (jobId: string) => {
-    pollJobRef.current?.abort();
-    const controller = new AbortController();
-    pollJobRef.current = controller;
-    const maxAttempts = 120;
-    for (let i = 0; i < maxAttempts; i++) {
-      if (controller.signal.aborted) return;
-      await new Promise((r) => setTimeout(r, 3000));
-      if (controller.signal.aborted) return;
-      try {
-        const updated = await jobApi.getJob(jobId);
-        if (updated.status === JOB_STATUS.COMPLETED || updated.status === JOB_STATUS.FAILED) {
-          setJob(updated);
-          if (updated.status === JOB_STATUS.COMPLETED) {
-            initFromJobRef.current(updated.scenes ?? [], updated.id, updated.studioEdits ?? undefined);
-            goToStepRef.current("scenes");
-          }
-          return;
-        }
-      } catch {
-        if (i === maxAttempts - 1) {
-          toastError("Lost connection while polling. Please refresh.");
-        }
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      pollJobRef.current?.abort();
-    };
-  }, []);
-
   const handleAnalyze = useCallback(async () => {
-    if (!urlInput.trim() || isAnalyzingRef.current) return;
+    if (!urlInput.trim()) return;
     const url = urlInput.trim();
     if (!url.includes("youtube.com") && !url.includes("youtu.be")) {
       toastError("Please enter a valid YouTube URL.");
       return;
     }
-    isAnalyzingRef.current = true;
-    setIsLoadingJob(true);
-    try {
-      const newJob = await jobApi.createJob(url);
-      const processed = await jobApi.processJob(newJob.id);
-      setJob(processed);
-      if (processed.status === JOB_STATUS.COMPLETED) {
-        initFromJobRef.current(processed.scenes ?? [], processed.id, processed.studioEdits ?? undefined);
-        goToStepRef.current("scenes");
-      } else {
-        pollJob(processed.id);
-      }
-      } catch {
-        toastError("Analysis failed. Please try again.");
-      } finally {
-        isAnalyzingRef.current = false;
-        setIsLoadingJob(false);
-      }
-    }, [urlInput, pollJob]);
+    await analyze(url);
+  }, [urlInput, analyze]);
 
-  const handleExport = useCallback(
-    (outputConfig?: { format: string; quality: string }) => {
-      if (!job || studio.selectedSceneIndex === null) return;
-      const scene = studio.scenes[studio.selectedSceneIndex];
-      if (!scene) return;
-
-      const musicConfig = studio.musicTrack
-        ? {
-            fileKey: studio.musicTrack.id,
-            volume: studio.musicTrack.volume,
-            originalVolume: studio.originalVolume,
-            fadeIn: studio.musicTrack.fadeIn,
-            fadeOut: studio.musicTrack.fadeOut,
-          }
-        : undefined;
-
-      exportClips(
-        [{ start_time: scene.start_time, end_time: scene.end_time, peak_intensity: scene.peak_intensity }],
-        {
-          platform: studio.platform?.id,
-          format: (outputConfig?.format ?? DEFAULT_OUTPUT_FORMAT) as OutputFormat,
-          quality: (outputConfig?.quality ?? DEFAULT_OUTPUT_QUALITY) as OutputQuality,
-          captions: studio.captions.length > 0
-            ? studio.captions.map(({ text, font, size, color, position, textAlign, startFrame, endFrame, animation, textStyle, opacity, backgroundColor, backgroundEnabled, strokeWidth, shadowRadius, x, y }) => ({
-                text, font, size, color, position, textAlign, startFrame, endFrame, animation, textStyle, opacity, backgroundColor, backgroundEnabled, strokeWidth, shadowRadius, x, y,
-              }))
-            : undefined,
-          music: musicConfig,
-          templateId: studio.selectedTemplate?.id,
-          templateConfig: studio.selectedTemplate?.config as Record<string, unknown> | undefined,
-          actions: studio.studioActions.length > 0 ? studio.studioActions : undefined,
-        }
+  const handleSceneEdit = useCallback(
+    (start: number, end: number) => {
+      if (!job || !selectedPlatform) return;
+      window.open(
+        `/studio/editor?jobId=${job.id}&start=${start}&end=${end}&platform=${selectedPlatform.id}`,
+        "_blank"
       );
-      toastSuccess("Export started! Check the Export tab for progress.");
     },
-    [job, studio, exportClips]
+    [job, selectedPlatform]
   );
 
-  const renderCenter = () => {
-    return (
-      <div className="flex-1 overflow-y-auto px-3 py-2 min-h-0">
-        {renderStepContent()}
-      </div>
-    );
-  };
-
-  const renderStepContent = () => {
-    switch (studio.currentStep) {
-      case "platform":
-        if (!job) {
-          return (
-            <div className="max-w-xl mx-auto space-y-4 py-6">
-              <div className="text-center space-y-1">
-                <h1 className="text-xl font-normal tracking-tight">Clip Studio</h1>
-                <p className="text-sm text-muted-foreground">
-                  Paste a YouTube URL to start creating your clip.
-                </p>
-              </div>
-
-              <Card>
-                <CardContent className="p-3">
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleAnalyze();
-                    }}
-                    className="flex gap-2"
-                  >
-                    <Input
-                      value={urlInput}
-                      onChange={(e) => setUrlInput(e.target.value)}
-                      placeholder="https://youtube.com/watch?v=..."
-                      disabled={isLoadingJob}
-                      className="text-sm"
-                    />
-                    <Button type="submit" disabled={isLoadingJob || !urlInput.trim()} size="sm" className="h-9 px-3">
-                      {isLoadingJob ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Search className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-
-              <PlatformSelector
-                selected={studio.platform}
-                onSelect={studio.setPlatform}
-              />
-            </div>
-          );
-        }
-
-        return (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={() => {
-                  setJob(null);
-                  studio.reset();
-                  setUrlInput("");
-                }}
-              >
-                <ArrowLeft className="h-3 w-3 mr-1" />
-                Change Video
-              </Button>
-            </div>
-            <PlatformSelector
-              selected={studio.platform}
-              onSelect={studio.setPlatform}
-            />
-          </div>
-        );
-
-      case "scenes":
-        return (
-          <div className="space-y-3">
-            <SceneSelector
-              scenes={studio.scenes}
-              selectedSceneIndex={studio.selectedSceneIndex}
-              onSelectScene={studio.selectScene}
-              videoDuration={job?.videoDuration ?? 0}
-              onCustomRange={studio.addCustomScene}
-            />
-            {job && studio.scenes.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  const scene =
-                    studio.selectedSceneIndex !== null
-                      ? studio.scenes[studio.selectedSceneIndex]
-                      : studio.scenes[0];
-                  if (!scene) return;
-                  router.push(
-                    `/studio/editor?jobId=${job.id}&start=${scene.start_time}&end=${scene.end_time}`
-                  );
-                }}
-              >
-                <Monitor className="h-4 w-4 mr-1" />
-                Open in OpenReel Editor
-              </Button>
-            )}
-          </div>
-        );
-
-      case "chat":
-        return (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <ChatPanel
-              messages={studio.chatMessages}
-              onSend={studio.sendChatMessage}
-              loadingPhase={studio.chatLoadingPhase}
-              pendingClarification={studio.pendingClarification}
-              onClarificationSelect={studio.sendChatMessage}
-              pendingPreview={studio.pendingPreview}
-              onApplyPreview={studio.applyPendingPreview}
-              onCancelPreview={studio.cancelPendingPreview}
-            />
-          </div>
-        );
-
-      case "export":
-        return (
-          <ExportPanel
-            platform={studio.platform}
-            scenes={studio.scenes}
-            selectedScenes={studio.selectedSceneIndex !== null ? [studio.selectedSceneIndex] : []}
-            captions={studio.captions}
-            musicTrack={studio.musicTrack}
-            originalVolume={studio.originalVolume}
-            selectedTemplate={studio.selectedTemplate}
-            onExport={handleExport}
-            isExporting={isExporting}
-            clips={clips}
-            exportError={exportError}
-            initialFormat={studio.outputFormat}
-            initialQuality={studio.outputQuality}
-            onFormatChange={studio.setOutputFormat}
-            onQualityChange={studio.setOutputQuality}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const renderRight = () => {
-    if (!job) return null;
-    
-    if (studio.currentStep === "chat") {
-      return (
-        <div className="flex flex-col h-full">
-          <PreviewPanel
-            previewUrl={studio.previewUrl}
-            loading={studio.previewLoading}
-            error={studio.previewError}
-            sceneStart={studio.selectedSceneIndex !== null ? studio.scenes[studio.selectedSceneIndex]?.start_time : 0}
-            sceneEnd={studio.selectedSceneIndex !== null ? studio.scenes[studio.selectedSceneIndex]?.end_time : 15}
-          />
-          <ActionList
-            actions={studio.studioActions}
-            onRemove={studio.removeStudioAction}
-            onUndo={studio.undo}
-            onRedo={studio.redo}
-            canUndo={studio.canUndo}
-            canRedo={studio.canRedo}
-            revisionDepth={studio.revisionDepth}
-          />
-        </div>
-      );
-    }
-    
-    // Compute the selected scene's start/end for the OpenReel editor.
-    const selectedScene = studio.selectedSceneIndex !== null ? studio.scenes[studio.selectedSceneIndex] : null;
-    const sceneStart = selectedScene?.start_time ?? 0;
-    const sceneEnd = selectedScene?.end_time ?? (job?.videoDuration ?? 0);
-
-    return (
-      <OpenReelEditor
-        jobId={job?.id ?? ""}
-        start={sceneStart}
-        end={sceneEnd}
-      />
-    );
-  };
+  const isCompleted = job?.status === JOB_STATUS.COMPLETED;
+  const hasScenes = isCompleted && (job?.scenes?.length ?? 0) > 0;
 
   if (isMobile) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background p-8 text-center">
-        <Monitor className="h-12 w-12 text-muted-foreground mb-4" />
         <h1 className="text-xl font-semibold mb-2">Desktop Only</h1>
         <p className="text-muted-foreground mb-6 max-w-sm">
-          Clip Studio requires a larger screen to edit scenes, captions, and templates.
+          Clip Studio requires a larger screen to edit scenes.
         </p>
         <Button asChild>
           <Link href="/dashboard">Go to Dashboard</Link>
@@ -395,59 +86,210 @@ function StudioContent() {
   }
 
   return (
-    <StudioLayout
-      leftExpanded={leftExpanded}
-      toolbar={
-        <StudioToolbar
-          currentStep={studio.currentStep}
-          currentStepIndex={studio.currentStepIndex}
-          steps={studio.steps}
-          canGoNext={studio.canGoNext}
-          canGoPrev={studio.canGoPrev}
-          isFirstStep={studio.isFirstStep}
-          isLastStep={studio.isLastStep}
-          onGoNext={studio.goNext}
-          onGoPrev={studio.goPrev}
-          onGoToStep={studio.goToStep}
-          onExport={handleExport}
-          onReset={studio.reset}
-          isExporting={isExporting}
-          outputFormat={studio.outputFormat}
-          outputQuality={studio.outputQuality}
-        />
-      }
-      left={
-        <ToolPalette
-          currentStep={studio.currentStep}
-          onStepChange={studio.goToStep}
-          expanded={leftExpanded}
-          onToggleExpand={() => setLeftExpanded((p) => !p)}
-          canGoToStep={studio.canGoToStep}
-        />
-      }
-      center={renderCenter()}
-      right={renderRight()}
-      bottom={
-        studio.scenes.length > 0 ? (
-          <StudioTimeline
-            scenes={studio.scenes}
-            selectedScenes={studio.selectedSceneIndex !== null ? [studio.selectedSceneIndex] : []}
-            totalDuration={job?.videoDuration ?? 0}
-            onToggleScene={studio.selectScene}
-          />
-        ) : undefined
-      }
-    />
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-4xl p-4 sm:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Dashboard
+              </Link>
+            </Button>
+            <h1 className="text-xl font-semibold">Studio</h1>
+            {user && user.plan === "free" && (
+              <Badge variant="secondary" className="font-mono text-xs">
+                {user.analysesUsed}/{user.analysesLimit} analyses
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* URL Input — show when no job loaded */}
+        {!job && !isLoading && (
+          <Card>
+            <CardContent className="p-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleAnalyze();
+                }}
+                className="flex gap-2"
+              >
+                <Input
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="https://youtube.com/watch?v=..."
+                  disabled={isLoading}
+                  className="text-sm"
+                />
+                <Button type="submit" disabled={isLoading || !urlInput.trim()} size="sm" className="h-9 px-3">
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </form>
+              <p className="text-xs text-muted-foreground mt-2">
+                Videos must be at least 3 days old with 1,000+ views for heatmap data to be available.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error — inline warning card with contextual help */}
+        {error && (
+          <Card className="border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">{error}</p>
+                  {error.toLowerCase().includes("less than") && error.toLowerCase().includes("days") && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <Clock className="h-3 w-3" />
+                      <span>YouTube typically generates heatmap data 3–7 days after upload. Your analysis quota was not used.</span>
+                    </div>
+                  )}
+                  {error.toLowerCase().includes("views") && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <Eye className="h-3 w-3" />
+                      <span>Heatmap data requires sufficient viewer engagement. Your analysis quota was not used.</span>
+                    </div>
+                  )}
+                  {error.toLowerCase().includes("no heatmap") && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="h-3 w-3" />
+                      <span>This video may not have heatmap data available yet. Your analysis quota was not used.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading */}
+        {isLoading && (
+          <Card>
+            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+              Analyzing video...
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Job loaded */}
+        {job && (
+          <>
+            {/* Video info */}
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                {job.videoThumbnail && (
+                  <img
+                    src={job.videoThumbnail}
+                    alt={job.videoTitle || "Video"}
+                    className="w-32 h-auto rounded-lg object-cover"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-semibold truncate">{job.videoTitle}</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant={isCompleted ? "default" : "secondary"} className="capitalize">
+                      {job.status}
+                    </Badge>
+                    {job.videoDuration && (
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {Math.floor(job.videoDuration / 60)}:{(job.videoDuration % 60).toString().padStart(2, "0")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    void loadJob("");
+                    setUrlInput("");
+                    setSelectedPlatform(null);
+                    router.push("/studio");
+                  }}
+                  className="shrink-0"
+                >
+                  Change Video
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Step 1: Platform selection (required before scenes) */}
+            {!selectedPlatform && isCompleted && (
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold">Select Target Platform</h2>
+                <PlatformSelector selected={selectedPlatform} onSelect={setSelectedPlatform} />
+              </div>
+            )}
+
+            {/* Step 2: Scene browser (after platform selected) */}
+            {selectedPlatform && hasScenes && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">Select a Scene to Edit</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Platform: {selectedPlatform.name} ({selectedPlatform.aspectRatio}, max {selectedPlatform.maxDuration}s)
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedPlatform(null)}
+                    className="text-xs"
+                  >
+                    Change Platform
+                  </Button>
+                </div>
+                <SceneSelector
+                  scenes={job.scenes ?? []}
+                  videoDuration={job.videoDuration ?? 0}
+                  onEdit={handleSceneEdit}
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Empty state */}
+        {!job && !isLoading && (
+          <div className="text-center py-16 space-y-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mx-auto">
+              <img src="/logo.svg" alt="SpikeClip" className="h-8 w-8 opacity-40" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-lg font-medium">Analyze a YouTube Video</p>
+              <p className="text-sm text-muted-foreground">
+                Paste a YouTube URL above to extract heatmap data and find the most-replayed moments.
+              </p>
+            </div>
+            {user?.plan === "free" && (
+              <div className="text-xs text-muted-foreground/60 space-y-1">
+                <p>Analyses: {user.analysesUsed}/{user.analysesLimit} used this month</p>
+                <p>Clips: {user.clipsUsed}/{user.clipsLimit} exported this month</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 export default function StudioPage() {
   return (
-    <Suspense fallback={
-      <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
       <StudioContent />
     </Suspense>
   );

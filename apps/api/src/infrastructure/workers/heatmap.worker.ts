@@ -2,6 +2,7 @@ import { Logger } from "@nestjs/common";
 import { Job as BullMQJob, Worker } from "bullmq";
 import { extractTopScenes } from "@spikeclips/shared";
 import { PrismaService } from "../database/prisma.service";
+import { AuthService } from "../auth/auth.service";
 import { Prisma } from "@prisma/client";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -21,13 +22,13 @@ const connectionOptions = {
   maxRetriesPerRequest: null,
 };
 
-export function createHeatmapWorker(prisma: PrismaService): Worker {
+export function createHeatmapWorker(prisma: PrismaService, authService: AuthService): Worker {
   const logger = new Logger("HeatmapWorker");
 
   const worker = new Worker(
     "analysis",
     async (bullJob: BullMQJob<HeatmapJobData>) => {
-      const { jobId, url } = bullJob.data;
+      const { jobId, url, userId } = bullJob.data;
       logger.log(`Processing heatmap for job ${jobId}`);
 
       try {
@@ -50,6 +51,9 @@ export function createHeatmapWorker(prisma: PrismaService): Worker {
         }>;
 
         if (!heatmap.length) {
+          // Refund analysis credit — video has no heatmap data
+          await authService.decrementAnalyses(userId).catch(() => {});
+
           await prisma.job.update({
             where: { id: jobId },
             data: { status: "failed", errorMessage: "No heatmap data found for this video" },

@@ -20,6 +20,7 @@ import { Response } from "express";
 import { createReadStream, existsSync } from "fs";
 import { join } from "path";
 import { StudioService } from "./studio.service";
+import { AuthService } from "../../infrastructure/auth/auth.service";
 import type { StudioAction } from "@spikeclips/shared";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { UploadedFile } from "@nestjs/common";
@@ -60,7 +61,10 @@ const PREVIEW_TMP = "/tmp/spikeclips-preview";
 export class StudioController {
   private readonly logger = new Logger(StudioController.name);
 
-  constructor(private readonly studioService: StudioService) {}
+  constructor(
+    private readonly studioService: StudioService,
+    private readonly authService: AuthService
+  ) {}
 
   @Post("translate")
   @HttpCode(HttpStatus.OK)
@@ -226,7 +230,12 @@ export class StudioController {
     if (!file) {
       throw new BadRequestException("No file provided");
     }
-    return this.studioService.saveExportedClip(req.user.userId, jobId, file, {
+    const userId = req.user.userId;
+    const canExport = await this.authService.checkCanExportClips(userId, 1);
+    if (!canExport) {
+      throw new ForbiddenException("Clip export limit reached. Upgrade your plan for more clips.");
+    }
+    const result = await this.studioService.saveExportedClip(userId, jobId, file, {
       sceneIndex: dto.sceneIndex,
       startTime: dto.startTime,
       endTime: dto.endTime,
@@ -234,5 +243,7 @@ export class StudioController {
       fileSize: file.size,
       peakIntensity: dto.peakIntensity,
     });
+    await this.authService.incrementClips(userId, 1);
+    return result;
   }
 }

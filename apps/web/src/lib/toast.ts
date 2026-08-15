@@ -11,3 +11,7 @@ export function toastError(message: string) {
 export function toastWarning(message: string) {
   toast.warning(message);
 }
+
+export function toastInfo(message: string) {
+  toast.info(message);
+}

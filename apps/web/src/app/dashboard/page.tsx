@@ -15,7 +15,7 @@ import { JOB_STATUS } from "@/domain/entities/job";
 import { SceneEditor } from "@/presentation/components/scenes/SceneEditor";
 import { EditableScene } from "@/application/hooks/use-scene-editor";
 import { VideoScenePreview } from "@/presentation/components/video/VideoScenePreview";
-import { History, ArrowLeft, ExternalLink, Clock } from "lucide-react";
+import { History, ArrowLeft, ExternalLink, Clock, AlertTriangle, Eye } from "lucide-react";
 import { useAnalysisProgress } from "@/lib/hooks/use-analysis-progress";
 import { useJobHistory } from "@/lib/hooks/use-job-history";
 
@@ -127,11 +127,37 @@ function DashboardContent() {
       )}
 
       <UrlInput onSubmit={analyze} isLoading={isLoading} />
+      <p className="text-xs text-muted-foreground -mt-4">
+        Videos must be at least 3 days old with 1,000+ views for heatmap data to be available.
+      </p>
 
       {error && (
-        <Card className="border-destructive bg-destructive/5">
-          <CardContent className="p-4 text-destructive text-sm">
-            {error}
+        <Card className="border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">{error}</p>
+                {error.toLowerCase().includes("less than") && error.toLowerCase().includes("days") && (
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <Clock className="h-3 w-3" />
+                    <span>YouTube typically generates heatmap data 3–7 days after upload. Your analysis quota was not used.</span>
+                  </div>
+                )}
+                {error.toLowerCase().includes("views") && (
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <Eye className="h-3 w-3" />
+                    <span>Heatmap data requires sufficient viewer engagement. Your analysis quota was not used.</span>
+                  </div>
+                )}
+                {error.toLowerCase().includes("no heatmap") && (
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>This video may not have heatmap data available yet. Your analysis quota was not used.</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -237,13 +263,7 @@ function DashboardContent() {
           {isCompleted && (
             <div className="flex justify-center">
               <Button asChild size="lg">
-                <Link
-                  href={
-                    editedScenes.length > 0
-                      ? `/studio?jobId=${job.id}&start=${editedScenes[0].start_time}&end=${editedScenes[0].end_time}`
-                      : `/studio?jobId=${job.id}`
-                  }
-                >
+                <Link href={`/studio?jobId=${job.id}`}>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Open in Studio
                 </Link>

@@ -1,6 +1,7 @@
 import { Logger } from "@nestjs/common";
 import { Worker } from "bullmq";
 import { PrismaService } from "../database/prisma.service";
+import { AuthService } from "../auth/auth.service";
 import { StorageService } from "../storage/storage.interface";
 import { FfmpegService } from "../external/ffmpeg.service";
 import { createHeatmapWorker } from "./heatmap.worker";
@@ -13,13 +14,14 @@ let sourceWorker: Worker | null = null;
 
 export function startWorkers(
   prisma: PrismaService,
+  authService: AuthService,
   storage: StorageService,
   ffmpeg?: FfmpegService
 ): void {
   const logger = new Logger("Workers");
 
   try {
-    heatmapWorker = createHeatmapWorker(prisma);
+    heatmapWorker = createHeatmapWorker(prisma, authService);
     clipWorker = createClipWorker(prisma, storage, ffmpeg);
     sourceWorker = createSourceWorker(prisma);
     logger.log("All workers started");

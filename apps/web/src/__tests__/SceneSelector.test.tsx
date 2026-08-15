@@ -10,8 +10,7 @@ const mockScenes = [
 
 const defaultProps = {
   scenes: mockScenes,
-  selectedSceneIndex: null,
-  onSelectScene: jest.fn(),
+  onEdit: jest.fn(),
 };
 
 describe("SceneSelector", () => {
@@ -20,7 +19,7 @@ describe("SceneSelector", () => {
   });
 
   it("renders empty state when no scenes and no videoDuration", () => {
-    render(<SceneSelector scenes={[]} selectedSceneIndex={null} onSelectScene={jest.fn()} />);
+    render(<SceneSelector scenes={[]} onEdit={jest.fn()} />);
     expect(screen.getByText(/No scenes were detected/)).toBeInTheDocument();
   });
 
@@ -43,29 +42,16 @@ describe("SceneSelector", () => {
     expect(container.textContent).toContain("70%");
   });
 
-  it("highlights selected scene", () => {
-    const { container } = render(<SceneSelector {...defaultProps} selectedSceneIndex={1} />);
-    const cards = container.querySelectorAll("[tabindex='0']");
-    expect(cards[1]).toHaveClass("ring-1");
-  });
-
-  it("calls onSelectScene on click", () => {
+  it("calls onEdit with correct times when Edit button is clicked", () => {
     render(<SceneSelector {...defaultProps} />);
-    fireEvent.click(screen.getByText("Scene 2"));
-    expect(defaultProps.onSelectScene).toHaveBeenCalledWith(1);
+    const editButtons = screen.getAllByText("Edit");
+    fireEvent.click(editButtons[1]);
+    expect(defaultProps.onEdit).toHaveBeenCalledWith(15, 25);
   });
 
-  it("keyboard Enter triggers onSelectScene", () => {
-    const { container } = render(<SceneSelector {...defaultProps} />);
-    const card = container.querySelectorAll("[tabindex='0']")[0];
-    fireEvent.keyDown(card, { key: "Enter" });
-    expect(defaultProps.onSelectScene).toHaveBeenCalledWith(0);
-  });
-
-  it("keyboard Space triggers onSelectScene", () => {
-    const { container } = render(<SceneSelector {...defaultProps} />);
-    const card = container.querySelectorAll("[tabindex='0']")[0];
-    fireEvent.keyDown(card, { key: " " });
-    expect(defaultProps.onSelectScene).toHaveBeenCalledWith(0);
+  it("shows Edit button for each scene", () => {
+    render(<SceneSelector {...defaultProps} />);
+    const editButtons = screen.getAllByText("Edit");
+    expect(editButtons.length).toBe(3);
   });
 });

@@ -153,6 +153,34 @@ export class AuthService {
     return result > 0;
   }
 
+  async decrementAnalyses(userId: string): Promise<boolean> {
+    const result = await this.prisma.$executeRaw`
+      UPDATE "User" SET "analysesUsed" = GREATEST("analysesUsed" - 1, 0)
+      WHERE id = ${userId}
+    `;
+    return result > 0;
+  }
+
+  async checkCanExportClips(userId: string, count: number): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return false;
+    if (user.plan === "pro" || user.plan === "team") return true;
+    const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT 1 as count FROM "User"
+      WHERE id = ${userId} AND ("clipsUsed" + ${count} <= "clipsLimit" OR "clipsLimit" = -1)
+    `;
+    return result.length > 0;
+  }
+
+  async incrementClips(userId: string, count: number): Promise<boolean> {
+    const result = await this.prisma.$executeRaw`
+      UPDATE "User" SET "clipsUsed" = "clipsUsed" + ${count}
+      WHERE id = ${userId}
+        AND ("clipsUsed" + ${count} <= "clipsLimit" OR "clipsLimit" = -1)
+    `;
+    return result > 0;
+  }
+
   private async checkAndResetMonthlyUsage(userId: string, resetAt?: Date | null): Promise<void> {
     const now = new Date();
     const shouldReset = !resetAt || (resetAt.getMonth() !== now.getMonth() || resetAt.getFullYear() !== now.getFullYear());

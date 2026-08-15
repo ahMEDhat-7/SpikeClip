@@ -35,6 +35,12 @@
   var ORIGIN = typeof window !== "undefined" ? window.location.origin : "*";
   var STUDIO_ACTIONS = { "openreel:loadMedia": true, "openreel:updateRange": true, "openreel:loadProject": true };
 
+  var PLATFORM_PRESETS = {
+    "youtube-shorts":  { width: 1080, height: 1920, frameRate: 30, maxDuration: 60 },
+    "instagram-reels": { width: 1080, height: 1920, frameRate: 30, maxDuration: 90 },
+    "tiktok":          { width: 1080, height: 1920, frameRate: 30, maxDuration: 180 }
+  };
+
   function emitToParent(msg) {
     try { window.parent.postMessage(msg, ORIGIN); } catch (e) {}
   }
@@ -212,16 +218,18 @@
     })();
   }
 
-  async function loadMediaViaStore(store, url, start, end) {
+  async function loadMediaViaStore(store, url, start, end, platform) {
     var res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch source (" + res.status + ")");
     var blob = await res.blob();
     var file = new File([blob], "source.mp4", { type: blob.type || "video/mp4" });
 
+    var preset = PLATFORM_PRESETS[platform] || PLATFORM_PRESETS["youtube-shorts"];
+
     // Try to use the store's importMedia method
     if (typeof store.getState().createNewProject === "function") {
       store.getState().createNewProject("SpikeClip Scene", {
-        width: 1080, height: 1920, frameRate: 30
+        width: preset.width, height: preset.height, frameRate: preset.frameRate
       });
     }
 
@@ -332,13 +340,14 @@
       if (data.type === "openreel:loadMedia" && data.url) {
         var loadStart = typeof data.start === "number" ? data.start : start;
         var loadEnd = typeof data.end === "number" ? data.end : end;
+        var loadPlatform = data.platform || "youtube-shorts";
 
         // Try store-based loading first, fall back to file input
         var hasStoreMethods = store && typeof store.getState === "function" &&
           typeof store.getState().importMedia === "function";
 
         var loadFn = hasStoreMethods
-          ? loadMediaViaStore(store, data.url, loadStart, loadEnd)
+          ? loadMediaViaStore(store, data.url, loadStart, loadEnd, loadPlatform)
           : loadMediaViaFileInput(data.url, loadStart, loadEnd);
 
         loadFn.catch(function (err) {

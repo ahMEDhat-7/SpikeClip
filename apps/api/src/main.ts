@@ -9,6 +9,7 @@ import { LoggingInterceptor } from "./presentation/interceptors/logging.intercep
 import { SentryModule } from "./infrastructure/sentry/sentry.module";
 import { startWorkers, stopWorkers } from "./infrastructure/workers";
 import { PrismaService } from "./infrastructure/database/prisma.service";
+import { AuthService } from "./infrastructure/auth/auth.service";
 import { FFMPEG_SERVICE } from "./infrastructure/external/external.module";
 
 const logger = new Logger("Bootstrap");
@@ -79,9 +80,10 @@ async function bootstrap() {
 
   try {
     const prisma = app.get(PrismaService);
+    const authService = app.get(AuthService);
     const storage = app.get("STORAGE_SERVICE");
     const ffmpeg = app.get(FFMPEG_SERVICE);
-    startWorkers(prisma, storage, ffmpeg);
+    startWorkers(prisma, authService, storage, ffmpeg);
   } catch (err) {
     logger.warn(`Failed to start workers (Redis may be unavailable): ${err instanceof Error ? err.message : err}`);
   }

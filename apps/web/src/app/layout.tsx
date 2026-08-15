@@ -108,7 +108,13 @@ export default function RootLayout({
               <Footer />
             </div>
           </Providers>
-          <Toaster richColors position="top-right" />
+          <Toaster
+            richColors
+            position="top-right"
+            duration={5000}
+            closeButton
+            toastOptions={{ className: "max-w-md" }}
+          />
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

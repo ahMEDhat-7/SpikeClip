@@ -10,8 +10,7 @@ const cspDirectives = [
   "img-src 'self' https://i.ytimg.com https://img.youtube.com data: blob:",
   "font-src 'self' https://fonts.gstatic.com data:",
   `connect-src 'self'${isDev ? " ws: wss:" : ""} https://*.sentry.io`,
-  "frame-src https://www.youtube.com http://www.youtube.com",
-  "frame-ancestors 'none'",
+  "frame-src 'self' https://www.youtube.com http://www.youtube.com",
 ];
 
 const securityHeaders = [
@@ -54,11 +53,49 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/openreel-editor",
+        destination: "/openreel-editor/index.html",
+      },
+      {
+        source: "/openreel-editor/:path*",
+        destination: "/openreel-editor/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/api/:path*",
         headers: securityHeaders,
+      },
+      {
+        source: "/studio",
+        headers: securityHeaders,
+      },
+      {
+        source: "/studio/:path*",
+        headers: securityHeaders,
+      },
+      {
+        source: "/dashboard",
+        headers: securityHeaders,
+      },
+      {
+        source: "/dashboard/:path*",
+        headers: securityHeaders,
+      },
+      {
+        source: "/login",
+        headers: securityHeaders,
+      },
+      {
+        source: "/openreel-editor/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
       },
     ];
   },
