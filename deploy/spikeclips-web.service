@@ -1,5 +1,5 @@
 [Unit]
-Description=SpikeClips Web Server
+Description=SpikeClip Web Server
 After=network.target spikeclips-api.service
 
 [Service]

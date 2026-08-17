@@ -9,13 +9,13 @@ import { BarChart3, Users, Target, Zap, DollarSign, TrendingUp, Award } from "lu
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Clutch uses real YouTube heatmap data to identify the most-replayed moments. Built for creators who value data over guesswork.",
+    "SpikeClip uses real YouTube heatmap data to identify the most-replayed moments. Built for creators who value data over guesswork.",
 };
 
 const whatWhyWho = [
   {
     icon: BarChart3,
-    title: "What is Clutch?",
+    title: "What is SpikeClip?",
     items: [
       "Heatmap-driven clip extraction tool",
       "Real viewer replay data — not AI guesses",
@@ -73,7 +73,7 @@ const storySections = [
   },
   {
     label: "Our approach",
-    text: "Clutch extracts YouTube heatmap data and uses our v2 spike merging algorithm with gap-tolerant clustering to identify the most-engaged moments. No AI guesses. No sentiment analysis. Just raw viewer behavior translated into actionable clip suggestions.",
+    text: "SpikeClip extracts YouTube heatmap data and uses our v2 spike merging algorithm with gap-tolerant clustering to identify the most-engaged moments. No AI guesses. No sentiment analysis. Just raw viewer behavior translated into actionable clip suggestions.",
   },
   {
     label: "The result",
@@ -93,7 +93,7 @@ export default function AboutPage() {
             <span className="gradient-text">measure</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Clutch was born from a simple frustration: why guess which moments
+            SpikeClip was born from a simple frustration: why guess which moments
             to clip when YouTube already tells you what viewers rewatch?
           </p>
         </div>
@@ -154,7 +154,7 @@ export default function AboutPage() {
           <div className="container mx-auto px-4 sm:px-6 relative z-10">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
-                Earn money with <span className="gradient-text">Clutch</span>
+                Earn money with <span className="gradient-text">SpikeClip</span>
               </h2>
               <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
                 Shorts are discovery engines that funnel viewers to your long-form content.

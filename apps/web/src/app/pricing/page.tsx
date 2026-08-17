@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -13,18 +16,13 @@ import { Check } from "lucide-react";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
 import { ScrollReveal } from "@/presentation/components/features/ScrollReveal";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description:
-    "Simple, transparent pricing for Clutch. Choose the plan that fits your workflow.",
-};
-
 const tiers = [
   {
     name: "Free",
-    price: "$0",
+    monthlyPrice: "$0",
+    annualPrice: "$0",
     period: "/month",
-    description: "Try Clutch with limited analyses",
+    description: "Try SpikeClip with limited analyses",
     features: [
       "3 heatmap analyses per month",
       "Up to 3 scenes per video",
@@ -39,7 +37,8 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: "$19",
+    monthlyPrice: "$19",
+    annualPrice: "$15",
     period: "/month",
     description: "Full pipeline for solo creators",
     features: [
@@ -58,7 +57,8 @@ const tiers = [
   },
   {
     name: "Team",
-    price: "$49",
+    monthlyPrice: "$49",
+    annualPrice: "$39",
     period: "/month",
     description: "For agencies and teams",
     features: [
@@ -71,12 +71,14 @@ const tiers = [
       "Batch processing",
     ],
     cta: "Contact Sales",
-    href: "mailto:hello@clutchapp.dev",
+    href: "mailto:hello@spikeclip.app",
     variant: "outline" as const,
   },
 ];
 
 export default function PricingPage() {
+  const [billing, setBilling] = useState<"monthly" | "annual">("annual");
+
   return (
     <main>
       <section className="relative overflow-hidden bg-background pt-section pb-12">
@@ -89,6 +91,33 @@ export default function PricingPage() {
             Choose the plan that fits your workflow. All plans include our core
             heatmap analysis technology.
           </p>
+
+          {/* Monthly/Annual Toggle */}
+          <div className="flex items-center justify-center gap-3 pt-4">
+            <button
+              onClick={() => setBilling("monthly")}
+              className={`text-sm font-medium transition-colors px-4 py-2 rounded-full ${
+                billing === "monthly"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling("annual")}
+              className={`text-sm font-medium transition-colors px-4 py-2 rounded-full relative ${
+                billing === "annual"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Annual
+              <span className="absolute -top-2 -right-2 text-[10px] font-bold bg-accent text-accent-foreground px-1.5 py-0.5 rounded-full">
+                Save 21%
+              </span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -114,7 +143,7 @@ export default function PricingPage() {
                   <CardTitle className="text-xl">{tier.name}</CardTitle>
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl font-mono font-bold">
-                      {tier.price}
+                      {billing === "annual" ? tier.annualPrice : tier.monthlyPrice}
                     </span>
                     <span className="text-muted-foreground text-sm">
                       {tier.period}
@@ -158,7 +187,7 @@ export default function PricingPage() {
             to our team.
           </p>
           <Button variant="outline-hairline" asChild>
-            <Link href="mailto:hello@clutchapp.dev">Contact us</Link>
+            <Link href="mailto:hello@spikeclip.app">Contact us</Link>
           </Button>
         </div>
       </section>

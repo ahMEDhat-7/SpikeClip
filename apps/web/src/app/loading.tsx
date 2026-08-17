@@ -4,7 +4,7 @@ export default function Loading() {
       <div className="flex flex-col items-center gap-4 animate-pulse">
         <img
           src="/logo.svg"
-          alt="Clutch"
+          alt="SpikeClip"
           width={120}
           height={120}
           className="drop-shadow-lg"

@@ -1,5 +1,5 @@
 [Unit]
-Description=SpikeClips API Server
+Description=SpikeClip API Server
 After=network.target docker.service
 Requires=docker.service
 

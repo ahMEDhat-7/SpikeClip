@@ -39,6 +39,6 @@ describe("Footer", () => {
 
   it("renders logo", () => {
     render(<Footer />);
-    expect(screen.getByText("Clutch")).toBeTruthy();
+    expect(screen.getByText("SpikeClip")).toBeTruthy();
   });
 });

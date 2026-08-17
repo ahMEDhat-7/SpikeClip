@@ -9,7 +9,7 @@ import { ScrollReveal } from "@/presentation/components/features/ScrollReveal";
 export const metadata: Metadata = {
   title: "Features",
   description:
-    "Discover how Clutch uses real YouTube heatmap data to identify the most-replayed moments and create engaging vertical shorts.",
+    "Discover how SpikeClip uses real YouTube heatmap data to identify the most-replayed moments and create engaging vertical shorts.",
 };
 
 const steps = [

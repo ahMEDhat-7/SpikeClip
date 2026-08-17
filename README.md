@@ -1,4 +1,6 @@
-# SpikeClip
+<p align="center">
+  <img src="./media/header.svg" alt="SpikeClip — Find what viewers actually rewatch" width="100%"/>
+</p>
 
 > Find what viewers actually rewatch — then make it beautiful.
 
@@ -11,7 +13,7 @@
 
 Unlike AI-guessing tools (OpusClip, Vexub, etc.), SpikeClip is built on the engagement signal YouTube already collects: the heatmap that shows exactly where viewers rewatched. The result is a clip selection you can defend with data, not vibes.
 
-![SpikeClip](./media/home)
+![Landing Page — Desktop](./media/landing-desktop.png)
 
 ---
 
@@ -23,6 +25,20 @@ A walkthrough of SpikeClip running locally — landing page, the heatmap analysi
   Your browser does not support the video tag.
   <a href="./media/demo">Download the walkthrough (MP4)</a>.
 </video>
+
+---
+
+## Screenshots
+
+| Page | Preview |
+|------|---------|
+| Landing (desktop) | ![Landing Desktop](./media/landing-desktop.png) |
+| Landing (mobile) | ![Landing Mobile](./media/landing-mobile.png) |
+| Pricing | ![Pricing](./media/pricing.png) |
+| Features | ![Features](./media/features.png) |
+| Full page | ![Full Page](./media/landing-full.png) |
+
+> Screenshots captured via Chromium DevTools on the local dev server (`pnpm dev`). Replace with production screenshots after deployment.
 
 ---
 

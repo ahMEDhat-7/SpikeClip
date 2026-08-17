@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlignmentGridHero } from "@/presentation/components/features/AlignmentGridHero";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
 import { ScrollReveal } from "@/presentation/components/features/ScrollReveal";
+import { HeroVisual } from "@/presentation/components/features/HeroVisual";
+import { SocialProofBar } from "@/presentation/components/features/SocialProofBar";
+import { ProblemSection } from "@/presentation/components/features/ProblemSection";
+import { FAQ } from "@/presentation/components/features/FAQ";
 import { ArrowRight, Code, MessageSquare, Eye, Sparkles } from "lucide-react";
 import { LANDING_FEATURES } from "@/presentation/constants/features";
 
@@ -17,11 +20,11 @@ const stats = [
 export default function HomePage() {
   return (
     <main>
-      {/* Hero Section — Alignment Grid with Spring Physics */}
+      {/* Hero Section — Real product UI */}
       <section className="relative overflow-hidden min-h-[85vh] flex flex-col">
         <DotsBackground opacity={0.7} />
         <div className="container mx-auto px-4 sm:px-6 relative z-10 flex-1 flex flex-col justify-center pt-24 pb-12">
-          <div className="flex flex-col items-center text-center space-y-6 max-w-3xl mx-auto mb-8">
+          <div className="flex flex-col items-center text-center space-y-6 max-w-3xl mx-auto mb-4">
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05]"
               style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}
@@ -47,14 +50,23 @@ export default function HomePage() {
                 <a href="#how-it-works">See how it works</a>
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Free tier · No credit card required
+            </p>
           </div>
 
-          {/* Alignment Grid Demo — Spring Physics */}
-          <ScrollReveal>
-            <AlignmentGridHero />
-          </ScrollReveal>
+          {/* Hero Visual — Real product UI */}
+          <HeroVisual />
         </div>
       </section>
+
+      {/* Social Proof Bar — Integration logos */}
+      <SocialProofBar />
+
+      {/* Problem Framing — PAS */}
+      <ScrollReveal>
+        <ProblemSection />
+      </ScrollReveal>
 
       {/* Stats Bar */}
       <ScrollReveal>
@@ -77,7 +89,7 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* How it Works — Bento grid with grid-section borders */}
+      {/* How it Works — With visual connectors */}
       <ScrollReveal>
         <section id="how-it-works" className="relative py-section scroll-mt-20">
           <DotsBackground opacity={0.7} />
@@ -104,8 +116,8 @@ export default function HomePage() {
                 { num: "01", title: "Paste your URL", desc: "Drop in any YouTube video link. We validate and extract heatmap data automatically." },
                 { num: "02", title: "See the heatmap", desc: "View exactly where viewers rewatched. Our algorithm identifies the top moments." },
                 { num: "03", title: "Export clips", desc: "Select scenes and download vertical clips ready for TikTok, Shorts, or Reels." },
-              ].map((step) => (
-                <Card key={step.num} className="rounded-none border-0 border-hairline bg-transparent group transition-colors hover:bg-surface/50">
+              ].map((step, i) => (
+                <Card key={step.num} className="relative rounded-none border-0 border-hairline bg-transparent group transition-colors hover:bg-surface/50">
                   <CardContent className="p-8 text-center space-y-4">
                     <div className="text-4xl font-mono font-bold text-primary/40">
                       {step.num}
@@ -115,6 +127,14 @@ export default function HomePage() {
                       {step.desc}
                     </p>
                   </CardContent>
+                  {/* Visual connector arrow (desktop only) */}
+                  {i < 2 && (
+                    <div className="hidden md:flex absolute top-1/2 -right-3 -translate-y-1/2 z-20 items-center justify-center">
+                      <div className="h-6 w-6 rounded-full bg-background border border-hairline flex items-center justify-center">
+                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
@@ -122,7 +142,7 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* Why Clutch — Asymmetric bento layout */}
+      {/* Why SpikeClip — Bento grid layout */}
       <ScrollReveal>
         <section className="relative bg-background border-t border-hairline py-section">
           <DotsBackground opacity={0.7} />
@@ -132,7 +152,7 @@ export default function HomePage() {
                 className="text-[11px] font-semibold uppercase text-muted-foreground mb-3"
                 style={{ letterSpacing: "var(--tracking-wide, 0.06em)" }}
               >
-                Why Clutch
+                Why SpikeClip
               </p>
               <h2
                 className="text-2xl sm:text-3xl font-semibold"
@@ -141,8 +161,31 @@ export default function HomePage() {
                 Built for creators who value data over guesswork
               </h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
-              {LANDING_FEATURES.map((feature, i) => (
+            <div className="bento-grid max-w-5xl mx-auto">
+              {/* Primary differentiator — spans 2 columns */}
+              <Card className="bento-featured group transition-all duration-300 hover:shadow-md border-hairline bg-card rounded-2xl">
+                <CardContent className="p-6 h-full flex flex-col space-y-3">
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-primary shrink-0"
+                    style={{
+                      background: `color-mix(in srgb, var(--color-primary) 10%, transparent)`,
+                      animation: `icon-orbit 4s ease-in-out 0s infinite`,
+                    }}
+                  >
+                    {(() => {
+                      const Icon = LANDING_FEATURES[0].icon;
+                      return <Icon className="h-5 w-5" aria-hidden="true" />;
+                    })()}
+                  </div>
+                  <h3 className="font-semibold text-lg">{LANDING_FEATURES[0].title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                    {LANDING_FEATURES[0].description}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Supporting features */}
+              {LANDING_FEATURES.slice(1).map((feature, i) => (
                 <Card
                   key={feature.title}
                   className="group transition-all duration-300 hover:shadow-md border-hairline bg-card rounded-2xl"
@@ -152,7 +195,7 @@ export default function HomePage() {
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-primary shrink-0"
                       style={{
                         background: `color-mix(in srgb, var(--color-primary) 10%, transparent)`,
-                        animation: `icon-orbit ${4 + i * 0.5}s ease-in-out ${i * 0.6}s infinite`,
+                        animation: `icon-orbit ${4 + (i + 1) * 0.5}s ease-in-out ${(i + 1) * 0.6}s infinite`,
                       }}
                     >
                       <feature.icon className="h-5 w-5" aria-hidden="true" />
@@ -276,7 +319,12 @@ export default function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* CTA Section */}
+      {/* FAQ Section */}
+      <ScrollReveal>
+        <FAQ />
+      </ScrollReveal>
+
+      {/* Final CTA Section — Outcome restatement */}
       <ScrollReveal>
         <section className="relative py-section text-center">
           <div className="glow-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full pointer-events-none" />
@@ -285,20 +333,17 @@ export default function HomePage() {
               className="text-2xl sm:text-3xl font-semibold"
               style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}
             >
-              Start clipping with real data
+              Find what viewers actually rewatch — start free
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-lg">
               Free tier includes 3 analyses per month. No credit card required.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="flex justify-center">
               <Button asChild className="group rounded-full px-8 h-12 text-sm font-semibold gradient-border-btn">
                 <Link href="/login">
                   Get started free
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
-              </Button>
-              <Button asChild variant="outline-hairline" className="rounded-full px-8 h-12 text-sm">
-                <Link href="/pricing">See pricing</Link>
               </Button>
             </div>
           </div>

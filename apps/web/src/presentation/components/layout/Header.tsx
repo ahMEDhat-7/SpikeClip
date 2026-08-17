@@ -146,9 +146,9 @@ export function Header() {
       <div className="glass-nav rounded-[20px] px-4 md:px-5 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg shrink-0">
           <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-primary/10">
-            <img src="/logo.svg" alt="Clutch" className="h-4 w-4" />
+            <img src="/logo.svg" alt="SpikeClip" className="h-4 w-4" />
           </div>
-          <span className="text-primary">Clutch</span>
+          <span className="text-primary">SpikeClip</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-5" aria-label="Main navigation">

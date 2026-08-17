@@ -278,7 +278,7 @@ function DashboardContent() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mx-auto">
             <img
               src="/logo.svg"
-              alt="Clutch"
+              alt="SpikeClip"
               className="h-8 w-8 opacity-40"
             />
           </div>
