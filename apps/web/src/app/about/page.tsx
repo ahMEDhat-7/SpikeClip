@@ -3,20 +3,19 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
-import { GlowOrb } from "@/presentation/components/features/GlowOrb";
 import { ScrollReveal } from "@/presentation/components/features/ScrollReveal";
 import { BarChart3, Users, Target, Zap, DollarSign, TrendingUp, Award } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About",
   description:
-    "SpikeClip uses real YouTube heatmap data to identify the most-replayed moments. Built for creators who value data over guesswork.",
+    "Clutch uses real YouTube heatmap data to identify the most-replayed moments. Built for creators who value data over guesswork.",
 };
 
 const whatWhyWho = [
   {
     icon: BarChart3,
-    title: "What is SpikeClip?",
+    title: "What is Clutch?",
     items: [
       "Heatmap-driven clip extraction tool",
       "Real viewer replay data — not AI guesses",
@@ -74,7 +73,7 @@ const storySections = [
   },
   {
     label: "Our approach",
-    text: "SpikeClip extracts YouTube heatmap data and uses our v2 spike merging algorithm with gap-tolerant clustering to identify the most-engaged moments. No AI guesses. No sentiment analysis. Just raw viewer behavior translated into actionable clip suggestions.",
+    text: "Clutch extracts YouTube heatmap data and uses our v2 spike merging algorithm with gap-tolerant clustering to identify the most-engaged moments. No AI guesses. No sentiment analysis. Just raw viewer behavior translated into actionable clip suggestions.",
   },
   {
     label: "The result",
@@ -86,16 +85,15 @@ export default function AboutPage() {
   return (
     <main>
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-section">
-        <DotsBackground opacity={0.3} />
-        <GlowOrb className="top-20 right-1/4" size={250} />
+      <section className="relative overflow-hidden bg-background py-section">
+        <DotsBackground opacity={0.7} />
         <div className="container mx-auto px-4 sm:px-6 relative z-10 text-center space-y-6">
-          <h1 className="text-4xl sm:text-5xl font-normal tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
             Built for creators who{" "}
-            <span className="text-primary">measure</span>
+            <span className="gradient-text">measure</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            SpikeClip was born from a simple frustration: why guess which moments
+            Clutch was born from a simple frustration: why guess which moments
             to clip when YouTube already tells you what viewers rewatch?
           </p>
         </div>
@@ -103,20 +101,20 @@ export default function AboutPage() {
 
       <ScrollReveal>
         {/* 3-Column Grid: What / Why / Who */}
-        <section className="relative bg-surface py-section">
-          <DotsBackground opacity={0.2} />
+        <section className="relative bg-background border-t border-hairline py-section">
+          <DotsBackground opacity={0.7} />
           <div className="container mx-auto px-4 sm:px-6 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {whatWhyWho.map((section) => (
                 <Card key={section.title} className="group transition-colors hover:border-hairline-strong">
                   <CardContent className="p-6 space-y-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <section.icon className="h-5 w-5" />
                     </div>
                     <h3 className="font-semibold text-lg">{section.title}</h3>
                     <ul className="space-y-2">
                       {section.items.map((item) => (
-                        <li key={item} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <li key={item} className="text-sm text-muted-foreground flex items-start gap-2 line-clamp-2">
                           <span className="text-primary mt-1">•</span>
                           {item}
                         </li>
@@ -138,7 +136,7 @@ export default function AboutPage() {
               <div key={section.label} className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-1 rounded-full bg-primary" />
-                  <h2 className="text-xl sm:text-2xl font-normal">{section.label}</h2>
+                  <h2 className="text-xl sm:text-2xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>{section.label}</h2>
                 </div>
                 <p className="text-muted-foreground leading-relaxed pl-4">
                   {section.text}
@@ -151,13 +149,12 @@ export default function AboutPage() {
 
       <ScrollReveal>
         {/* Earn Money Section */}
-        <section className="relative bg-surface py-section">
-          <DotsBackground opacity={0.2} />
-          <GlowOrb className="bottom-10 left-1/4" size={300} color="hsl(142, 71%, 45%)" />
+        <section className="relative bg-background border-t border-hairline py-section">
+          <DotsBackground opacity={0.7} />
           <div className="container mx-auto px-4 sm:px-6 relative z-10">
             <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-normal">
-                Earn money with <span className="text-primary">SpikeClip</span>
+              <h2 className="text-2xl sm:text-3xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
+                Earn money with <span className="gradient-text">Clutch</span>
               </h2>
               <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
                 Shorts are discovery engines that funnel viewers to your long-form content.
@@ -169,7 +166,7 @@ export default function AboutPage() {
               {/* Platform RPMs */}
               <Card className="group transition-colors hover:border-hairline-strong">
                 <CardContent className="p-6 space-y-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <h3 className="font-semibold text-lg">Platform RPMs</h3>
@@ -190,7 +187,7 @@ export default function AboutPage() {
               {/* Sponsorships */}
               <Card className="group transition-colors hover:border-hairline-strong">
                 <CardContent className="p-6 space-y-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <DollarSign className="h-5 w-5" />
                   </div>
                   <h3 className="font-semibold text-lg">Sponsorships</h3>
@@ -211,7 +208,7 @@ export default function AboutPage() {
               {/* Revenue Streams */}
               <Card className="group transition-colors hover:border-hairline-strong">
                 <CardContent className="p-6 space-y-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Award className="h-5 w-5" />
                   </div>
                   <h3 className="font-semibold text-lg">Revenue Streams</h3>
@@ -233,15 +230,14 @@ export default function AboutPage() {
       {/* CTA Section */}
       <ScrollReveal>
       <section className="relative container mx-auto px-4 sm:px-6 py-section text-center space-y-6">
-        <GlowOrb className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" size={350} />
         <div className="relative z-10 space-y-6">
-          <h2 className="text-2xl sm:text-3xl font-normal">
+          <h2 className="text-2xl sm:text-3xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
             Ready to clip with data?
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
             Join creators using real viewer data to make better content decisions.
           </p>
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="rounded-full">
             <Link href="/login">Get started free</Link>
           </Button>
         </div>

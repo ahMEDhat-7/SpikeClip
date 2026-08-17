@@ -85,7 +85,7 @@ ${this.buildStateSummary(context)}`;
   }
 
   private buildVerbosePrompt(context: StudioEditContext): string {
-    return `You are SpikeClip's editing assistant. You translate natural language editing instructions into structured JSON actions.
+    return `You are Clutch's editing assistant. You translate natural language editing instructions into structured JSON actions.
 
 ## Available Actions
 

@@ -11,13 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
-import { GlowOrb } from "@/presentation/components/features/GlowOrb";
 import { ScrollReveal } from "@/presentation/components/features/ScrollReveal";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple, transparent pricing for SpikeClip. Choose the plan that fits your workflow.",
+    "Simple, transparent pricing for Clutch. Choose the plan that fits your workflow.",
 };
 
 const tiers = [
@@ -25,7 +24,7 @@ const tiers = [
     name: "Free",
     price: "$0",
     period: "/month",
-    description: "Try SpikeClip with limited analyses",
+    description: "Try Clutch with limited analyses",
     features: [
       "3 heatmap analyses per month",
       "Up to 3 scenes per video",
@@ -72,7 +71,7 @@ const tiers = [
       "Batch processing",
     ],
     cta: "Contact Sales",
-    href: "mailto:hello@spikeclips.com",
+    href: "mailto:hello@clutchapp.dev",
     variant: "outline" as const,
   },
 ];
@@ -80,11 +79,10 @@ const tiers = [
 export default function PricingPage() {
   return (
     <main>
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-section">
-        <DotsBackground opacity={0.3} />
-        <GlowOrb className="top-20 left-1/3" size={250} />
+      <section className="relative overflow-hidden bg-background pt-section pb-12">
+        <DotsBackground opacity={0.7} />
         <div className="container mx-auto px-4 sm:px-6 text-center space-y-4 relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-normal">
+          <h1 className="text-3xl sm:text-4xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
             Simple, transparent pricing
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -95,20 +93,20 @@ export default function PricingPage() {
       </section>
 
       <ScrollReveal>
-        <section className="relative container mx-auto px-4 sm:px-6 py-section">
-          <DotsBackground opacity={0.15} />
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <section className="relative bg-background pt-8 pb-section">
+          <DotsBackground opacity={0.7} />
+          <div className="container mx-auto px-4 sm:px-6 relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {tiers.map((tier) => (
               <Card
                 key={tier.name}
-                className={`relative flex flex-col transition-colors ${
+                className={`relative flex flex-col transition-all ${
                   tier.popular
-                    ? "border-primary bg-primary/5 hover:border-primary/80"
-                    : "hover:border-hairline-strong"
+                    ? "border-primary/40 shadow-xl shadow-primary/10 hover:shadow-2xl hover:shadow-primary/15 scale-[1.02]"
+                    : "hover:border-hairline-strong hover:shadow-md"
                 }`}
               >
                 {tier.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold">
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground border-0 px-4 py-1 text-xs font-bold shadow-lg shadow-primary/30">
                     Most Popular
                   </Badge>
                 )}
@@ -138,7 +136,7 @@ export default function PricingPage() {
                   </ul>
                   <Button
                     variant={tier.variant}
-                    className="w-full mt-6"
+                    className="w-full mt-6 rounded-full"
                     asChild
                   >
                     <Link href={tier.href}>{tier.cta}</Link>
@@ -151,16 +149,16 @@ export default function PricingPage() {
       </ScrollReveal>
 
       <ScrollReveal>
-      <section className="relative bg-surface py-section">
-        <DotsBackground opacity={0.2} />
+      <section className="relative bg-background border-t border-hairline py-section">
+        <DotsBackground opacity={0.7} />
         <div className="container mx-auto px-4 sm:px-6 text-center space-y-4 relative z-10">
-          <h2 className="text-2xl font-normal">Need something custom?</h2>
+          <h2 className="text-2xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>Need something custom?</h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
             For enterprise needs, API access, or custom integrations, reach out
             to our team.
           </p>
           <Button variant="outline-hairline" asChild>
-            <Link href="mailto:hello@spikeclips.com">Contact us</Link>
+            <Link href="mailto:hello@clutchapp.dev">Contact us</Link>
           </Button>
         </div>
       </section>

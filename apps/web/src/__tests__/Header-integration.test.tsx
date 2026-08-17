@@ -20,7 +20,7 @@ jest.mock("@/application/hooks/use-auth", () => ({
 describe("Header", () => {
   it("renders logo", () => {
     render(<Header />);
-    expect(screen.getByText("Spike")).toBeTruthy();
+    expect(screen.getByText("Clutch")).toBeTruthy();
   });
 
   it("renders Sign In and Sign Up when not authenticated", () => {

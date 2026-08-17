@@ -63,7 +63,6 @@ export function Header() {
 
   useEffect(() => setMounted(true), []);
 
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -76,7 +75,6 @@ export function Header() {
     }
   }, [dropdownOpen]);
 
-  // Close mobile menu on Escape + focus trap
   useEffect(() => {
     if (!mobileOpen) return;
 
@@ -103,7 +101,6 @@ export function Header() {
       }
     }
 
-    // Focus first link when menu opens
     const timer = setTimeout(() => {
       const firstLink = mobileNavRef.current?.querySelector<HTMLElement>("a, button");
       firstLink?.focus();
@@ -116,7 +113,6 @@ export function Header() {
     };
   }, [mobileOpen]);
 
-  // Desktop dropdown arrow-key navigation
   const handleDropdownKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!dropdownMenuRef.current) return;
     const items = dropdownMenuRef.current.querySelectorAll<HTMLElement>(
@@ -137,7 +133,6 @@ export function Header() {
     }
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
@@ -147,25 +142,22 @@ export function Header() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background">
-      <div className="container mx-auto grid grid-cols-3 h-16 items-center px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2.5 font-bold text-xl justify-self-start">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <img src="/logo.svg" alt="SpikeClip" className="h-5 w-5" />
+    <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-3xl">
+      <div className="glass-nav rounded-[20px] px-4 md:px-5 h-14 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg shrink-0">
+          <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-primary/10">
+            <img src="/logo.svg" alt="Clutch" className="h-4 w-4" />
           </div>
-          <span>
-            <span className="text-red-400">Spike</span>
-            <span className="text-muted-foreground">Clip</span>
-          </span>
+          <span className="text-primary">Clutch</span>
         </Link>
 
-        <nav className="hidden md:flex items-center justify-center gap-6" aria-label="Main navigation">
+        <nav className="hidden md:flex items-center gap-5" aria-label="Main navigation">
           <NavLink href="/features" active={isActive("/features")}>Features</NavLink>
           <NavLink href="/pricing" active={isActive("/pricing")}>Pricing</NavLink>
           <NavLink href="/about" active={isActive("/about")}>About</NavLink>
         </nav>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center gap-1.5">
           {!isLoading && user && (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -175,7 +167,7 @@ export function Header() {
                 aria-label="User menu"
                 className="flex items-center gap-2 rounded-full transition-all hover:ring-2 hover:ring-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
-                <UserAvatar name={user.name || user.email} className="h-9 w-9 text-sm" />
+                <UserAvatar name={user.name || user.email} className="h-8 w-8 text-xs" />
               </button>
 
               {dropdownOpen && (
@@ -183,9 +175,9 @@ export function Header() {
                   ref={dropdownMenuRef}
                   role="menu"
                   onKeyDown={handleDropdownKeyDown}
-                  className="absolute right-0 top-full mt-2 w-56 rounded-lg border bg-background shadow-lg p-1.5 space-y-0.5"
+                  className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-hairline bg-card shadow-lg p-1.5 space-y-0.5"
                 >
-                  <div className="px-3 py-2 border-b mb-1">
+                  <div className="px-3 py-2 border-b border-hairline mb-1">
                     <p className="text-sm font-medium truncate">{user.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     <Badge variant="secondary" className="text-[10px] font-mono mt-1.5">
@@ -199,7 +191,7 @@ export function Header() {
                     href="/dashboard"
                     role="menuitem"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors"
                   >
                     <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
                     Dashboard
@@ -208,7 +200,7 @@ export function Header() {
                     href="/studio"
                     role="menuitem"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors"
                   >
                     <Film className="h-4 w-4 text-muted-foreground" />
                     Studio
@@ -218,7 +210,7 @@ export function Header() {
                       href="/pricing"
                       role="menuitem"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors text-primary font-medium"
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors text-primary font-medium"
                     >
                       Upgrade Plan
                     </Link>
@@ -227,13 +219,13 @@ export function Header() {
                     href="/profile"
                     role="menuitem"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors"
                   >
                     <User className="h-4 w-4 text-muted-foreground" />
                     Profile
                   </Link>
 
-                  <div className="h-px bg-border my-1" />
+                  <div className="h-px bg-hairline my-1" />
 
                   <button
                     role="menuitem"
@@ -241,7 +233,7 @@ export function Header() {
                       setDropdownOpen(false);
                       logout();
                     }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors text-destructive"
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors text-destructive"
                   >
                     <LogOut className="h-4 w-4" />
                     Sign Out
@@ -256,7 +248,7 @@ export function Header() {
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">Sign In</Link>
               </Button>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="rounded-full">
                 <Link href="/login">Sign Up</Link>
               </Button>
             </>
@@ -266,13 +258,14 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8 cursor-pointer"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
-                <Sun className="h-4 w-4" />
+                <Sun className="h-3.5 w-3.5" />
               ) : (
-                <Moon className="h-4 w-4" />
+                <Moon className="h-3.5 w-3.5" />
               )}
             </Button>
           )}
@@ -281,34 +274,34 @@ export function Header() {
             ref={mobileMenuBtnRef}
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden h-8 w-8"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
             {mobileOpen ? (
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             ) : (
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4 w-4" />
             )}
           </Button>
         </div>
       </div>
 
-      {/* Mobile navigation — animated with CSS transitions */}
+      {/* Mobile navigation */}
       <nav
         ref={mobileNavRef}
-        className={`md:hidden border-t bg-background overflow-hidden transition-all duration-200 ease-out ${
-          mobileOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0 pointer-events-none border-t-0"
+        className={`md:hidden mt-2 glass-nav rounded-2xl overflow-hidden transition-all duration-200 ease-out ${
+          mobileOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0 pointer-events-none"
         }`}
         aria-label="Mobile navigation"
         aria-hidden={!mobileOpen}
         inert={!mobileOpen || undefined}
       >
-        <div className="px-4 py-4 space-y-1">
+        <div className="px-4 py-3 space-y-1">
           <Link
             href="/features"
-            className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`block px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
               isActive("/features") ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
             onClick={() => setMobileOpen(false)}
@@ -317,7 +310,7 @@ export function Header() {
           </Link>
           <Link
             href="/pricing"
-            className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`block px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
               isActive("/pricing") ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
             onClick={() => setMobileOpen(false)}
@@ -326,7 +319,7 @@ export function Header() {
           </Link>
           <Link
             href="/about"
-            className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`block px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
               isActive("/about") ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
             onClick={() => setMobileOpen(false)}
@@ -335,9 +328,9 @@ export function Header() {
           </Link>
 
           {!isLoading && user && (
-            <div className="space-y-1 pt-2 border-t mt-2">
+            <div className="space-y-1 pt-2 border-t border-hairline mt-2">
               <div className="flex items-center gap-3 px-3 py-2">
-                <UserAvatar name={user.name || user.email} className="h-10 w-10 text-sm" />
+                <UserAvatar name={user.name || user.email} className="h-9 w-9 text-xs" />
                 <div>
                   <p className="text-sm font-medium">{user.name}</p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -345,7 +338,7 @@ export function Header() {
               </div>
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 <LayoutDashboard className="h-4 w-4" />
@@ -353,7 +346,7 @@ export function Header() {
               </Link>
               <Link
                 href="/studio"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 <Film className="h-4 w-4" />
@@ -362,7 +355,7 @@ export function Header() {
               {user.plan === "free" && (
                 <Link
                   href="/pricing"
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-xl transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   Upgrade Plan
@@ -370,7 +363,7 @@ export function Header() {
               )}
               <Link
                 href="/profile"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 <User className="h-4 w-4" />
@@ -399,7 +392,7 @@ export function Header() {
           )}
 
           {!user && (
-            <div className="space-y-1 pt-2 border-t mt-2">
+            <div className="space-y-1 pt-2 border-t border-hairline mt-2">
               <Button
                 asChild
                 variant="ghost"
@@ -413,7 +406,7 @@ export function Header() {
                   Sign In
                 </Link>
               </Button>
-              <Button asChild size="sm" className="w-full">
+              <Button asChild size="sm" className="w-full rounded-full">
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}

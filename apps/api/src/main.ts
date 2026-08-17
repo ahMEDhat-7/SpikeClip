@@ -53,7 +53,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle("SpikeClip API")
+    .setTitle("Clutch API")
     .setDescription(
       "YouTube heatmap-driven clip extraction API. " +
         "Analyze viewer engagement data to find the most-replayed moments in videos."

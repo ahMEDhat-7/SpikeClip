@@ -2,28 +2,28 @@ import type { Metadata } from "next";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — SpikeClip",
-  description: "SpikeClip Terms of Service",
+  title: "Terms of Service — Clutch",
+  description: "Clutch Terms of Service",
 };
 
 export default function TermsPage() {
   return (
-    <main className="relative container mx-auto px-4 py-section max-w-3xl">
-      <DotsBackground opacity={0.2} />
+    <main className="relative container mx-auto px-4 sm:px-6 py-section max-w-3xl">
+      <DotsBackground opacity={0.7} />
       <div className="relative z-10">
-      <h1 className="text-3xl font-normal tracking-tight mb-6">Terms of Service</h1>
+      <h1 className="text-3xl font-normal tracking-tight mb-6 text-center">Terms of Service</h1>
       <div className="prose prose-sm dark:prose-invert space-y-4">
         <p>Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
 
         <h2 className="text-xl font-semibold mt-8">1. Acceptance of Terms</h2>
         <p>
-          By accessing or using SpikeClip (&quot;the Service&quot;), you agree to be bound by these Terms of Service.
+          By accessing or using Clutch (&quot;the Service&quot;), you agree to be bound by these Terms of Service.
           If you do not agree, do not use the Service.
         </p>
 
         <h2 className="text-xl font-semibold mt-8">2. Description of Service</h2>
         <p>
-          SpikeClip is a YouTube heatmap-driven clip extraction tool. It analyzes viewer engagement data
+          Clutch is a YouTube heatmap-driven clip extraction tool. It analyzes viewer engagement data
           to identify the most-replayed moments in videos and allows users to create short-form clips.
         </p>
 
@@ -44,20 +44,20 @@ export default function TermsPage() {
 
         <h2 className="text-xl font-semibold mt-8">5. Intellectual Property</h2>
         <p>
-          The Service and its original content, features, and functionality are owned by SpikeClip
+          The Service and its original content, features, and functionality are owned by Clutch
           and are protected by copyright, trademark, and other intellectual property laws.
         </p>
 
         <h2 className="text-xl font-semibold mt-8">6. Termination</h2>
         <p>
           We may terminate or suspend your account at any time for conduct that violates these Terms
-          or is harmful to other users, third parties, or the business interests of SpikeClip.
+          or is harmful to other users, third parties, or the business interests of Clutch.
         </p>
 
         <h2 className="text-xl font-semibold mt-8">7. Disclaimer</h2>
         <p>
           The Service is provided &quot;as is&quot; without warranties of any kind.
-          SpikeClip does not guarantee uninterrupted or error-free operation.
+          Clutch does not guarantee uninterrupted or error-free operation.
         </p>
 
         <h2 className="text-xl font-semibold mt-8">8. Changes to Terms</h2>

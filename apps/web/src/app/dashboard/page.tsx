@@ -36,7 +36,7 @@ function DashboardContent() {
     <main className="container mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl sm:text-3xl font-normal tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>Dashboard</h1>
           {user && (
             <>
               {user.plan === "free" && (
@@ -262,7 +262,7 @@ function DashboardContent() {
 
           {isCompleted && (
             <div className="flex justify-center">
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="rounded-full">
                 <Link href={`/studio?jobId=${job.id}`}>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Open in Studio
@@ -278,7 +278,7 @@ function DashboardContent() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mx-auto">
             <img
               src="/logo.svg"
-              alt="SpikeClip"
+              alt="Clutch"
               className="h-8 w-8 opacity-40"
             />
           </div>

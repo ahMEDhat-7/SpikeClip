@@ -11,17 +11,18 @@ html {
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
-  --radius: 0.5rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --radius: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
   --radius-pill: 9999px;
 
-  /* ── Section rhythm (80px — Cursor convention) ── */
-  --spacing-section: 5rem;
+  /* ── Section rhythm (96px — generous breathing room) ── */
+  --spacing-section: 6rem;
 
-  /* ── Max-width scale (Tailwind v4 requires explicit tokens) ── */
+  /* ── Max-width scale ── */
   --max-width-xs: 20rem;
   --max-width-sm: 24rem;
   --max-width-md: 28rem;
@@ -40,50 +41,62 @@ html {
   --max-width-screen-xl: 1280px;
   --max-width-screen-2xl: 1536px;
 
-  /* ── Light mode (default) ── */
-  --color-background: hsl(0 0% 98%);
-  --color-foreground: hsl(224 71% 4%);
+  /* ── Display type scale ── */
+  --text-display-sm: 2rem;
+  --text-display-md: 2.5rem;
+  --text-display-lg: 3.5rem;
+  --text-display-xl: 4.5rem;
+  --text-display-2xl: 6rem;
+
+  /* ── Tracking tokens ── */
+  --tracking-display: -0.04em;
+  --tracking-body: -0.01em;
+  --tracking-wide: 0.06em;
+
+  /* ── Light mode (warm off-white, Craft-inspired) ── */
+  --color-background: hsl(40 20% 98%);
+  --color-foreground: hsl(24 10% 10%);
 
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(224 71% 4%);
+  --color-card-foreground: hsl(24 10% 10%);
 
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(224 71% 4%);
+  --color-popover-foreground: hsl(24 10% 10%);
 
-  --color-primary: hsl(354 79% 50%);
+  --color-primary: hsl(350 80% 55%);
   --color-primary-foreground: hsl(0 0% 100%);
 
-  --color-secondary: hsl(220 14% 96%);
-  --color-secondary-foreground: hsl(224 71% 4%);
+  --color-secondary: hsl(40 15% 95%);
+  --color-secondary-foreground: hsl(24 10% 10%);
 
-  --color-muted: hsl(220 14% 96%);
-  --color-muted-foreground: hsl(220 9% 46%);
+  --color-muted: hsl(40 15% 95%);
+  --color-muted-foreground: hsl(24 5% 45%);
 
-  --color-accent: hsl(354 79% 50%);
+  --color-accent: hsl(152 60% 45%);
   --color-accent-foreground: hsl(0 0% 100%);
 
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
-  /* Hairline system — 1px borders as primary depth device */
-  --color-border: hsl(220 13% 91%);
-  --color-hairline: hsl(220 13% 91%);
-  --color-hairline-strong: hsl(220 13% 82%);
-  --color-input: hsl(220 13% 91%);
-  --color-ring: hsl(354 79% 50%);
+  /* Hairline system — warm 1px borders as primary depth device */
+  --color-border: hsl(30 10% 90%);
+  --color-hairline: hsl(30 10% 90%);
+  --color-hairline-strong: hsl(30 10% 80%);
+  --color-input: hsl(30 10% 90%);
+  --color-ring: hsl(350 80% 55%);
 
-  --color-surface: hsl(220 20% 96%);
-  --color-surface-hover: hsl(220 16% 93%);
-  --color-surface-active: hsl(220 14% 90%);
+  --color-surface: hsl(40 15% 95%);
+  --color-surface-hover: hsl(40 12% 92%);
+  --color-surface-active: hsl(40 10% 89%);
   --color-surface-card: hsl(0 0% 100%);
 
-  --color-chart-primary: hsl(354 79% 50%);
-  --color-chart-secondary: hsl(354 60% 70%);
+  --color-chart-primary: hsl(350 80% 55%);
+  --color-chart-secondary: hsl(350 60% 70%);
 
-  --color-success: hsl(142 71% 45%);
+  --color-success: hsl(152 60% 45%);
   --color-warning: hsl(38 92% 50%);
 
-  /* ── Cursor-inspired AI Timeline pastels ── */
+  /* ── AI Timeline pastels ── */
   --color-timeline-thinking: hsl(18 55% 78%);
   --color-timeline-grep: hsl(130 30% 71%);
   --color-timeline-read: hsl(214 52% 75%);
@@ -91,51 +104,51 @@ html {
   --color-timeline-done: hsl(36 55% 50%);
 }
 
-/* ── Dark mode (Cursor-inspired warm dark surfaces) ── */
+/* ── Dark mode (Huly-inspired warm dark) ── */
 .dark {
-  --color-background: hsl(222 47% 6%);
-  --color-foreground: hsl(210 40% 98%);
+  --color-background: hsl(240 15% 6%);
+  --color-foreground: hsl(0 0% 95%);
 
-  --color-card: hsl(222 47% 11%);
-  --color-card-foreground: hsl(210 40% 98%);
+  --color-card: hsl(240 12% 12%);
+  --color-card-foreground: hsl(0 0% 95%);
 
-  --color-popover: hsl(222 47% 11%);
-  --color-popover-foreground: hsl(210 40% 98%);
+  --color-popover: hsl(240 12% 12%);
+  --color-popover-foreground: hsl(0 0% 95%);
 
-  --color-primary: hsl(354 79% 52%);
+  --color-primary: hsl(350 80% 58%);
   --color-primary-foreground: hsl(0 0% 100%);
 
-  --color-secondary: hsl(217 20% 14%);
-  --color-secondary-foreground: hsl(210 40% 98%);
+  --color-secondary: hsl(240 12% 15%);
+  --color-secondary-foreground: hsl(0 0% 95%);
 
-  --color-muted: hsl(217 20% 11%);
-  --color-muted-foreground: hsl(215 20% 60%);
+  --color-muted: hsl(240 12% 10%);
+  --color-muted-foreground: hsl(240 10% 55%);
 
-  --color-accent: hsl(354 79% 52%);
+  --color-accent: hsl(152 60% 50%);
   --color-accent-foreground: hsl(0 0% 100%);
 
   --color-destructive: hsl(0 62% 50%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
   /* Hairline system — refined for dark mode */
-  --color-border: hsl(217 20% 18%);
-  --color-hairline: hsl(217 20% 18%);
-  --color-hairline-strong: hsl(217 20% 25%);
-  --color-input: hsl(217 20% 18%);
-  --color-ring: hsl(354 79% 52%);
+  --color-border: hsl(240 10% 18%);
+  --color-hairline: hsl(240 10% 18%);
+  --color-hairline-strong: hsl(240 10% 25%);
+  --color-input: hsl(240 10% 18%);
+  --color-ring: hsl(350 80% 58%);
 
-  --color-surface: hsl(222 47% 13%);
-  --color-surface-hover: hsl(217 30% 16%);
-  --color-surface-active: hsl(217 25% 20%);
-  --color-surface-card: hsl(222 47% 11%);
+  --color-surface: hsl(240 12% 10%);
+  --color-surface-hover: hsl(240 10% 14%);
+  --color-surface-active: hsl(240 8% 18%);
+  --color-surface-card: hsl(240 12% 12%);
 
-  --color-chart-primary: hsl(354 79% 52%);
-  --color-chart-secondary: hsl(354 60% 50%);
+  --color-chart-primary: hsl(350 80% 58%);
+  --color-chart-secondary: hsl(350 60% 50%);
 
-  --color-success: hsl(142 71% 55%);
+  --color-success: hsl(152 60% 50%);
   --color-warning: hsl(38 92% 55%);
 
-  /* Cursor-inspired AI Timeline pastels (dark mode variants) */
+  /* AI Timeline pastels (dark mode variants) */
   --color-timeline-thinking: hsl(18 50% 45%);
   --color-timeline-grep: hsl(130 25% 40%);
   --color-timeline-read: hsl(214 45% 45%);
@@ -191,31 +204,126 @@ a {
   height: 8px;
 }
 .dark ::-webkit-scrollbar-track {
-  background: hsl(217 20% 10%);
+  background: hsl(240 12% 8%);
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(217 20% 22%);
+  background: hsl(240 10% 22%);
   border-radius: 4px;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(217 20% 30%);
+  background: hsl(240 10% 30%);
 }
 
 /* ── Dots grid background utility ── */
 .dots-bg {
-  background-image: radial-gradient(circle, hsl(217 20% 20% / 0.4) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(circle, hsl(30 10% 80% / 0.7) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 .dark .dots-bg {
-  background-image: radial-gradient(circle, hsl(217 20% 30% / 0.5) 1px, transparent 1px);
+  background-image: radial-gradient(circle, hsl(240 10% 25% / 0.8) 1px, transparent 1px);
 }
 
-/* ── Glow effects (refined — subtler per Cursor's restraint) ── */
-.glow-crimson {
-  box-shadow: 0 0 40px hsl(354 79% 59% / 0.1), 0 0 80px hsl(354 79% 59% / 0.04);
+/* ── Glassmorphism navigation (Craft.do-inspired) ── */
+.glass-nav {
+  background: hsl(40 20% 98% / 0.82);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(30 10% 85% / 0.6);
+  box-shadow:
+    0 1px 3px hsl(24 10% 10% / 0.04),
+    0 4px 12px hsl(24 10% 10% / 0.06);
+}
+.dark .glass-nav {
+  background: hsl(240 15% 6% / 0.82);
+  border: 1px solid hsl(0 0% 100% / 0.08);
+  box-shadow:
+    0 1px 3px hsl(0 0% 0% / 0.2),
+    0 4px 12px hsl(0 0% 0% / 0.3);
 }
 
-/* ── Hairline divider (Cursor-inspired section separator) ── */
+/* ── Glass card ── */
+.glass-card {
+  background: hsl(0 0% 100% / 0.6);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid hsl(30 10% 85% / 0.5);
+}
+.dark .glass-card {
+  background: hsl(240 12% 12% / 0.6);
+  border: 1px solid hsl(0 0% 100% / 0.08);
+}
+
+/* ── Gradient text ── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-primary), hsl(350 80% 70%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, var(--color-accent), hsl(152 60% 60%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Gradient border button (Huly-inspired glowing CTA) ── */
+.gradient-border-btn {
+  position: relative;
+  z-index: 0;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border: none;
+}
+.gradient-border-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--color-primary), hsl(350 80% 70%), var(--color-accent));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.gradient-border-btn:hover::before {
+  opacity: 1;
+}
+
+/* ── Section grid borders (Stacker-inspired architecture) ── */
+.grid-section {
+  border-left: 1px solid var(--color-hairline);
+  border-right: 1px solid var(--color-hairline);
+  margin: 0 16px;
+}
+.grid-section + .grid-section {
+  border-top: 1px solid var(--color-hairline);
+}
+.grid-section:first-child {
+  border-top: 1px solid var(--color-hairline);
+}
+
+/* ── Glow effects ── */
+.glow-primary {
+  background: radial-gradient(circle, hsl(350 80% 55% / 0.12) 0%, transparent 70%);
+}
+
+.glow-accent {
+  background: radial-gradient(circle, hsl(152 60% 45% / 0.12) 0%, transparent 70%);
+}
+
+.dark .glow-primary {
+  background: radial-gradient(circle, hsl(350 80% 58% / 0.15) 0%, transparent 70%);
+}
+.dark .glow-accent {
+  background: radial-gradient(circle, hsl(152 60% 50% / 0.15) 0%, transparent 70%);
+}
+
+/* ── Hairline divider ── */
 .hairline-divider {
   height: 1px;
   background: var(--color-hairline);
@@ -237,7 +345,6 @@ a {
   transform: translateY(0);
 }
 
-/* Accessibility: show content when user prefers reduced motion or JS is unavailable */
 @media (prefers-reduced-motion: reduce) {
   .scroll-reveal {
     opacity: 1;
@@ -246,7 +353,6 @@ a {
   }
 }
 
-/* Show content when JavaScript is disabled */
 @media (scripting: none) {
   .scroll-reveal {
     opacity: 1;
@@ -264,7 +370,7 @@ a {
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 
-/* ── Icon orbit animation (subtle circular motion for feature icons) ── */
+/* ── Icon orbit animation ── */
 @keyframes icon-orbit {
   0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
   25%  { transform: translate(4px, -6px) scale(1.08) rotate(8deg); }
@@ -273,7 +379,7 @@ a {
   100% { transform: translate(0, 0) scale(1) rotate(0deg); }
 }
 
-/* ── Hero floating icon circular orbit (visible on all screens) ── */
+/* ── Hero floating icon circular orbit ── */
 @keyframes hero-orbit {
   0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
   14%  { transform: translate(18px, -28px) rotate(12deg) scale(1.1); }
@@ -293,4 +399,18 @@ a {
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.4; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* ── Micro float for idle shapes ── */
+@keyframes micro-float {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(2px, -3px); }
+  66% { transform: translate(-2px, 2px); }
+}
+
+/* ── Stagger reveal for alignment grid shapes ── */
+@keyframes shape-reveal {
+  0% { opacity: 0; transform: scale(0.3); }
+  60% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
 }

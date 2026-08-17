@@ -13,13 +13,10 @@ export function Footer() {
       <div className="container mx-auto px-6 md:px-12 py-section">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-              <img src="/logo.svg" alt="SpikeClip" className="h-4 w-4" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-primary/10">
+              <img src="/logo.svg" alt="Clutch" className="h-4 w-4" />
             </div>
-            <span className="text-sm font-semibold">
-              <span className="text-red-400">Spike</span>
-              <span className="text-muted-foreground">Clip</span>
-            </span>
+            <span className="text-sm font-semibold text-primary">Clutch</span>
           </div>
 
           <nav className="flex items-center gap-6 text-sm text-muted-foreground" aria-label="Footer navigation">
@@ -42,7 +39,7 @@ export function Footer() {
           </nav>
 
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} SpikeClip. All rights reserved.
+            &copy; {new Date().getFullYear()} Clutch. All rights reserved.
           </p>
         </div>
       </div>

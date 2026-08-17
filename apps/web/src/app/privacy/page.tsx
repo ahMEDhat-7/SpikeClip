@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — SpikeClip",
-  description: "SpikeClip Privacy Policy",
+  title: "Privacy Policy — Clutch",
+  description: "Clutch Privacy Policy",
 };
 
 export default function PrivacyPage() {
   return (
-    <main className="relative container mx-auto px-4 py-section max-w-3xl">
-      <DotsBackground opacity={0.2} />
+    <main className="relative container mx-auto px-4 sm:px-6 py-section max-w-3xl">
+      <DotsBackground opacity={0.7} />
       <div className="relative z-10">
-      <h1 className="text-3xl font-normal tracking-tight mb-6">Privacy Policy</h1>
+      <h1 className="text-3xl font-normal tracking-tight mb-6 text-center">Privacy Policy</h1>
       <div className="prose prose-sm dark:prose-invert space-y-4">
         <p>Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
 
         <h2 className="text-xl font-semibold mt-8">1. Information We Collect</h2>
-        <p>We collect the following information when you use SpikeClip:</p>
+        <p>We collect the following information when you use Clutch:</p>
         <ul className="list-disc pl-6">
           <li><strong>Account information:</strong> Email address and display name</li>
           <li><strong>Usage data:</strong> YouTube URLs analyzed, clips created, and usage quotas</li>

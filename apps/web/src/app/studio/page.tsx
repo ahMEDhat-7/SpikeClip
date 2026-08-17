@@ -260,7 +260,7 @@ function StudioContent() {
         {!job && !isLoading && (
           <div className="text-center py-16 space-y-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mx-auto">
-              <img src="/logo.svg" alt="SpikeClip" className="h-8 w-8 opacity-40" />
+              <img src="/logo.svg" alt="Clutch" className="h-8 w-8 opacity-40" />
             </div>
             <div className="space-y-1">
               <p className="text-lg font-medium">Analyze a YouTube Video</p>

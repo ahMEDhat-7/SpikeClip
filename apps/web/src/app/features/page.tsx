@@ -4,13 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DETAILED_FEATURES } from "@/presentation/constants/features";
 import { DotsBackground } from "@/presentation/components/layout/DotsBackground";
-import { GlowOrb } from "@/presentation/components/features/GlowOrb";
 import { ScrollReveal } from "@/presentation/components/features/ScrollReveal";
 
 export const metadata: Metadata = {
   title: "Features",
   description:
-    "Discover how SpikeClip uses real YouTube heatmap data to identify the most-replayed moments and create engaging vertical shorts.",
+    "Discover how Clutch uses real YouTube heatmap data to identify the most-replayed moments and create engaging vertical shorts.",
 };
 
 const steps = [
@@ -43,13 +42,12 @@ const steps = [
 export default function FeaturesPage() {
   return (
     <main>
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-section">
-        <DotsBackground opacity={0.3} />
-        <GlowOrb className="top-20 right-1/4" size={250} />
+      <section className="relative overflow-hidden bg-background py-section">
+        <DotsBackground opacity={0.7} />
         <div className="container mx-auto px-4 sm:px-6 text-center space-y-6 relative z-10">
-          <h1 className="text-4xl sm:text-5xl font-normal tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
             Features built for{" "}
-            <span className="text-primary">data-driven</span> creators
+            <span className="gradient-text">data-driven</span> creators
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Every feature is designed to turn raw viewer engagement data into
@@ -59,17 +57,17 @@ export default function FeaturesPage() {
       </section>
 
       <ScrollReveal>
-        <section className="relative container mx-auto px-4 sm:px-6 py-section">
-          <DotsBackground opacity={0.15} />
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="relative bg-background py-section">
+          <DotsBackground opacity={0.7} />
+          <div className="container mx-auto px-4 sm:px-6 relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {DETAILED_FEATURES.map((feature) => (
               <Card key={feature.title} className="group transition-colors hover:border-hairline-strong">
                 <CardContent className="p-6 space-y-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <feature.icon className="h-6 w-6" aria-hidden="true" />
                   </div>
                   <h3 className="text-lg font-semibold">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground line-clamp-3">
                     {feature.description}
                   </p>
                   <ul className="space-y-1.5">
@@ -91,10 +89,10 @@ export default function FeaturesPage() {
       </ScrollReveal>
 
       <ScrollReveal>
-        <section className="relative bg-surface py-section">
-          <DotsBackground opacity={0.2} />
+        <section className="relative bg-background border-t border-hairline py-section">
+          <DotsBackground opacity={0.7} />
           <div className="container mx-auto px-4 sm:px-6 relative z-10">
-            <h2 className="text-2xl sm:text-3xl font-normal text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-12" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
               How it works
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
@@ -104,7 +102,7 @@ export default function FeaturesPage() {
                     <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-px bg-border" aria-hidden="true" />
                   )}
                   <div className="space-y-3">
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-mono text-sm font-bold">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary font-mono text-sm font-bold">
                       {step.number}
                     </div>
                     <h3 className="font-semibold text-lg">{step.title}</h3>
@@ -120,16 +118,18 @@ export default function FeaturesPage() {
       </ScrollReveal>
 
       <ScrollReveal>
-      <section className="container mx-auto px-4 sm:px-6 py-section text-center space-y-6">
-        <h2 className="text-2xl sm:text-3xl font-normal">
+      <section className="relative bg-background border-t border-hairline py-section text-center space-y-6">
+        <div className="container mx-auto px-4 sm:px-6 space-y-6">
+        <h2 className="text-2xl sm:text-3xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
           Start analyzing with real data
         </h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
           Free tier includes 3 analyses per month. No credit card required.
         </p>
-        <Button asChild size="lg">
+        <Button asChild size="lg" className="rounded-full">
           <Link href="/login">Get started free</Link>
         </Button>
+        </div>
       </section>
       </ScrollReveal>
     </main>

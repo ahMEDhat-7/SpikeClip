@@ -57,23 +57,23 @@ function LoginContent() {
 
   if (authLoading || user) {
     return (
-      <main className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <main className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4.5rem)]">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </main>
     );
   }
 
   return (
-    <main className="relative container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-      <DotsBackground opacity={0.3} />
+    <main className="relative container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4.5rem)]">
+      <DotsBackground opacity={0.7} />
       <GlowOrb className="top-1/4 left-1/4" size={300} />
       <GlowOrb className="bottom-1/4 right-1/4" size={250} color="hsl(210, 80%, 50%)" />
       <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="text-center space-y-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 mx-auto">
-            <img src="/logo.svg" alt="SpikeClip logo" className="h-7 w-7" />
+            <img src="/logo.svg" alt="Clutch logo" className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-normal tracking-tight">Welcome to SpikeClip</h1>
+          <h1 className="text-2xl font-normal tracking-tight">Welcome to Clutch</h1>
           <p className="text-sm text-muted-foreground">
             Extract the most replayed moments from any YouTube video
           </p>
@@ -100,7 +100,7 @@ function LoginContent() {
             disabled={signingIn}
             variant="outline"
             size="lg"
-            className="w-full h-12 text-base font-medium"
+            className="w-full h-12 text-base font-medium cursor-pointer"
           >
             {signingIn ? (
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
@@ -126,7 +126,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <main className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[calc(100vh-4.5rem)]">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </main>
       }
