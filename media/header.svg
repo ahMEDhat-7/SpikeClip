@@ -1,44 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220">
   <defs>
-    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- Spike gradient: warm orange → red -->
+    <linearGradient id="spikeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#f97316">
-        <animate attributeName="stop-color" values="#f97316;#ef4444;#a855f7;#3b82f6;#f97316" dur="6s" repeatCount="indefinite"/>
+        <animate attributeName="stop-color" values="#f97316;#ef4444;#f97316" dur="4s" repeatCount="indefinite"/>
       </stop>
-      <stop offset="50%" stop-color="#ef4444">
-        <animate attributeName="stop-color" values="#ef4444;#a855f7;#3b82f6;#f97316;#ef4444" dur="6s" repeatCount="indefinite"/>
-      </stop>
-      <stop offset="100%" stop-color="#a855f7">
-        <animate attributeName="stop-color" values="#a855f7;#3b82f6;#f97316;#ef4444;#a855f7" dur="6s" repeatCount="indefinite"/>
+      <stop offset="100%" stop-color="#ef4444">
+        <animate attributeName="stop-color" values="#ef4444;#fb923c;#ef4444" dur="4s" repeatCount="indefinite"/>
       </stop>
     </linearGradient>
+    <!-- Clip gradient: purple → blue -->
+    <linearGradient id="clipGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a855f7">
+        <animate attributeName="stop-color" values="#a855f7;#6366f1;#a855f7" dur="4s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#3b82f6">
+        <animate attributeName="stop-color" values="#3b82f6;#8b5cf6;#3b82f6" dur="4s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    <!-- Enhanced glow filter -->
     <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feGaussianBlur stdDeviation="4" result="blur1"/>
+      <feGaussianBlur stdDeviation="8" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Soft glow for subtitle -->
+    <filter id="subGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+    <!-- Bar gradients -->
     <linearGradient id="bar1" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.1"/>
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.05"/>
       <stop offset="100%" stop-color="#f97316"/>
     </linearGradient>
     <linearGradient id="bar2" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.1"/>
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.05"/>
       <stop offset="100%" stop-color="#ef4444"/>
     </linearGradient>
     <linearGradient id="bar3" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.1"/>
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.05"/>
       <stop offset="100%" stop-color="#a855f7"/>
     </linearGradient>
     <linearGradient id="bar4" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.1"/>
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.05"/>
       <stop offset="100%" stop-color="#3b82f6"/>
-    </linearGradient>
-    <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#f97316" stop-opacity="0.8"/>
-      <stop offset="33%" stop-color="#ef4444" stop-opacity="0.9"/>
-      <stop offset="66%" stop-color="#a855f7" stop-opacity="0.8"/>
-      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.7"/>
     </linearGradient>
   </defs>
 
@@ -46,187 +59,173 @@
   <rect width="800" height="220" rx="12" fill="#0f0a1a"/>
 
   <!-- Subtle grid -->
-  <g opacity="0.06" stroke="#ffffff" stroke-width="0.5">
-    <line x1="0" y1="110" x2="800" y2="110"/>
+  <g opacity="0.05" stroke="#ffffff" stroke-width="0.5">
     <line x1="0" y1="130" x2="800" y2="130"/>
     <line x1="0" y1="150" x2="800" y2="150"/>
     <line x1="0" y1="170" x2="800" y2="170"/>
     <line x1="0" y1="190" x2="800" y2="190"/>
     <line x1="0" y1="210" x2="800" y2="210"/>
-    <line x1="100" y1="100" x2="100" y2="220"/>
-    <line x1="200" y1="100" x2="200" y2="220"/>
-    <line x1="300" y1="100" x2="300" y2="220"/>
-    <line x1="400" y1="100" x2="400" y2="220"/>
-    <line x1="500" y1="100" x2="500" y2="220"/>
-    <line x1="600" y1="100" x2="600" y2="220"/>
-    <line x1="700" y1="100" x2="700" y2="220"/>
+    <line x1="100" y1="120" x2="100" y2="220"/>
+    <line x1="200" y1="120" x2="200" y2="220"/>
+    <line x1="300" y1="120" x2="300" y2="220"/>
+    <line x1="400" y1="120" x2="400" y2="220"/>
+    <line x1="500" y1="120" x2="500" y2="220"/>
+    <line x1="600" y1="120" x2="600" y2="220"/>
+    <line x1="700" y1="120" x2="700" y2="220"/>
   </g>
 
-  <!-- Title: SpikeClip -->
-  <text x="400" y="82" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="800" font-size="64" fill="url(#titleGrad)" filter="url(#glow)">
-    SpikeClip
-    <animate attributeName="opacity" values="0.95;1;0.95" dur="3s" repeatCount="indefinite"/>
+  <!-- Ambient glow behind title -->
+  <ellipse cx="400" cy="70" rx="200" ry="50" fill="url(#spikeGrad)" opacity="0.06">
+    <animate attributeName="opacity" values="0.04;0.08;0.04" dur="5s" repeatCount="indefinite"/>
+    <animate attributeName="rx" values="180;220;180" dur="5s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- Title: Spike (warm) -->
+  <text x="400" y="82" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="800" font-size="64" filter="url(#glow)">
+    <tspan fill="url(#spikeGrad)">Spike</tspan><tspan fill="url(#clipGrad)">Clip</tspan>
+    <animate attributeName="opacity" values="0.92;1;0.92" dur="3s" repeatCount="indefinite"/>
   </text>
 
-  <!-- Subtitle -->
-  <text x="400" y="108" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="400" font-size="15" fill="#94a3b8" letter-spacing="3">
+  <!-- Subtitle with breathing letter-spacing -->
+  <text x="400" y="108" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="400" font-size="15" fill="#94a3b8" filter="url(#subGlow)">
+    <animate attributeName="letter-spacing" values="2;4;2" dur="6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.65;1;0.65" dur="4s" repeatCount="indefinite"/>
     FIND WHAT VIEWERS ACTUALLY REWATCH
-    <animate attributeName="opacity" values="0.7;1;0.7" dur="4s" repeatCount="indefinite"/>
   </text>
 
-  <!-- Heatmap bars — each bar animates its height independently -->
-  <!-- Bar 1 -->
-  <rect x="40" y="190" width="18" height="0" rx="2" fill="url(#bar1)">
-    <animate attributeName="height" values="15;55;30;70;20;45;15" dur="4.2s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="205;165;180;140;200;175;205" dur="4.2s" repeatCount="indefinite"/>
+  <!-- Heatmap bars — staggered begin times for organic pulse -->
+  <!-- Center bars begin first, edges follow (sine-wave stagger) -->
+  <rect x="40" y="190" width="18" height="0" rx="2" fill="url(#bar1)" opacity="0.85">
+    <animate attributeName="height" values="12;48;25;62;18;40;12" dur="4.2s" begin="0.6s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="208;172;195;158;202;180;208" dur="4.2s" begin="0.6s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 2 -->
-  <rect x="66" y="190" width="18" height="0" rx="2" fill="url(#bar2)">
-    <animate attributeName="height" values="30;70;50;20;65;35;30" dur="3.8s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="190;150;170;200;155;185;190" dur="3.8s" repeatCount="indefinite"/>
+  <rect x="66" y="190" width="18" height="0" rx="2" fill="url(#bar2)" opacity="0.85">
+    <animate attributeName="height" values="28;62;42;18;58;30;28" dur="3.8s" begin="0.45s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="192;158;178;202;162;190;192" dur="3.8s" begin="0.45s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 3 -->
-  <rect x="92" y="190" width="18" height="0" rx="2" fill="url(#bar3)">
-    <animate attributeName="height" values="55;25;70;40;15;60;55" dur="4.5s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="165;195;150;180;205;160;165" dur="4.5s" repeatCount="indefinite"/>
+  <rect x="92" y="190" width="18" height="0" rx="2" fill="url(#bar3)" opacity="0.85">
+    <animate attributeName="height" values="50;22;65;35;14;55;50" dur="4.5s" begin="0.35s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="170;198;155;185;206;165;170" dur="4.5s" begin="0.35s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 4 -->
-  <rect x="118" y="190" width="18" height="0" rx="2" fill="url(#bar4)">
-    <animate attributeName="height" values="40;65;20;55;70;30;40" dur="3.5s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="180;155;200;165;150;190;180" dur="3.5s" repeatCount="indefinite"/>
+  <rect x="118" y="190" width="18" height="0" rx="2" fill="url(#bar4)" opacity="0.85">
+    <animate attributeName="height" values="35;60;18;50;65;28;35" dur="3.5s" begin="0.25s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="185;160;202;170;155;192;185" dur="3.5s" begin="0.25s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 5 -->
-  <rect x="144" y="190" width="18" height="0" rx="2" fill="url(#bar1)">
-    <animate attributeName="height" values="20;50;70;35;55;25;20" dur="4.0s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="200;170;150;185;165;195;200" dur="4.0s" repeatCount="indefinite"/>
+  <rect x="144" y="190" width="18" height="0" rx="2" fill="url(#bar1)" opacity="0.85">
+    <animate attributeName="height" values="18;45;65;30;50;22;18" dur="4.0s" begin="0.18s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="202;175;155;190;170;198;202" dur="4.0s" begin="0.18s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 6 -->
-  <rect x="170" y="190" width="18" height="0" rx="2" fill="url(#bar2)">
-    <animate attributeName="height" values="60;30;45;70;20;55;60" dur="4.8s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="160;190;175;150;200;165;160" dur="4.8s" repeatCount="indefinite"/>
+  <rect x="170" y="190" width="18" height="0" rx="2" fill="url(#bar2)" opacity="0.85">
+    <animate attributeName="height" values="55;28;40;65;18;50;55" dur="4.8s" begin="0.12s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="165;192;180;155;202;170;165" dur="4.8s" begin="0.12s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 7 -->
-  <rect x="196" y="190" width="18" height="0" rx="2" fill="url(#bar3)">
-    <animate attributeName="height" values="35;60;25;50;45;70;35" dur="3.6s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="185;160;195;170;175;150;185" dur="3.6s" repeatCount="indefinite"/>
+  <rect x="196" y="190" width="18" height="0" rx="2" fill="url(#bar3)" opacity="0.85">
+    <animate attributeName="height" values="30;55;22;45;40;65;30" dur="3.6s" begin="0.08s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="190;165;198;175;180;155;190" dur="3.6s" begin="0.08s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 8 -->
-  <rect x="222" y="190" width="18" height="0" rx="2" fill="url(#bar4)">
-    <animate attributeName="height" values="50;20;65;30;60;40;50" dur="4.3s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="170;200;155;190;160;180;170" dur="4.3s" repeatCount="indefinite"/>
+  <rect x="222" y="190" width="18" height="0" rx="2" fill="url(#bar4)" opacity="0.85">
+    <animate attributeName="height" values="45;18;60;28;55;38;45" dur="4.3s" begin="0.05s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="175;202;160;192;165;182;175" dur="4.3s" begin="0.05s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 9 -->
-  <rect x="248" y="190" width="18" height="0" rx="2" fill="url(#bar1)">
-    <animate attributeName="height" values="25;55;40;65;30;50;25" dur="3.9s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="195;165;180;155;190;170;195" dur="3.9s" repeatCount="indefinite"/>
+  <rect x="248" y="190" width="18" height="0" rx="2" fill="url(#bar1)" opacity="0.85">
+    <animate attributeName="height" values="22;50;35;60;28;45;22" dur="3.9s" begin="0.03s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="198;170;185;160;192;175;198" dur="3.9s" begin="0.03s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 10 -->
-  <rect x="274" y="190" width="18" height="0" rx="2" fill="url(#bar2)">
-    <animate attributeName="height" values="45;70;25;50;35;60;45" dur="4.1s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="175;150;195;170;185;160;175" dur="4.1s" repeatCount="indefinite"/>
+  <rect x="274" y="190" width="18" height="0" rx="2" fill="url(#bar2)" opacity="0.9">
+    <animate attributeName="height" values="40;65;22;48;32;55;40" dur="4.1s" begin="0.02s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="180;155;198;172;188;165;180" dur="4.1s" begin="0.02s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 11 (center peak) -->
-  <rect x="300" y="190" width="18" height="0" rx="2" fill="url(#bar3)">
-    <animate attributeName="height" values="70;50;65;45;70;55;70" dur="3.7s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="150;170;155;175;150;165;150" dur="3.7s" repeatCount="indefinite"/>
+  <!-- Center peak bars — begin=0s (first to animate) -->
+  <rect x="300" y="190" width="18" height="0" rx="2" fill="url(#bar3)" opacity="0.95">
+    <animate attributeName="height" values="65;45;60;40;65;50;65" dur="3.7s" begin="0s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="155;175;160;180;155;170;155" dur="3.7s" begin="0s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 12 -->
-  <rect x="326" y="190" width="18" height="0" rx="2" fill="url(#bar4)">
-    <animate attributeName="height" values="60;35;50;65;40;55;60" dur="4.6s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="160;185;170;155;180;165;160" dur="4.6s" repeatCount="indefinite"/>
+  <rect x="326" y="190" width="18" height="0" rx="2" fill="url(#bar4)" opacity="0.95">
+    <animate attributeName="height" values="55;32;48;60;38;50;55" dur="4.6s" begin="0s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="165;188;172;160;182;170;165" dur="4.6s" begin="0s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 13 -->
-  <rect x="352" y="190" width="18" height="0" rx="2" fill="url(#bar1)">
-    <animate attributeName="height" values="40;65;30;55;70;25;40" dur="3.4s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="180;155;190;165;150;195;180" dur="3.4s" repeatCount="indefinite"/>
+  <rect x="352" y="190" width="18" height="0" rx="2" fill="url(#bar1)" opacity="0.9">
+    <animate attributeName="height" values="38;60;28;52;65;22;38" dur="3.4s" begin="0.02s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="182;160;192;168;155;198;182" dur="3.4s" begin="0.02s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 14 -->
-  <rect x="378" y="190" width="18" height="0" rx="2" fill="url(#bar2)">
-    <animate attributeName="height" values="55;25;60;35;45;70;55" dur="4.4s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="165;195;160;185;175;150;165" dur="4.4s" repeatCount="indefinite"/>
+  <rect x="378" y="190" width="18" height="0" rx="2" fill="url(#bar2)" opacity="0.9">
+    <animate attributeName="height" values="50;22;55;32;42;65;50" dur="4.4s" begin="0.03s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="170;198;165;188;178;155;170" dur="4.4s" begin="0.03s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 15 -->
-  <rect x="404" y="190" width="18" height="0" rx="2" fill="url(#bar3)">
-    <animate attributeName="height" values="30;55;45;70;25;50;30" dur="3.8s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="190;165;175;150;195;170;190" dur="3.8s" repeatCount="indefinite"/>
+  <rect x="404" y="190" width="18" height="0" rx="2" fill="url(#bar3)" opacity="0.85">
+    <animate attributeName="height" values="28;50;42;65;22;45;28" dur="3.8s" begin="0.05s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="192;170;178;155;198;175;192" dur="3.8s" begin="0.05s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 16 -->
-  <rect x="430" y="190" width="18" height="0" rx="2" fill="url(#bar4)">
-    <animate attributeName="height" values="65;40;55;30;60;45;65" dur="4.2s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="155;180;165;190;160;175;155" dur="4.2s" repeatCount="indefinite"/>
+  <rect x="430" y="190" width="18" height="0" rx="2" fill="url(#bar4)" opacity="0.85">
+    <animate attributeName="height" values="60;38;50;28;55;42;60" dur="4.2s" begin="0.08s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="160;182;170;192;165;178;160" dur="4.2s" begin="0.08s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 17 -->
-  <rect x="456" y="190" width="18" height="0" rx="2" fill="url(#bar1)">
-    <animate attributeName="height" values="35;60;25;50;55;30;35" dur="3.6s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="185;160;195;170;165;190;185" dur="3.6s" repeatCount="indefinite"/>
+  <rect x="456" y="190" width="18" height="0" rx="2" fill="url(#bar1)" opacity="0.85">
+    <animate attributeName="height" values="32;55;22;48;50;28;32" dur="3.6s" begin="0.12s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="188;165;198;172;170;192;188" dur="3.6s" begin="0.12s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 18 -->
-  <rect x="482" y="190" width="18" height="0" rx="2" fill="url(#bar2)">
-    <animate attributeName="height" values="50;30;65;40;20;55;50" dur="4.7s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="170;190;155;180;200;165;170" dur="4.7s" repeatCount="indefinite"/>
+  <rect x="482" y="190" width="18" height="0" rx="2" fill="url(#bar2)" opacity="0.85">
+    <animate attributeName="height" values="45;28;60;38;18;50;45" dur="4.7s" begin="0.18s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="175;192;160;182;202;170;175" dur="4.7s" begin="0.18s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 19 -->
-  <rect x="508" y="190" width="18" height="0" rx="2" fill="url(#bar3)">
-    <animate attributeName="height" values="20;45;70;35;55;25;20" dur="3.9s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="200;175;150;185;165;195;200" dur="3.9s" repeatCount="indefinite"/>
+  <rect x="508" y="190" width="18" height="0" rx="2" fill="url(#bar3)" opacity="0.85">
+    <animate attributeName="height" values="18;42;65;32;50;22;18" dur="3.9s" begin="0.25s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="202;178;155;188;170;198;202" dur="3.9s" begin="0.25s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 20 -->
-  <rect x="534" y="190" width="18" height="0" rx="2" fill="url(#bar4)">
-    <animate attributeName="height" values="55;70;30;60;40;50;55" dur="4.0s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="165;150;190;160;180;170;165" dur="4.0s" repeatCount="indefinite"/>
+  <rect x="534" y="190" width="18" height="0" rx="2" fill="url(#bar4)" opacity="0.85">
+    <animate attributeName="height" values="50;65;28;55;38;45;50" dur="4.0s" begin="0.35s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="170;155;192;165;182;175;170" dur="4.0s" begin="0.35s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 21 -->
-  <rect x="560" y="190" width="18" height="0" rx="2" fill="url(#bar1)">
-    <animate attributeName="height" values="40;25;55;70;35;60;40" dur="4.5s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="180;195;165;150;185;160;180" dur="4.5s" repeatCount="indefinite"/>
+  <rect x="560" y="190" width="18" height="0" rx="2" fill="url(#bar1)" opacity="0.85">
+    <animate attributeName="height" values="38;22;50;65;32;55;38" dur="4.5s" begin="0.45s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="182;198;170;155;188;165;182" dur="4.5s" begin="0.45s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 22 -->
-  <rect x="586" y="190" width="18" height="0" rx="2" fill="url(#bar2)">
-    <animate attributeName="height" values="60;45;35;50;65;30;60" dur="3.5s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="160;175;185;170;155;190;160" dur="3.5s" repeatCount="indefinite"/>
+  <rect x="586" y="190" width="18" height="0" rx="2" fill="url(#bar2)" opacity="0.85">
+    <animate attributeName="height" values="55;42;32;48;60;28;55" dur="3.5s" begin="0.55s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="165;178;188;172;160;192;165" dur="3.5s" begin="0.55s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 23 -->
-  <rect x="612" y="190" width="18" height="0" rx="2" fill="url(#bar3)">
-    <animate attributeName="height" values="25;55;65;30;50;70;25" dur="4.3s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="195;165;155;190;170;150;195" dur="4.3s" repeatCount="indefinite"/>
+  <rect x="612" y="190" width="18" height="0" rx="2" fill="url(#bar3)" opacity="0.85">
+    <animate attributeName="height" values="22;50;60;28;45;65;22" dur="4.3s" begin="0.65s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="198;170;160;192;175;155;198" dur="4.3s" begin="0.65s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 24 -->
-  <rect x="638" y="190" width="18" height="0" rx="2" fill="url(#bar4)">
-    <animate attributeName="height" values="45;30;50;65;35;55;45" dur="3.7s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="175;190;170;155;185;165;175" dur="3.7s" repeatCount="indefinite"/>
+  <rect x="638" y="190" width="18" height="0" rx="2" fill="url(#bar4)" opacity="0.85">
+    <animate attributeName="height" values="42;28;48;60;32;50;42" dur="3.7s" begin="0.75s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="178;192;172;160;188;170;178" dur="3.7s" begin="0.75s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 25 -->
-  <rect x="664" y="190" width="18" height="0" rx="2" fill="url(#bar1)">
-    <animate attributeName="height" values="35;60;20;45;55;40;35" dur="4.1s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="185;160;200;175;165;180;185" dur="4.1s" repeatCount="indefinite"/>
+  <rect x="664" y="190" width="18" height="0" rx="2" fill="url(#bar1)" opacity="0.85">
+    <animate attributeName="height" values="32;55;18;42;50;38;32" dur="4.1s" begin="0.85s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="188;165;202;178;170;182;188" dur="4.1s" begin="0.85s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 26 -->
-  <rect x="690" y="190" width="18" height="0" rx="2" fill="url(#bar2)">
-    <animate attributeName="height" values="50;35;60;25;40;55;50" dur="4.8s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="170;185;160;195;180;165;170" dur="4.8s" repeatCount="indefinite"/>
+  <rect x="690" y="190" width="18" height="0" rx="2" fill="url(#bar2)" opacity="0.85">
+    <animate attributeName="height" values="48;32;55;22;38;50;48" dur="4.8s" begin="0.95s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="172;188;165;198;182;170;172" dur="4.8s" begin="0.95s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 27 -->
-  <rect x="716" y="190" width="18" height="0" rx="2" fill="url(#bar3)">
-    <animate attributeName="height" values="30;50;40;55;65;25;30" dur="3.4s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="190;170;180;165;155;195;190" dur="3.4s" repeatCount="indefinite"/>
+  <rect x="716" y="190" width="18" height="0" rx="2" fill="url(#bar3)" opacity="0.85">
+    <animate attributeName="height" values="28;45;38;50;60;22;28" dur="3.4s" begin="1.05s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="192;175;182;170;160;198;192" dur="3.4s" begin="1.05s" repeatCount="indefinite"/>
   </rect>
-  <!-- Bar 28 -->
-  <rect x="742" y="190" width="18" height="0" rx="2" fill="url(#bar4)">
-    <animate attributeName="height" values="45;25;55;35;50;60;45" dur="4.6s" repeatCount="indefinite"/>
-    <animate attributeName="y" values="175;195;165;185;170;160;175" dur="4.6s" repeatCount="indefinite"/>
+  <rect x="742" y="190" width="18" height="0" rx="2" fill="url(#bar4)" opacity="0.85">
+    <animate attributeName="height" values="42;22;50;32;45;55;42" dur="4.6s" begin="1.15s" repeatCount="indefinite"/>
+    <animate attributeName="y" values="178;198;170;188;175;165;178" dur="4.6s" begin="1.15s" repeatCount="indefinite"/>
   </rect>
 
-  <!-- Moving playhead line across heatmap -->
-  <line x1="0" y1="115" x2="0" y2="218" stroke="#f97316" stroke-width="2" opacity="0.7">
-    <animate attributeName="x1" values="30;770;30" dur="8s" repeatCount="indefinite"/>
-    <animate attributeName="x2" values="30;770;30" dur="8s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" values="0.4;0.8;0.4" dur="8s" repeatCount="indefinite"/>
+  <!-- Moving playhead with ease-in-out spline -->
+  <line x1="30" y1="125" x2="30" y2="218" stroke="#f97316" stroke-width="1.5" opacity="0.6">
+    <animate attributeName="x1" values="30;770;30" dur="7s" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" repeatCount="indefinite"/>
+    <animate attributeName="x2" values="30;770;30" dur="7s" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0.7;0.3" dur="7s" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" repeatCount="indefinite"/>
   </line>
 
-  <!-- Pulse dot at playhead tip -->
-  <circle cx="0" cy="115" r="4" fill="#f97316" opacity="0.9">
-    <animate attributeName="cx" values="30;770;30" dur="8s" repeatCount="indefinite"/>
-    <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+  <!-- Pulse dot at playhead tip with glow -->
+  <circle cx="30" cy="125" r="4" fill="#f97316" opacity="0.8" filter="url(#subGlow)">
+    <animate attributeName="cx" values="30;770;30" dur="7s" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" repeatCount="indefinite"/>
+    <animate attributeName="r" values="3;5;3" dur="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Secondary trailing dot -->
+  <circle cx="30" cy="125" r="2" fill="#ef4444" opacity="0.4">
+    <animate attributeName="cx" values="20;760;20" dur="7s" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="7s" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" repeatCount="indefinite"/>
   </circle>
 </svg>

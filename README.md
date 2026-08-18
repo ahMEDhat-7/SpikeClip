@@ -116,17 +116,35 @@ This keeps SpikeClip's data-driven heatmap selection while giving it a professio
 
 ## How it works
 
+### Analysis Pipeline (6 stages)
+
+| Stage | What happens |
+|-------|-------------|
+| **01 — Submit** | Paste a YouTube URL. Metadata + heatmap are extracted via `yt-dlp`. |
+| **02 — Analyze** | Per-second engagement scores are computed from the heatmap data. |
+| **03 — Detect** | The canonical spike-merging algorithm clusters high-engagement moments into scenes (3–60s). |
+| **04 — Score** | Scenes are ranked by viewer rewatch intensity — highest replay = best clip. |
+| **05 — Visualize** | Interactive heatmap renders with detected scenes highlighted and clickable timestamps. |
+| **06 — Decide** | User reviews ranked scenes and picks moments for Clip Studio. |
+
+### Clip Studio Pipeline (4 stages)
+
+| Stage | What happens |
+|-------|-------------|
+| **01 — Analyze** | Paste a URL and get heatmap data with per-second engagement scores. |
+| **02 — Select** | Review detected scenes ranked by viewer rewatch intensity. |
+| **03 — Edit** | Add captions (SRT / drawtext), layer background music with fades, apply curated templates. |
+| **04 — Export** | Download vertical clips (9:16, 1080×1920) ready for TikTok, YouTube Shorts, and Instagram Reels. |
+
 ```
-User submits URL
-  → POST /api/jobs  (URL validated, metadata + heatmap extracted via yt-dlp)
-  → HeatmapWorker runs the canonical merge algorithm → scenes saved to job
-  → Frontend polls GET /api/jobs/:id and renders the heatmap
+POST /api/jobs  →  yt-dlp extracts metadata + heatmap
+  →  HeatmapWorker runs the canonical merge algorithm → scenes saved
+  →  Frontend polls GET /api/jobs/:id and renders the interactive heatmap
         ↓
-User opens Clip Studio, picks a scene, adds captions/music/template
-  → POST /api/jobs/:id/export  (Clip rows created + export jobs enqueued)
-  → ClipWorker: download section → crop to 9:16 → overlay captions →
-    apply template effects → mix music → upload to storage
-  → Clips served via HMAC-signed API URLs (never a public bucket)
+POST /api/jobs/:id/export  →  Clip rows created + export jobs enqueued
+  →  ClipWorker: download section → crop to 9:16 → overlay captions →
+     apply template effects → mix music → upload to MinIO
+  →  Clips served via HMAC-signed API URLs (never a public bucket)
 ```
 
 ---
