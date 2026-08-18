@@ -1,4 +1,4 @@
-import type { PlatformId } from "@spikeclips/shared";
+import type { PlatformId } from "@spikeclip/shared";
 
 export type ChatRole = "system" | "user" | "assistant";
 

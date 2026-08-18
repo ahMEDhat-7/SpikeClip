@@ -23,7 +23,7 @@ pnpm install
 cp .env.example apps/api/.env
 
 # Run migrations
-pnpm --filter @spikeclips/api prisma:migrate
+pnpm --filter @spikeclip/api prisma:migrate
 
 # Start dev servers
 pnpm dev

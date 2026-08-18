@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { StudioService } from "../studio.service";
-import type { StudioAction, JobStatus } from "@spikeclips/shared";
+import type { StudioAction, JobStatus } from "@spikeclip/shared";
 
 const storageMock = {
   upload: jest.fn().mockResolvedValue(undefined),

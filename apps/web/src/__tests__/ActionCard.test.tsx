@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ActionCard } from "../presentation/components/studio/ActionCard";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 const captionAction: StudioAction = {
   action: "add_captions",

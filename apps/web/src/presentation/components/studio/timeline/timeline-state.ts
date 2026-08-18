@@ -1,4 +1,4 @@
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 export interface TimelineState {
   scenes: Array<{

@@ -8,7 +8,7 @@ import {
   ClarificationResponse,
   StudioEditContext,
   describeAction,
-} from "@spikeclips/shared";
+} from "@spikeclip/shared";
 import { RedisService } from "../redis/redis.service";
 import { LLM_PROVIDER, LLMProvider, ChatMessage } from "./llm-provider.interface";
 

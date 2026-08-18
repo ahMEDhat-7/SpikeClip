@@ -1,6 +1,6 @@
-export type { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "@spikeclips/shared";
+export type { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "@spikeclip/shared";
 
-import type { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclips/shared";
+import type { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
 
 export const JOB_STATUS = {
   PENDING: "pending",

@@ -1,5 +1,5 @@
 import { Job } from "../entities/job.entity";
-import { JobStatus } from "@spikeclips/shared";
+import { JobStatus } from "@spikeclip/shared";
 
 export const JOB_REPOSITORY = "JOB_REPOSITORY";
 

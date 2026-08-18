@@ -17,8 +17,8 @@ RUN pnpm install --frozen-lockfile
 
 # Build shared package
 COPY packages/shared ./packages/shared
-RUN pnpm --filter @spikeclips/shared build
+RUN pnpm --filter @spikeclip/shared build
 
 EXPOSE 3000
 
-CMD ["pnpm", "--filter", "@spikeclips/web", "dev"]
+CMD ["pnpm", "--filter", "@spikeclip/web", "dev"]

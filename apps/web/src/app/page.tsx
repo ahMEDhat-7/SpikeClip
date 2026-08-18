@@ -7,14 +7,14 @@ import { HeroVisual } from "@/presentation/components/features/HeroVisual";
 import { SocialProofBar } from "@/presentation/components/features/SocialProofBar";
 import { ProblemSection } from "@/presentation/components/features/ProblemSection";
 import { FAQ } from "@/presentation/components/features/FAQ";
-import { ArrowRight, Code, MessageSquare, Eye, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, BarChart3, Layers, Download, Link2, Scan, MousePointer } from "lucide-react";
 import { LANDING_FEATURES } from "@/presentation/constants/features";
 
 const stats = [
-  { value: "3-60s", label: "Clip duration range" },
-  { value: "9:16", label: "Vertical format" },
-  { value: "<10s", label: "Analysis time" },
-  { value: "99.9%", label: "Uptime" },
+  { value: "3-60s", label: "Clip duration range", color: "text-primary" },
+  { value: "9:16", label: "Vertical format", color: "text-accent" },
+  { value: "<10s", label: "Analysis time", color: "text-primary" },
+  { value: "99.9%", label: "Uptime", color: "text-accent" },
 ];
 
 export default function HomePage() {
@@ -23,7 +23,7 @@ export default function HomePage() {
       {/* Hero Section — Real product UI */}
       <section className="relative overflow-hidden min-h-[85vh] flex flex-col">
         <DotsBackground opacity={0.7} />
-        <div className="container mx-auto px-4 sm:px-6 relative z-10 flex-1 flex flex-col justify-center pt-24 pb-12">
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 flex-1 flex flex-col justify-center pb-12">
           <div className="flex flex-col items-center text-center space-y-6 max-w-3xl mx-auto mb-4">
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05]"
@@ -76,7 +76,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-hairline" aria-label="Key statistics">
               {stats.map((stat) => (
                 <div key={stat.label} className="text-center px-4">
-                  <div className="text-3xl font-mono font-semibold gradient-text">
+                  <div className={`text-3xl font-mono font-semibold ${stat.color}`}>
                     {stat.value}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
@@ -113,13 +113,19 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 max-w-5xl mx-auto grid-section">
               {[
-                { num: "01", title: "Paste your URL", desc: "Drop in any YouTube video link. We validate and extract heatmap data automatically." },
-                { num: "02", title: "See the heatmap", desc: "View exactly where viewers rewatched. Our algorithm identifies the top moments." },
-                { num: "03", title: "Export clips", desc: "Select scenes and download vertical clips ready for TikTok, Shorts, or Reels." },
+                { num: "01", icon: Link2, title: "Paste your URL", desc: "Drop in any YouTube video link. We validate and extract heatmap data automatically." },
+                { num: "02", icon: BarChart3, title: "Extract heatmap", desc: "Per-second viewer engagement scores are pulled directly from YouTube's heatmap API." },
+                { num: "03", icon: Scan, title: "Detect scenes", desc: "The spike merging algorithm clusters high-engagement moments into scored, naturally-bounded clips." },
+                { num: "04", icon: MousePointer, title: "Pick your scenes", desc: "Review detected scenes ranked by engagement score. Select the moments that fit your content." },
+                { num: "05", icon: Sparkles, title: "Edit with AI", desc: "OpenReel-powered editor with AI video generation — captions, effects, transitions, and more via natural language." },
+                { num: "06", icon: Download, title: "Export vertical clips", desc: "Download 9:16 clips ready for TikTok, YouTube Shorts, and Instagram Reels." },
               ].map((step, i) => (
                 <Card key={step.num} className="relative rounded-none border-0 border-hairline bg-transparent group transition-colors hover:bg-surface/50">
                   <CardContent className="p-8 text-center space-y-4">
-                    <div className="text-4xl font-mono font-bold text-primary/40">
+                    <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <step.icon className="h-5 w-5" />
+                    </div>
+                    <div className="text-3xl font-mono font-bold text-primary/40">
                       {step.num}
                     </div>
                     <h3 className="text-lg font-semibold">{step.title}</h3>
@@ -127,8 +133,8 @@ export default function HomePage() {
                       {step.desc}
                     </p>
                   </CardContent>
-                  {/* Visual connector arrow (desktop only) */}
-                  {i < 2 && (
+                  {/* Visual connector arrow — only between cards in the same row */}
+                  {i < 5 && i % 3 !== 2 && (
                     <div className="hidden md:flex absolute top-1/2 -right-3 -translate-y-1/2 z-20 items-center justify-center">
                       <div className="h-6 w-6 rounded-full bg-background border border-hairline flex items-center justify-center">
                         <ArrowRight className="h-3 w-3 text-muted-foreground" />
@@ -221,54 +227,41 @@ export default function HomePage() {
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-medium text-accent">
                   <Sparkles className="h-3 w-3" />
-                  AI-Powered Editing
+                  Full Pipeline
                 </div>
                 <h2
                   className="text-2xl sm:text-3xl font-semibold leading-tight"
                   style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}
                 >
-                  Edit clips with{" "}
-                  <span className="gradient-text">natural language</span>
+                  From URL to clips{" "}
+                  <span className="gradient-text">in four steps</span>
                 </h2>
                 <p className="text-muted-foreground text-lg leading-relaxed">
-                  Type what you want in plain English. Our AI translates your prompt into
-                  professional video edits — captions, effects, transitions, speed changes,
-                  and more.
+                  The complete workflow — analyze viewer engagement, pick the best
+                  moments, polish with AI, and export vertical clips ready to post.
                 </p>
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <MessageSquare className="h-4 w-4" />
+                  {[
+                    { icon: BarChart3, num: "01", title: "Analyze", desc: "Paste a URL and get heatmap data with per-second engagement scores." },
+                    { icon: Layers, num: "02", title: "Select", desc: "Review detected scenes ranked by viewer rewatch intensity." },
+                    { icon: Sparkles, num: "03", title: "Edit", desc: "Add captions, music, effects, and templates with AI assistance." },
+                    { icon: Download, num: "04", title: "Export", desc: "Download vertical clips ready for TikTok, Shorts, and Reels." },
+                  ].map((step) => (
+                    <div key={step.num} className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <step.icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">
+                          <span className="text-muted-foreground font-mono text-xs mr-1.5">{step.num}</span>
+                          {step.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {step.desc}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium">Prompt-based workflow</h3>
-                      <p className="text-sm text-muted-foreground">
-                        &quot;Add bold captions centered on screen&quot; or &quot;Speed up the intro by 2x&quot;
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Eye className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Live preview</h3>
-                      <p className="text-sm text-muted-foreground">
-                        See every change in real-time before exporting
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Code className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">8 action types</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Captions, effects, overlays, transitions, speed, audio mixing, backgrounds, and trims
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
                 <Button asChild className="group mt-4 rounded-full px-6">
                   <Link href="/login">
@@ -283,32 +276,33 @@ export default function HomePage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                       <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                      Clip Studio
+                      Clip Studio Pipeline
                     </div>
-                    <div className="rounded-xl bg-muted/50 p-3 font-mono text-xs">
-                      <span className="text-primary">You:</span> Add bold captions centered on screen
-                    </div>
-                    <div className="rounded-xl bg-primary/5 p-3 font-mono text-xs border border-primary/10">
-                      <span className="text-primary font-medium">Studio:</span> Applied 1 action: add_captions
-                    </div>
-                    <div className="rounded-xl bg-muted/50 p-3 font-mono text-xs">
-                      <span className="text-primary">You:</span> Speed up the intro by 2x
-                    </div>
-                    <div className="rounded-xl bg-primary/5 p-3 font-mono text-xs border border-primary/10">
-                      <span className="text-primary font-medium">Studio:</span> Applied 1 action: set_speed
-                    </div>
-                    <div className="rounded-xl bg-muted/50 p-3 font-mono text-xs">
-                      <span className="text-primary">You:</span> Make it black and white with a vignette
-                    </div>
-                    <div className="rounded-xl bg-primary/5 p-3 font-mono text-xs border border-primary/10">
-                      <span className="text-primary font-medium">Studio:</span> Applied 2 actions: apply_effect x2
-                    </div>
-                    {/* Timeline progress bars */}
+                    {[
+                      { stage: "01", label: "Analyze", desc: "Heatmap extracted — 6 scenes detected", color: "bg-primary/10 text-primary", barColor: "bg-timeline-thinking" },
+                      { stage: "02", label: "Select", desc: "3 scenes selected (42s total)", color: "bg-primary/10 text-primary", barColor: "bg-timeline-read" },
+                      { stage: "03", label: "Edit", desc: "Captions + music applied", color: "bg-accent/10 text-accent", barColor: "bg-timeline-edit" },
+                      { stage: "04", label: "Export", desc: "Rendering 9:16 vertical clips", color: "bg-accent/10 text-accent", barColor: "bg-timeline-done" },
+                    ].map((item) => (
+                      <div key={item.stage} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-mono font-bold ${item.color}`}>
+                          {item.stage}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium">{item.label}</span>
+                            <span className="text-[10px] text-muted-foreground truncate">{item.desc}</span>
+                          </div>
+                          <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full rounded-full ${item.barColor}`} style={{ width: item.stage === "04" ? "75%" : "100%" }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                     <div className="flex gap-1.5 mt-3">
                       <div className="h-1.5 flex-1 rounded-full bg-timeline-thinking" />
                       <div className="h-1.5 flex-1 rounded-full bg-timeline-read" />
                       <div className="h-1.5 flex-1 rounded-full bg-timeline-edit" />
-                      <div className="h-1.5 flex-1 rounded-full bg-timeline-grep" />
                       <div className="h-1.5 flex-1 rounded-full bg-timeline-done" />
                     </div>
                   </div>

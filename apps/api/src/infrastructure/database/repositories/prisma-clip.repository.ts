@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { ClipRepository } from "../../../domain/repositories/clip.repository";
 import { Clip } from "../../../domain/entities/clip.entity";
-import { ClipStatus } from "@spikeclips/shared";
+import { ClipStatus } from "@spikeclip/shared";
 
 @Injectable()
 export class PrismaClipRepository implements ClipRepository {

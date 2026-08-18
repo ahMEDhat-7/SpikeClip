@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Job } from "../../domain/entities/job.entity";
-import { ScoredBlock, HeatmapSpike } from "@spikeclips/shared";
+import { ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
 
 export class JobResponseDto {
   @ApiProperty({ description: "Job ID", example: "550e8400-e29b-41d4-a716-446655440000" })
@@ -43,7 +43,7 @@ export class JobResponseDto {
   errorMessage?: string;
 
   @ApiPropertyOptional({ description: "Persisted Studio action revisions keyed by scene index" })
-  studioEdits?: Record<number, import("@spikeclips/shared").StudioAction[]> | null;
+  studioEdits?: Record<number, import("@spikeclip/shared").StudioAction[]> | null;
 
   @ApiProperty({ description: "Job creation timestamp" })
   createdAt!: Date;

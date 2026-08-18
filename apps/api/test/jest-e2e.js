@@ -7,6 +7,6 @@ module.exports = {
     "^.+\\.ts$": "ts-jest",
   },
   moduleNameMapper: {
-    "^@spikeclips/shared$": "<rootDir>/../../../packages/shared/src",
+    "^@spikeclip/shared$": "<rootDir>/../../../packages/shared/src",
   },
 };

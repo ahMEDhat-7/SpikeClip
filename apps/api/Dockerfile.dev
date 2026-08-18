@@ -25,11 +25,11 @@ RUN pnpm install --frozen-lockfile
 
 # Build shared package
 COPY packages/shared ./packages/shared
-RUN pnpm --filter @spikeclips/shared build
+RUN pnpm --filter @spikeclip/shared build
 
 # Generate Prisma client
-RUN pnpm --filter @spikeclips/api exec prisma generate
+RUN pnpm --filter @spikeclip/api exec prisma generate
 
 EXPOSE 3001
 
-CMD ["pnpm", "--filter", "@spikeclips/api", "dev"]
+CMD ["pnpm", "--filter", "@spikeclip/api", "dev"]

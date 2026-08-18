@@ -54,7 +54,7 @@ done
 # Run Prisma migrations
 echo ""
 echo "Running Prisma migrations..."
-docker compose exec -T api pnpm --filter @spikeclips/api exec prisma migrate deploy 2>/dev/null || echo "  (migrations already applied or schema up to date)"
+docker compose exec -T api pnpm --filter @spikeclip/api exec prisma migrate deploy 2>/dev/null || echo "  (migrations already applied or schema up to date)"
 
 # Seed test user
 echo ""

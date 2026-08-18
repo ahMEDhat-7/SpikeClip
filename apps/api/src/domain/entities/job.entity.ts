@@ -3,7 +3,7 @@ import {
   ScoredBlock,
   HeatmapSpike,
   StudioAction,
-} from "@spikeclips/shared";
+} from "@spikeclip/shared";
 
 export class Job {
   constructor(

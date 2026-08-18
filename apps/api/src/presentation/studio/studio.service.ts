@@ -12,7 +12,7 @@ import {
   type StudioAction,
   type PlatformId,
   type StudioEditContext,
-} from "@spikeclips/shared";
+} from "@spikeclip/shared";
 import { createHash } from "crypto";
 import { execFile } from "child_process";
 import { promisify } from "util";

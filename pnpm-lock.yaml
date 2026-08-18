@@ -44,7 +44,7 @@ importers:
       '@sentry/nestjs':
         specifier: ^9.0.0
         version: 9.47.1(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2))
-      '@spikeclips/shared':
+      '@spikeclip/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       bullmq:
@@ -156,7 +156,7 @@ importers:
       '@sentry/nextjs':
         specifier: ^10.69.0
         version: 10.69.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(webpack@5.106.2)
-      '@spikeclips/shared':
+      '@spikeclip/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@vercel/analytics':

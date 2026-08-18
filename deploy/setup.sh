@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-DOMAIN="spikeclips.com"
+DOMAIN="spikeclip.app"
 SWAP_SIZE="2G"
 REPO_URL="git@github.com:ahmedhat/SpikeClip.git"
 
@@ -71,36 +71,36 @@ if ! command -v yt-dlp &> /dev/null; then
     sudo pip3 install --break-system-packages yt-dlp
 fi
 
-# ── 9. Create spikeclips user ──
-echo "[9/13] Setting up spikeclips user..."
-if ! id "spikeclips" &>/dev/null; then
-    sudo adduser --system --home /home/spikeclips --shell /bin/bash --group spikeclips
-    sudo mkdir -p /home/spikeclips
-    sudo chown spikeclips:spikeclips /home/spikeclips
+# ── 9. Create spikeclip user ──
+echo "[9/13] Setting up spikeclip user..."
+if ! id "spikeclip" &>/dev/null; then
+    sudo adduser --system --home /home/spikeclip --shell /bin/bash --group spikeclip
+    sudo mkdir -p /home/spikeclip
+    sudo chown spikeclip:spikeclip /home/spikeclip
 fi
 
 # ── 10. Clone and build ──
 echo "[10/13] Cloning and building project..."
-sudo -u spikeclips bash -c '
-    cd /home/spikeclips
-    if [ ! -d "spikeclips" ]; then
-        git clone '"$REPO_URL"' spikeclips
+sudo -u spikeclip bash -c '
+    cd /home/spikeclip
+    if [ ! -d "spikeclip" ]; then
+        git clone '"$REPO_URL"' SpikeClip
     fi
-    cd spikeclips
+    cd SpikeClip
     pnpm install
     pnpm build
 '
 
 # ── 11. Copy systemd units ──
 echo "[11/13] Installing systemd services..."
-sudo cp /home/spikeclips/spikeclips/deploy/spikeclips-api.service /etc/systemd/system/
-sudo cp /home/spikeclips/spikeclips/deploy/spikeclips-web.service /etc/systemd/system/
+sudo cp /home/spikeclip/SpikeClip/deploy/spikeclip-api.service /etc/systemd/system/
+sudo cp /home/spikeclip/SpikeClip/deploy/spikeclip-web.service /etc/systemd/system/
 sudo systemctl daemon-reload
 
 # ── 12. Configure .env ──
 echo "[12/13] Configuring environment..."
-if [ ! -f /home/spikeclips/spikeclips/.env ]; then
-    cp /home/spikeclips/spikeclips/.env.example /home/spikeclips/spikeclips/.env
+if [ ! -f /home/spikeclip/SpikeClip/.env ]; then
+    cp /home/spikeclip/SpikeClip/.env.example /home/spikeclip/SpikeClip/.env
     echo "Created .env from .env.example — edit it with your secrets"
 fi
 
@@ -122,11 +122,11 @@ echo "=== Setup Complete ==="
 echo ""
 echo "Next steps:"
 echo "  1. DNS: Point $DOMAIN A record -> $(curl -s ifconfig.me)"
-echo "  2. Edit .env: nano /home/spikeclips/spikeclips/.env"
-echo "  3. Start infra: /home/spikeclips/spikeclips/deploy/start.sh"
-echo "  4. Prisma migrate: cd /home/spikeclips/spikeclips/apps/api && npx prisma migrate deploy"
+echo "  2. Edit .env: nano /home/spikeclip/SpikeClip/.env"
+echo "  3. Start infra: /home/spikeclip/SpikeClip/deploy/start.sh"
+echo "  4. Prisma migrate: cd /home/spikeclip/SpikeClip/apps/api && npx prisma migrate deploy"
 echo "  5. SSL cert: sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
-echo "  6. Start all: /home/spikeclips/spikeclips/deploy/start.sh"
+echo "  6. Start all: /home/spikeclip/SpikeClip/deploy/start.sh"
 echo ""
 echo "  Verify: curl -I https://$DOMAIN"
 echo "  Verify: curl -I https://$DOMAIN/api/health"

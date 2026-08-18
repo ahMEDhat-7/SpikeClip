@@ -5,10 +5,10 @@ Requires=docker.service
 
 [Service]
 Type=simple
-User=spikeclips
-Group=spikeclips
-WorkingDirectory=/home/spikeclips/spikeclips/apps/api
-EnvironmentFile=/home/spikeclips/spikeclips/.env
+User=spikeclip
+Group=spikeclip
+WorkingDirectory=/home/spikeclip/SpikeClip/apps/api
+EnvironmentFile=/home/spikeclip/SpikeClip/.env
 Environment=NODE_ENV=production
 Environment=UV_THREADPOOL_SIZE=4
 ExecStart=/usr/bin/env node dist/main.js
@@ -24,7 +24,7 @@ CPUQuota=80%
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/tmp/spikeclips-clips
+ReadWritePaths=/tmp/spikeclip-clips
 PrivateTmp=yes
 
 [Install]

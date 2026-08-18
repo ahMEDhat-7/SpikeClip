@@ -168,14 +168,14 @@ Set your Google OAuth credentials at minimum (the UI and Browse pages work witho
 ### 4. Migrate & run
 
 ```bash
-pnpm --filter @spikeclips/api prisma:migrate
+pnpm --filter @spikeclip/api prisma:migrate
 pnpm dev
 ```
 
 - **Frontend:** http://localhost:3000
 - **Swagger:** http://localhost:3001/api/docs
 
-> A seeded test user (`test@spikeclips.dev`) is available via `pnpm --filter @spikeclips/api prisma:seed` for manual testing without Google OAuth.
+> A seeded test user (`test@spikeclip.dev`) is available via `pnpm --filter @spikeclip/api prisma:seed` for manual testing without Google OAuth.
 
 ---
 
@@ -225,7 +225,7 @@ SpikeClip/
 
 ```bash
 pnpm test                              # all unit tests (shared + api + web)
-pnpm --filter @spikeclips/api test:e2e # e2e (needs docker compose up)
+pnpm --filter @spikeclip/api test:e2e # e2e (needs docker compose up)
 ```
 
 CI runs 6 jobs: Lint, Security Audit, Test, API E2E (compose infra), Build, Docker Build.

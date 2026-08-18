@@ -1,6 +1,6 @@
 import { Logger } from "@nestjs/common";
 import { Job as BullMQJob, Worker } from "bullmq";
-import { extractTopScenes } from "@spikeclips/shared";
+import { extractTopScenes } from "@spikeclip/shared";
 import { PrismaService } from "../database/prisma.service";
 import { AuthService } from "../auth/auth.service";
 import { Prisma } from "@prisma/client";

@@ -9,7 +9,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { unlink, mkdir, stat, access, rename, writeFile } from "fs/promises";
 import { join } from "path";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 const execFileAsync = promisify(execFile);
 const TMP_DIR = "/tmp/spikeclips-export";

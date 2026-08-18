@@ -16,7 +16,7 @@ import {
   OutputQuality,
   OutputFormat,
   FONT_MAP,
-} from "@spikeclips/shared";
+} from "@spikeclip/shared";
 import { withTimeout } from "./utils/timeout";
 
 const execFileAsync = promisify(execFile);

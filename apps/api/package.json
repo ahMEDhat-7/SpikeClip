@@ -1,5 +1,5 @@
 {
-  "name": "@spikeclips/api",
+  "name": "@spikeclip/api",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -27,7 +27,7 @@
     "@nestjs/throttler": "^6.0.0",
     "@prisma/client": "^6.19.3",
     "@sentry/nestjs": "^9.0.0",
-    "@spikeclips/shared": "workspace:*",
+    "@spikeclip/shared": "workspace:*",
     "bullmq": "^5.30.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

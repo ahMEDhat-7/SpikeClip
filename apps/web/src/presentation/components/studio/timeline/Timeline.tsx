@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { formatTime } from "@/lib/format";
 import { UndoRedoManager, type TimelineState } from "./timeline-state";
-import type { ScoredBlock } from "@spikeclips/shared";
+import type { ScoredBlock } from "@spikeclip/shared";
 
 interface TimelineProps {
   scenes: ScoredBlock[];

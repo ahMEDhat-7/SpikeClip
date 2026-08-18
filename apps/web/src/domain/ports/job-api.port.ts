@@ -1,7 +1,7 @@
 import { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "../entities/job";
 import { PlatformId } from "../entities/platform";
 import { OutputFormat, OutputQuality } from "../entities/export";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 export interface StudioExportConfig {
   platform?: PlatformId;

@@ -77,13 +77,13 @@ User 1 ──── N Job 1 ──── N Clip
 
 ```bash
 # Create migration
-pnpm --filter @spikeclips/api prisma:migrate
+pnpm --filter @spikeclip/api prisma:migrate
 
 # Open Prisma Studio (GUI)
-pnpm --filter @spikeclips/api prisma:studio
+pnpm --filter @spikeclip/api prisma:studio
 
 # Regenerate client
-pnpm --filter @spikeclips/api prisma:generate
+pnpm --filter @spikeclip/api prisma:generate
 ```
 
 ## Schema Location

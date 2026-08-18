@@ -5,7 +5,7 @@ import {
   selectTopScenes,
   padScenes,
   DEFAULT_ALGORITHM_CONFIG,
-} from "@spikeclips/shared";
+} from "@spikeclip/shared";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
 import { JobResponseDto } from "../dto/job-response.dto";

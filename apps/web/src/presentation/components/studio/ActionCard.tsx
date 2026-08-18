@@ -2,8 +2,8 @@
 
 import { memo } from "react";
 import { X } from "lucide-react";
-import type { StudioAction } from "@spikeclips/shared";
-import { describeAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
+import { describeAction } from "@spikeclip/shared";
 
 const ACTION_ICONS: Record<string, string> = {
   add_captions: "Aa",

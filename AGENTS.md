@@ -14,20 +14,20 @@ pnpm lint             # tsc --noEmit per package
 pnpm test             # Run all unit tests (shared + api + web)
 
 # Single package
-pnpm --filter @spikeclips/web dev
-pnpm --filter @spikeclips/api dev          # also runs `prisma generate` first
-pnpm --filter @spikeclips/shared build     # tsc → dist/
+pnpm --filter @spikeclip/web dev
+pnpm --filter @spikeclip/api dev          # also runs `prisma generate` first
+pnpm --filter @spikeclip/shared build     # tsc → dist/
 
 # Tests
-pnpm --filter @spikeclips/shared test
-pnpm --filter @spikeclips/api test
-pnpm --filter @spikeclips/api test:e2e     # needs infra (see below)
-pnpm --filter @spikeclips/web test         # jest
+pnpm --filter @spikeclip/shared test
+pnpm --filter @spikeclip/api test
+pnpm --filter @spikeclip/api test:e2e     # needs infra (see below)
+pnpm --filter @spikeclip/web test         # jest
 ```
 
 **Infra:** `./scripts/dev.sh` starts Postgres (5432), Redis (6379), MinIO (9000/9001) via Docker.
 
-**Database:** `pnpm --filter @spikeclips/api prisma:migrate` (dev) / `prisma migrate deploy` (CI). `prisma:seed` creates a test user `test@spikeclips.dev` (useful for manual testing without Google OAuth).
+**Database:** `pnpm --filter @spikeclip/api prisma:migrate` (dev) / `prisma migrate deploy` (CI). `prisma:seed` creates a test user `test@spikeclip.dev` (useful for manual testing without Google OAuth).
 
 ## Environment gotchas
 

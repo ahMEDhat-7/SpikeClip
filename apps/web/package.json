@@ -1,5 +1,5 @@
 {
-  "name": "@spikeclips/web",
+  "name": "@spikeclip/web",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",
     "@sentry/nextjs": "^10.69.0",
-    "@spikeclips/shared": "workspace:*",
+    "@spikeclip/shared": "workspace:*",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",

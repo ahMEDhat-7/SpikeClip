@@ -27,11 +27,11 @@ RUN pnpm install --frozen-lockfile
 
 # Build shared package
 COPY packages/shared ./packages/shared
-RUN pnpm --filter @spikeclips/shared build
+RUN pnpm --filter @spikeclip/shared build
 
 # Build API
 COPY apps/api ./apps/api
-RUN pnpm --filter @spikeclips/api build
+RUN pnpm --filter @spikeclip/api build
 
 # ─── Runtime ───
 FROM node:24-slim AS runtime

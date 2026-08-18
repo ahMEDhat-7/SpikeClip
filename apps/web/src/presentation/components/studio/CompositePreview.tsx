@@ -7,7 +7,7 @@ import { Platform } from "@/domain/entities/platform";
 import { Caption } from "@/domain/entities/caption";
 import { EditTemplate } from "@/domain/entities/template";
 import { MusicTrack } from "@/domain/entities/music";
-import type { ScoredBlock } from "@spikeclips/shared";
+import type { ScoredBlock } from "@spikeclip/shared";
 import { CaptionOverlay } from "./CaptionOverlay";
 import { Button } from "@/components/ui/button";
 import { Play, Pause } from "lucide-react";

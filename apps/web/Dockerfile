@@ -15,11 +15,11 @@ RUN pnpm install --frozen-lockfile
 
 # Build shared package
 COPY packages/shared ./packages/shared
-RUN pnpm --filter @spikeclips/shared build
+RUN pnpm --filter @spikeclip/shared build
 
 # Build web (NEXT_PUBLIC vars injected at build time)
 COPY apps/web ./apps/web
-RUN pnpm --filter @spikeclips/web build
+RUN pnpm --filter @spikeclip/web build
 
 # ─── Runtime ───
 FROM node:24-slim AS runtime

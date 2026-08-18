@@ -148,7 +148,7 @@ export function Header() {
           <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-primary/10">
             <img src="/logo.svg" alt="SpikeClip" className="h-4 w-4" />
           </div>
-          <span className="text-primary">SpikeClip</span>
+          <span><span className="text-primary">Spike</span><span className="text-foreground">Clip</span></span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-5" aria-label="Main navigation">

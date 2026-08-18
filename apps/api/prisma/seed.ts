@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 const TEST_USER = {
   id: randomUUID(),
-  email: "test@spikeclips.dev",
+  email: "test@spikeclip.dev",
   name: "Test User",
   oauthProvider: "google",
   oauthProviderId: "test-google-id-12345",

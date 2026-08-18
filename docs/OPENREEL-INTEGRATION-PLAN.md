@@ -79,7 +79,7 @@ SpikeClip Web (Next.js 16 + React 19)
 ## Verification
 
 - `pnpm install` resolves `@openreel/core` + deps.
-- `pnpm --filter @spikeclips/shared build` + `test` → 90 tests pass.
-- `pnpm --filter @spikeclips/api lint` → clean.
-- `pnpm --filter @spikeclips/web lint` → clean.
-- `pnpm --filter @spikeclips/api exec jest studio.service.spec` → 4 tests pass.
+- `pnpm --filter @spikeclip/shared build` + `test` → 90 tests pass.
+- `pnpm --filter @spikeclip/api lint` → clean.
+- `pnpm --filter @spikeclip/web lint` → clean.
+- `pnpm --filter @spikeclip/api exec jest studio.service.spec` → 4 tests pass.

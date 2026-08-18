@@ -6,7 +6,7 @@ Thanks for your interest in contributing! This guide covers code style, conventi
 
 - **TypeScript strict mode** — No `any` types allowed. Every value must have an explicit type.
 - **Clean Architecture** — Follow the layer order: `domain/` → `application/` → `infrastructure/` → `presentation/`
-- **Import from `@spikeclips/shared`** — Use path aliases, never relative imports across packages.
+- **Import from `@spikeclip/shared`** — Use path aliases, never relative imports across packages.
 - **Functional code** — Prefer pure functions. Use classes only when framework requires it (NestJS controllers, services).
 - **No comments** — Code should be self-documenting. Comments are only added when explicitly requested.
 
@@ -57,7 +57,7 @@ cd spikeclips
 pnpm install
 ./scripts/dev.sh
 cp .env.example apps/api/.env
-pnpm --filter @spikeclips/api prisma:migrate
+pnpm --filter @spikeclip/api prisma:migrate
 pnpm dev
 ```
 
@@ -65,10 +65,10 @@ pnpm dev
 
 ```bash
 pnpm test                                    # All packages
-pnpm --filter @spikeclips/shared test        # Algorithm only
-pnpm --filter @spikeclips/api test           # API unit tests
-pnpm --filter @spikeclips/api test:e2e       # API E2E tests
-pnpm --filter @spikeclips/web test           # Frontend tests
+pnpm --filter @spikeclip/shared test        # Algorithm only
+pnpm --filter @spikeclip/api test           # API unit tests
+pnpm --filter @spikeclip/api test:e2e       # API E2E tests
+pnpm --filter @spikeclip/web test           # Frontend tests
 ```
 
 ## Project Structure

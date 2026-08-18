@@ -21,7 +21,7 @@ import { createReadStream, existsSync } from "fs";
 import { join } from "path";
 import { StudioService } from "./studio.service";
 import { AuthService } from "../../infrastructure/auth/auth.service";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { UploadedFile } from "@nestjs/common";
 

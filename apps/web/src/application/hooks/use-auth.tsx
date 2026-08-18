@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, createContext, useContext, ReactNode } from "react";
 import { useAuthApi } from "@/application/providers/api-provider";
 import { toastWarning } from "@/lib/toast";
-import { PlanTier } from "@spikeclips/shared";
+import { PlanTier } from "@spikeclip/shared";
 
 interface User {
   id: string;

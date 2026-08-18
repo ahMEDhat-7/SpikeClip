@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { PromptTranslationService } from "../prompt-translation.service";
 import { RedisService } from "../../redis/redis.service";
 import { LLM_PROVIDER, ChatMessage } from "../llm-provider.interface";
-import { StudioEditContext, StudioAction } from "@spikeclips/shared";
+import { StudioEditContext, StudioAction } from "@spikeclip/shared";
 
 const mockRedis = {
   get: jest.fn().mockResolvedValue(null),

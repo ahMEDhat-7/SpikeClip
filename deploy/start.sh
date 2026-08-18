@@ -15,15 +15,15 @@ echo "Waiting for services to be healthy..."
 sleep 5
 
 echo "Starting API server..."
-sudo systemctl start spikeclips-api
+sudo systemctl start spikeclip-api
 
 echo "Starting web server..."
-sudo systemctl start spikeclips-web
+sudo systemctl start spikeclip-web
 
 echo "Starting Nginx..."
 sudo systemctl start nginx
 
 echo "=== All services started ==="
-echo "  API:   https://spikeclips.com/api"
-echo "  Web:   https://spikeclips.com"
+echo "  API:   https://spikeclip.app/api"
+echo "  Web:   https://spikeclip.app"
 echo "  MinIO: http://localhost:9001 (console)"

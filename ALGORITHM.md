@@ -89,7 +89,7 @@ Pads each scene by ±5 seconds (configurable), clamps to `[0, videoDuration]`, m
 ## Tests
 
 ```bash
-pnpm --filter @spikeclips/shared test
+pnpm --filter @spikeclip/shared test
 ```
 
 62 test cases covering:

@@ -6,7 +6,7 @@ import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exce
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
 import { getSourcePath } from "../../infrastructure/workers/source-path";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 interface ExportScene {
   start_time: number;

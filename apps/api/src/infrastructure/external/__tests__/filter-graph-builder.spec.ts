@@ -1,5 +1,5 @@
 import { FilterGraphBuilder } from "../filter-graph-builder";
-import { StudioAction } from "@spikeclips/shared";
+import { StudioAction } from "@spikeclip/shared";
 
 describe("FilterGraphBuilder", () => {
   let builder: FilterGraphBuilder;

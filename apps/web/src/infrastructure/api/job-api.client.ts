@@ -8,7 +8,7 @@ import {
   PreviewResponse,
   TranslateContext,
 } from "../../domain/ports/job-api.port";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 

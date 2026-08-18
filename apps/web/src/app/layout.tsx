@@ -106,7 +106,7 @@ export default function RootLayout({
             <div className="relative flex min-h-screen flex-col">
               <CursorCircle />
               <Header />
-              <main id="main-content" className="flex-1">{children}</main>
+              <main id="main-content" className="flex-1 pt-24">{children}</main>
               <Footer />
             </div>
           </Providers>

@@ -1,5 +1,5 @@
 import { Job } from "../../domain/entities/job.entity";
-import { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclips/shared";
+import { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
 
 interface PrismaJob {
   id: string;
@@ -39,7 +39,7 @@ export class JobMapper {
       prismaJob.errorMessage ?? undefined,
       prismaJob.createdAt,
       prismaJob.completedAt ?? undefined,
-      (prismaJob.studioEdits as Record<number, import("@spikeclips/shared").StudioAction[]> | null) ?? undefined,
+      (prismaJob.studioEdits as Record<number, import("@spikeclip/shared").StudioAction[]> | null) ?? undefined,
       (prismaJob.project as Record<string, unknown> | null) ?? undefined
     );
   }

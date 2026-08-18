@@ -5,7 +5,7 @@ import {
   getEffectType,
   type WebGLEffectsContext,
 } from "./webgl-effects";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 export interface EffectState {
   vignetteIntensity: number;

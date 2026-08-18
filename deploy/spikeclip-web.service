@@ -1,13 +1,13 @@
 [Unit]
 Description=SpikeClip Web Server
-After=network.target spikeclips-api.service
+After=network.target spikeclip-api.service
 
 [Service]
 Type=simple
-User=spikeclips
-Group=spikeclips
-WorkingDirectory=/home/spikeclips/spikeclips/apps/web
-EnvironmentFile=/home/spikeclips/spikeclips/.env
+User=spikeclip
+Group=spikeclip
+WorkingDirectory=/home/spikeclip/SpikeClip/apps/web
+EnvironmentFile=/home/spikeclip/SpikeClip/.env
 Environment=NODE_ENV=production
 Environment=UV_THREADPOOL_SIZE=4
 ExecStart=/usr/bin/env node node_modules/next/dist/bin/next start -p 3000

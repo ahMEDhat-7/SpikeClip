@@ -16,7 +16,7 @@ import {
   getQualityPreset,
   getFormatCodecs,
   FONT_MAP,
-} from "@spikeclips/shared";
+} from "@spikeclip/shared";
 
 interface FilterChain {
   videoFilters: string[];

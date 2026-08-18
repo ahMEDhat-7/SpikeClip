@@ -1,5 +1,5 @@
 {
-  "name": "spikeclips",
+  "name": "spikeclip",
   "private": true,
   "scripts": {
     "dev": "turbo dev",
@@ -7,20 +7,20 @@
     "start": "turbo start",
     "lint": "turbo lint",
     "test": "turbo test",
-    "dev:api": "pnpm --filter @spikeclips/api dev",
-    "dev:web": "pnpm --filter @spikeclips/web dev",
-    "build:api": "pnpm --filter @spikeclips/api build",
-    "build:web": "pnpm --filter @spikeclips/web build",
-    "build:shared": "pnpm --filter @spikeclips/shared build",
-    "start:api": "pnpm --filter @spikeclips/api start",
-    "start:web": "pnpm --filter @spikeclips/web start",
-    "test:api": "pnpm --filter @spikeclips/api test",
-    "test:web": "pnpm --filter @spikeclips/web test",
-    "test:shared": "pnpm --filter @spikeclips/shared test",
-    "test:e2e": "pnpm --filter @spikeclips/api test:e2e",
-    "prisma:migrate": "pnpm --filter @spikeclips/api prisma:migrate",
-    "prisma:seed": "pnpm --filter @spikeclips/api prisma:seed",
-    "prisma:studio": "pnpm --filter @spikeclips/api prisma:studio"
+    "dev:api": "pnpm --filter @spikeclip/api dev",
+    "dev:web": "pnpm --filter @spikeclip/web dev",
+    "build:api": "pnpm --filter @spikeclip/api build",
+    "build:web": "pnpm --filter @spikeclip/web build",
+    "build:shared": "pnpm --filter @spikeclip/shared build",
+    "start:api": "pnpm --filter @spikeclip/api start",
+    "start:web": "pnpm --filter @spikeclip/web start",
+    "test:api": "pnpm --filter @spikeclip/api test",
+    "test:web": "pnpm --filter @spikeclip/web test",
+    "test:shared": "pnpm --filter @spikeclip/shared test",
+    "test:e2e": "pnpm --filter @spikeclip/api test:e2e",
+    "prisma:migrate": "pnpm --filter @spikeclip/api prisma:migrate",
+    "prisma:seed": "pnpm --filter @spikeclip/api prisma:seed",
+    "prisma:studio": "pnpm --filter @spikeclip/api prisma:studio"
   },
   "devDependencies": {
     "turbo": "^2.10.4"

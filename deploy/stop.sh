@@ -12,10 +12,10 @@ echo "Stopping Nginx..."
 sudo systemctl stop nginx || true
 
 echo "Stopping web server..."
-sudo systemctl stop spikeclips-web || true
+sudo systemctl stop spikeclip-web || true
 
 echo "Stopping API server..."
-sudo systemctl stop spikeclips-api || true
+sudo systemctl stop spikeclip-api || true
 
 echo "Stopping infrastructure services..."
 docker compose down

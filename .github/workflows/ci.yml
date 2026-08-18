@@ -28,7 +28,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @spikeclips/shared build
+      - run: pnpm --filter @spikeclip/shared build
       - run: pnpm lint
 
   test:
@@ -44,7 +44,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @spikeclips/shared build
+      - run: pnpm --filter @spikeclip/shared build
       - run: pnpm test
 
   build:

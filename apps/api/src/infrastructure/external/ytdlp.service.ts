@@ -5,7 +5,7 @@ import {
   VideoExtractor,
   VideoMetadata,
 } from "../../domain/services/video-extractor";
-import { HeatmapSpike } from "@spikeclips/shared";
+import { HeatmapSpike } from "@spikeclip/shared";
 import { withTimeout } from "./utils/timeout";
 
 const execFileAsync = promisify(execFile);

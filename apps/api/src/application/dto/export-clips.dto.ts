@@ -1,7 +1,7 @@
 import { IsArray, ValidateNested, IsNumber, Min, Max, IsOptional, IsString, IsObject, IsNotEmpty, IsBoolean, IsIn, ValidatorConstraint, ValidatorConstraintInterface, registerDecorator, MaxLength, Matches, ArrayMinSize } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import type { StudioAction } from "@spikeclips/shared";
+import type { StudioAction } from "@spikeclip/shared";
 
 class ExportSceneDto {
   @ApiProperty({ description: "Scene start time in seconds", example: 10.5 })

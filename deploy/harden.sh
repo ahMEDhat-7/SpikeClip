@@ -112,7 +112,7 @@ if ! command -v auditctl &> /dev/null; then
     sudo apt-get install -y -qq auditd
 fi
 
-sudo tee /etc/audit/rules.d/spikeclips.rules > /dev/null << 'AUDIT'
+sudo tee /etc/audit/rules.d/spikeclip.rules > /dev/null << 'AUDIT'
 # SSH config changes
 -w /etc/ssh/sshd_config -p wa -k ssh_config
 
@@ -177,7 +177,7 @@ echo "╔═══════════════════════�
 echo "║  ⚠  IMPORTANT: TEST SSH ON PORT $SSH_PORT NOW!              ║"
 echo "║                                                            ║"
 echo "║  Open a NEW terminal and run:                              ║"
-echo "║    ssh -p $SSH_PORT spikeclips@$(curl -s ifconfig.me)          ║"
+echo "║    ssh -p $SSH_PORT spikeclip@$(curl -s ifconfig.me)          ║"
 echo "║                                                            ║"
 echo "║  If it works, close this session.                          ║"
 echo "║  If it fails, restore: sudo cp /etc/ssh/sshd_config.bak.*  ║"

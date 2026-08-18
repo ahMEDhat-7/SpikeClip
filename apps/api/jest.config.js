@@ -10,6 +10,6 @@ module.exports = {
   coverageDirectory: "../coverage",
   testEnvironment: "node",
   moduleNameMapper: {
-    "^@spikeclips/shared$": "<rootDir>/../../../packages/shared/src",
+    "^@spikeclip/shared$": "<rootDir>/../../../packages/shared/src",
   },
 };
