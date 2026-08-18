@@ -38,7 +38,7 @@ A walkthrough of SpikeClip running locally — landing page, the heatmap analysi
 | Features | ![Features](./media/features.png) |
 | Full page | ![Full Page](./media/landing-full.png) |
 
-> Screenshots captured via Chromium DevTools on the local dev server (`pnpm dev`). Replace with production screenshots after deployment.
+> Screenshots captured from the production build (`pnpm build && pnpm start`) via Chromium DevTools.
 
 ---
 
