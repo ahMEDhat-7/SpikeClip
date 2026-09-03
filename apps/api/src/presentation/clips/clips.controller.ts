@@ -5,6 +5,7 @@ import {
   Query,
   Req,
   Res,
+  Sse,
   Inject,
   Logger,
   NotFoundException,
@@ -20,6 +21,7 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { Response } from "express";
+import { Observable } from "rxjs";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { ClipRepository, CLIP_REPOSITORY } from "../../domain/repositories/clip.repository";
 import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
@@ -28,6 +30,7 @@ import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/st
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
 import { toClipResponse } from "../../application/mappers/clip.mapper";
 import { Public } from "../../infrastructure/auth/jwt-auth.guard";
+import { subscribeToJobProgress } from "../../infrastructure/redis/progress-subscriber";
 import { PlanTier, ClipStatus, EXTENSION_TO_MIME, AUDIO_EXTENSIONS, MimeTypes } from "@spikeclip/shared";
 
 @ApiTags("Clips")
@@ -76,6 +79,47 @@ export class ClipsController {
       createdAt: clip.createdAt,
       completedAt: clip.completedAt ?? null,
     }));
+  }
+
+  @Get("job/:jobId/progress")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Subscribe to clip export progress via SSE", description: "Returns a server-sent event stream with real-time progress updates for all clips in a job." })
+  @ApiParam({ name: "jobId", description: "Job UUID" })
+  @ApiResponse({ status: 200, description: "SSE stream of clip progress events" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 403, description: "Forbidden — job does not belong to you" })
+  clipProgress(
+    @Param("jobId", ParseUUIDPipe) jobId: string,
+    @Req() req: Request & { user?: { userId?: string } }
+  ): Observable<{ data: any }> {
+    const clip$ = new Observable<{ data: any }>((observer) => {
+      this.jobRepository.findById(jobId).then((job) => {
+        if (!job || job.userId !== req.user?.userId) {
+          observer.error(new ForbiddenException("Job not found or unauthorized"));
+          return;
+        }
+
+        // Send initial state
+        observer.next({ data: { jobId, progress: 0, step: "subscribed" } });
+      }).catch(() => {
+        observer.error(new NotFoundException("Job not found"));
+      });
+
+      const { unsubscribe } = subscribeToJobProgress(jobId, (event) => {
+        observer.next({ data: event });
+        if (event.step === "completed" || event.step === "failed") {
+          observer.complete();
+        }
+      }, (err) => {
+        observer.error(err);
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    });
+
+    return clip$;
   }
 
   @Get(":id/download")

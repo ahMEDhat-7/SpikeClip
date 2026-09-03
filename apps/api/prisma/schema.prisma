@@ -8,22 +8,24 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(uuid())
-  email               String    @unique
-  name                String?
-  oauthProvider       String?
-  oauthProviderId     String?
-  plan                String    @default("free")
-  stripeCustomerId    String?
-  analysesUsed        Int       @default(0)
-  analysesLimit       Int       @default(3)
-  scenesLimit         Int       @default(3)
-  clipsUsed           Int       @default(0)
-  clipsLimit          Int       @default(2)
-  analysesResetAt     DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  jobs                Job[]
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  name                   String?
+  oauthProvider          String?
+  oauthProviderId        String?
+  plan                   String    @default("free")
+  stripeCustomerId       String?
+  analysesUsed           Int       @default(0)
+  analysesLimit          Int       @default(3)
+  scenesLimit            Int       @default(3)
+  clipsUsed              Int       @default(0)
+  clipsLimit             Int       @default(2)
+  analysesResetAt        DateTime?
+  totalExports           Int       @default(0)
+  totalProcessingTimeMs  Float     @default(0)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  jobs                   Job[]
 
   @@index([stripeCustomerId])
   @@index([oauthProvider, oauthProviderId])
@@ -40,6 +42,7 @@ model Job {
   videoUploadDate  String?
   videoChannelName String?
   status           String   @default("pending")
+  progress         Int      @default(0)
   scenes           Json?
   heatmapData      Json?
   studioEdits      Json?
@@ -48,6 +51,7 @@ model Job {
   sourceStart      Float?
   errorMessage     String?
   createdAt        DateTime @default(now())
+  startedAt        DateTime?
   completedAt      DateTime?
   deletedAt        DateTime?
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -67,11 +71,13 @@ model Clip {
   endTime         Float
   peakIntensity   Float?
   status          String   @default("pending")
+  progress        Int      @default(0)
   fileUrl         String?
   fileSize        Int?
   duration        Float?
   errorMessage    String?
   createdAt       DateTime @default(now())
+  startedAt       DateTime?
   completedAt     DateTime?
   deletedAt       DateTime?
   job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)

@@ -2,6 +2,8 @@ import { Injectable, Logger, Inject } from "@nestjs/common";
 import { PrismaService } from "../infrastructure/database/prisma.service";
 import { STORAGE_SERVICE, StorageService } from "../infrastructure/storage/storage.interface";
 import { RedisService } from "../infrastructure/redis/redis.service";
+import { QUEUE_SERVICE } from "../domain/services/queue";
+import type { BullMQQueueService } from "../infrastructure/external/queue.service";
 
 @Injectable()
 export class HealthService {
@@ -10,11 +12,12 @@ export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
-    private readonly redis: RedisService
+    private readonly redis: RedisService,
+    @Inject(QUEUE_SERVICE) private readonly queueService: BullMQQueueService
   ) {}
 
   async check() {
-    const checks: Record<string, string> = {};
+    const checks: Record<string, any> = {};
 
     // Database check
     try {
@@ -50,7 +53,21 @@ export class HealthService {
       checks.storage = "unknown";
     }
 
-    const allHealthy = Object.values(checks).every((s) => s === "ok" || s === "unknown");
+    // Queue health check
+    try {
+      const counts = await this.queueService.getJobCounts();
+      const hasStalledJobs = Object.values(counts).some(
+        (q) => q.active > 10 || q.waiting > 50
+      );
+      checks.queues = hasStalledJobs ? "degraded" : "ok";
+      checks.queueCounts = counts;
+    } catch {
+      checks.queues = "error";
+    }
+
+    const allHealthy = Object.values(checks).every(
+      (s) => s === "ok" || s === "unknown" || (typeof s === "object" && s !== null)
+    );
 
     return {
       status: allHealthy ? "ok" : "degraded",

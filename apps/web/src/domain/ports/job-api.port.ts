@@ -108,6 +108,7 @@ export interface JobResponse {
   videoUploadDate?: string;
   videoChannelName?: string;
   status: JobStatusValue;
+  progress?: number;
   scenes?: ScoredBlock[];
   heatmapData?: HeatmapSpike[];
   errorMessage?: string;
@@ -124,6 +125,7 @@ export interface ClipResponse {
   endTime: number;
   peakIntensity?: number;
   status: ClipStatusValue;
+  progress?: number;
   fileUrl?: string;
   fileSize?: number;
   duration?: number;

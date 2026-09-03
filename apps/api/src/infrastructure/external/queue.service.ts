@@ -10,6 +10,11 @@ const connectionOptions = {
   maxRetriesPerRequest: null,
 };
 
+const JOB_CLEANUP = {
+  removeOnComplete: { age: 3600, count: 100 },
+  removeOnFail: { age: 86400, count: 50 },
+};
+
 @Injectable()
 export class BullMQQueueService implements QueueService, OnModuleDestroy {
   private readonly logger = new Logger(BullMQQueueService.name);
@@ -32,6 +37,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       jobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5000 },
+      ...JOB_CLEANUP,
     });
   }
 
@@ -44,6 +50,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       jobId: `export-${jobId}-${data.sceneIndex}-${randomUUID().slice(0, 8)}`,
       attempts: 2,
       backoff: { type: "exponential", delay: 10000 },
+      ...JOB_CLEANUP,
     };
     if (dependsOn) {
       opts.dependencies = [dependsOn];
@@ -60,6 +67,7 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       jobId: bullJobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5000 },
+      ...JOB_CLEANUP,
     });
     return bullJobId;
   }
@@ -83,6 +91,23 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
     });
 
     return worker;
+  }
+
+  async getJobCounts(): Promise<{
+    analysis: { waiting: number; active: number; completed: number; failed: number };
+    export: { waiting: number; active: number; completed: number; failed: number };
+    source: { waiting: number; active: number; completed: number; failed: number };
+  }> {
+    const [analysis, exp, source] = await Promise.all([
+      this.analysisQueue.getJobCounts("waiting", "active", "completed", "failed"),
+      this.exportQueue.getJobCounts("waiting", "active", "completed", "failed"),
+      this.sourceQueue.getJobCounts("waiting", "active", "completed", "failed"),
+    ]);
+    return {
+      analysis: analysis as any,
+      export: exp as any,
+      source: source as any,
+    };
   }
 
   async onModuleDestroy() {

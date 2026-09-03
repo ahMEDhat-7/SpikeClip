@@ -63,21 +63,19 @@ export function useAnalyzeVideo(onComplete?: () => void) {
       stopPolling();
 
       try {
+        // Create job — server automatically enqueues analysis via BullMQ worker
         const newJob = await jobApi.createJob(url);
         setJob(newJob);
 
-        const processedJob = await jobApi.processJob(newJob.id);
-        setJob(processedJob);
-
-        if (processedJob.status === JOB_STATUS.COMPLETED) {
+        if (newJob.status === JOB_STATUS.COMPLETED) {
           setIsLoading(false);
           onComplete?.();
-        } else if (processedJob.status === JOB_STATUS.PROCESSING || processedJob.status === JOB_STATUS.PENDING) {
-          pollJobStatus(processedJob.id);
+        } else if (newJob.status === JOB_STATUS.PROCESSING || newJob.status === JOB_STATUS.PENDING) {
+          pollJobStatus(newJob.id);
         } else {
           setIsLoading(false);
-          if (processedJob.status === JOB_STATUS.FAILED) {
-            setError(processedJob.errorMessage || "Analysis failed.");
+          if (newJob.status === JOB_STATUS.FAILED) {
+            setError(newJob.errorMessage || "Analysis failed.");
           }
         }
       } catch (err) {

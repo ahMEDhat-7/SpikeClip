@@ -3,6 +3,7 @@ import { Job as BullMQJob, Worker } from "bullmq";
 import { PrismaService } from "../database/prisma.service";
 import { StorageService } from "../storage/storage.interface";
 import { FfmpegService } from "../external/ffmpeg.service";
+import { YtdlpService } from "../external/ytdlp.service";
 import { CaptionOverlay, MusicMixConfig } from "../../domain/services/video-processor";
 import { randomUUID } from "crypto";
 import { execFile } from "child_process";
@@ -26,6 +27,7 @@ import {
   MimeTypes,
   PLATFORM_CAST,
 } from "@spikeclip/shared";
+import { publishClipProgress } from "../redis/progress-publisher";
 
 const execFileAsync = promisify(execFile);
 const TMP_DIR = "/tmp/spikeclips-export";
@@ -67,7 +69,8 @@ async function fileExists(path: string): Promise<boolean> {
 export function createClipWorker(
   prisma: PrismaService,
   storage: StorageService,
-  ffmpeg?: FfmpegService
+  ffmpeg?: FfmpegService,
+  ytdlp?: YtdlpService
 ): Worker {
   const logger = new Logger("ClipWorker");
 
@@ -85,8 +88,10 @@ export function createClipWorker(
       try {
         await prisma.clip.update({
           where: { id: clipId },
-          data: { status: ClipStatus.PROCESSING },
+          data: { status: ClipStatus.PROCESSING, startedAt: new Date(), progress: 0 },
         });
+
+        publishClipProgress(jobId, clipId, 5, "acquiring_source");
 
         const tmpInput = join(TMP_DIR, `${clipId}-source.mp4`);
         const tmpCropped = join(TMP_DIR, `${clipId}-cropped.mp4`);
@@ -98,7 +103,6 @@ export function createClipWorker(
 
         // Step 1: Reuse the pre-downloaded shared source when available,
         // otherwise fall back to downloading this section directly.
-        // BullMQ job dependencies ensure the source job completes before this runs.
         const jobRecord = await prisma.job.findUnique({
           where: { id: jobId },
           select: { sourceKey: true, sourceStart: true },
@@ -108,8 +112,6 @@ export function createClipWorker(
 
         let usedSharedSource = false;
         if (sourceKey) {
-          // Source should already be ready due to BullMQ job dependencies,
-          // but verify with a short wait as a safety net
           for (let attempt = 0; attempt < 5; attempt++) {
             if (await fileExists(sourceKey)) {
               usedSharedSource = true;
@@ -134,18 +136,22 @@ export function createClipWorker(
           if (sourceKey) {
             logger.warn(`Shared source not ready for clip ${clipId}, downloading section directly`);
           }
-          await execFileAsync("yt-dlp", [
-            "--js-runtimes", "node",
-            "-f",
-            YTDLP_FORMAT,
-            "--download-sections",
-            `*${startTime}-${endTime}`,
-            "--force-keyframes-at-cuts",
-            "-o",
-            tmpInput,
-            videoUrl,
-          ]);
+          // Use cached YtdlpService or fall back to direct execFile
+          if (ytdlp) {
+            await ytdlp.downloadSection(videoUrl, startTime, endTime, tmpInput);
+          } else {
+            await execFileAsync("yt-dlp", [
+              "--js-runtimes", "node",
+              "-f", YTDLP_FORMAT,
+              "--download-sections", `*${startTime}-${endTime}`,
+              "--force-keyframes-at-cuts",
+              "-o", tmpInput,
+              videoUrl,
+            ]);
+          }
         }
+
+        publishClipProgress(jobId, clipId, 25, "cropping_vertical");
 
         // Step 2: Vertical crop or pass-through encode
         if (vertical) {
@@ -165,8 +171,9 @@ export function createClipWorker(
         }
 
         let currentFile = tmpCropped;
+        publishClipProgress(jobId, clipId, 40, "applying_captions");
 
-        // Step 3: Caption overlay (with timing from startFrame/endFrame)
+        // Step 3: Caption overlay
         if (captions && captions.length > 0 && ffmpeg) {
           try {
             await ffmpeg.overlayCaptions(currentFile, tmpCaptions, captions, duration);
@@ -177,7 +184,9 @@ export function createClipWorker(
           }
         }
 
-        // Step 4: Template effects (vignette, layout)
+        publishClipProgress(jobId, clipId, 55, "applying_effects");
+
+        // Step 4: Template effects
         if (templateConfig && ffmpeg) {
           try {
             await ffmpeg.applyTemplateEffects(currentFile, tmpEffects, templateConfig);
@@ -188,7 +197,7 @@ export function createClipWorker(
           }
         }
 
-        // Step 4.5: Apply StudioActions (effects, speed, overlays, etc.)
+        // Step 4.5: Apply StudioActions
         if (actions && actions.length > 0 && ffmpeg) {
           try {
             const actionsOutput = join(TMP_DIR, `${clipId}-actions.mp4`);
@@ -209,7 +218,9 @@ export function createClipWorker(
           }
         }
 
-        // Step 5: Music mix (with correct fade-out and -shortest)
+        publishClipProgress(jobId, clipId, 70, "mixing_music");
+
+        // Step 5: Music mix
         if (music) {
           try {
             const musicSignedUrl = await storage.getSignedUrl(music.fileKey, MUSIC_SIGNED_URL_TTL);
@@ -231,6 +242,8 @@ export function createClipWorker(
           }
         }
 
+        publishClipProgress(jobId, clipId, 85, "uploading");
+
         // Step 6: If no music mix wrote to tmpOutput, copy current state there
         if (currentFile !== tmpOutput) {
           await rename(currentFile, tmpOutput);
@@ -242,17 +255,22 @@ export function createClipWorker(
         const fileUrl = storageKey;
         const fileSize = (await stat(tmpOutput)).size;
 
+        publishClipProgress(jobId, clipId, 95, "finalizing");
+
         // Step 8: Update DB
         await prisma.clip.update({
           where: { id: clipId },
           data: {
             status: ClipStatus.COMPLETED,
+            progress: 100,
             fileUrl,
             fileSize,
             duration,
             completedAt: new Date(),
           },
         });
+
+        publishClipProgress(jobId, clipId, 100, "completed");
 
         // Step 9: Cleanup temp files
         await unlink(tmpInput).catch(() => {});
@@ -291,6 +309,8 @@ export function createClipWorker(
           where: { id: clipId },
           data: { status: ClipStatus.FAILED, errorMessage: message },
         });
+
+        publishClipProgress(jobId, clipId, 0, "failed");
       }
     },
     {

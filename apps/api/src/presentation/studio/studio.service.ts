@@ -278,6 +278,8 @@ export class StudioService {
   /**
    * Download the requested source section once, cache it in storage, and return
    * a signed URL the OpenReel editor can import directly.
+   * First checks if the shared source from SourceWorker covers the range,
+   * and uses ffmpeg offset trimming instead of re-downloading.
    */
   async prepareSource(
     userId: string,
@@ -304,6 +306,41 @@ export class StudioService {
         return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };
       } catch {
         // Not cached yet — fall through to download.
+      }
+    }
+
+    // Check if the shared source from SourceWorker covers the requested range
+    const sourceKey = (job as any).sourceKey as string | undefined;
+    const sourceStart = (job as any).sourceStart as number | undefined;
+    if (sourceKey && sourceStart !== undefined) {
+      const { access } = await import("fs/promises");
+      try {
+        await access(sourceKey);
+        // Shared source exists — check if our range is within it
+        const sourceEndEstimate = sourceStart + 300; // approximate from file; we'll use ffmpeg trim
+        if (safeStart >= sourceStart) {
+          // Our range starts within the shared source — use ffmpeg to trim
+          const offset = Math.max(0, safeStart - sourceStart);
+          const duration = safeEnd - safeStart;
+          const tmpTrimmed = join(PREVIEW_TMP, `${jobId}-${Date.now()}-trimmed.mp4`);
+          await mkdir(PREVIEW_TMP, { recursive: true });
+          try {
+            await execFileAsync("ffmpeg", [
+              "-y",
+              "-ss", String(offset),
+              "-i", sourceKey,
+              "-t", String(duration),
+              "-c:v", "libx264", "-c:a", "aac",
+              tmpTrimmed,
+            ]);
+            await this.storage.uploadFromFile(tmpTrimmed, storageKey, "video/mp4");
+          } finally {
+            await unlink(tmpTrimmed).catch(() => {});
+          }
+          return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };
+        }
+      } catch {
+        // Shared source not accessible — fall through to yt-dlp download
       }
     }
 

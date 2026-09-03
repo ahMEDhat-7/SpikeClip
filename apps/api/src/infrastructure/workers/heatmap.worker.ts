@@ -3,12 +3,10 @@ import { Job as BullMQJob, Worker } from "bullmq";
 import { extractTopScenes } from "@spikeclip/shared";
 import { PrismaService } from "../database/prisma.service";
 import { AuthService } from "../auth/auth.service";
+import { YtdlpService } from "../external/ytdlp.service";
 import { Prisma } from "@prisma/client";
-import { execFile } from "child_process";
-import { promisify } from "util";
 import { QueueName, JobStatus } from "@spikeclip/shared";
-
-const execFileAsync = promisify(execFile);
+import { publishJobProgress } from "../redis/progress-publisher";
 
 interface HeatmapJobData {
   jobId: string;
@@ -23,7 +21,11 @@ const connectionOptions = {
   maxRetriesPerRequest: null,
 };
 
-export function createHeatmapWorker(prisma: PrismaService, authService: AuthService): Worker {
+export function createHeatmapWorker(
+  prisma: PrismaService,
+  authService: AuthService,
+  ytdlp?: YtdlpService
+): Worker {
   const logger = new Logger("HeatmapWorker");
 
   const worker = new Worker(
@@ -35,44 +37,50 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
       try {
         await prisma.job.update({
           where: { id: jobId },
-          data: { status: JobStatus.PROCESSING },
+          data: { status: JobStatus.PROCESSING, startedAt: new Date(), progress: 0 },
         });
 
-        const { stdout } = await execFileAsync("yt-dlp", [
-          "--js-runtimes", "node",
-          "-j",
-          "--no-download",
-          url,
-        ]);
-        const metadata = JSON.parse(stdout);
-        const heatmap = (metadata.heatmap ?? []) as Array<{
-          start_time: number;
-          end_time: number;
-          value: number;
-        }>;
+        publishJobProgress(jobId, 5, "fetching_metadata");
+
+        // Use cached YtdlpService instead of inline execFileAsync
+        const metadata = ytdlp
+          ? await ytdlp.extractMetadata(url)
+          : await fallbackExtractMetadata(url);
+
+        publishJobProgress(jobId, 50, "parsing_heatmap");
+
+        const heatmap = metadata.heatmap ?? [];
 
         if (!heatmap.length) {
-          // Refund analysis credit — video has no heatmap data
           await authService.decrementAnalyses(userId).catch(() => {});
 
           await prisma.job.update({
             where: { id: jobId },
             data: { status: JobStatus.FAILED, errorMessage: "No heatmap data found for this video" },
           });
+
+          publishJobProgress(jobId, 0, "failed");
           return;
         }
 
+        publishJobProgress(jobId, 70, "extracting_scenes");
+
         const scenes = extractTopScenes(heatmap);
+
+        publishJobProgress(jobId, 90, "saving_results");
 
         await prisma.job.update({
           where: { id: jobId },
           data: {
             status: JobStatus.COMPLETED,
+            progress: 100,
             heatmapData: heatmap as unknown as Prisma.InputJsonValue,
             scenes: scenes as unknown as Prisma.InputJsonValue,
             completedAt: new Date(),
           },
         });
+
+        publishJobProgress(jobId, 100, "completed");
 
         logger.log(`Completed heatmap for job ${jobId}: ${scenes.length} scenes`);
       } catch (error) {
@@ -87,6 +95,8 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
           where: { id: jobId },
           data: { status: JobStatus.FAILED, errorMessage: message },
         });
+
+        publishJobProgress(jobId, 0, "failed");
       }
     },
     {
@@ -104,4 +114,25 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
   });
 
   return worker;
+}
+
+async function fallbackExtractMetadata(url: string) {
+  const { execFile } = await import("child_process");
+  const { promisify } = await import("util");
+  const execFileAsync = promisify(execFile);
+
+  const { stdout } = await execFileAsync("yt-dlp", [
+    "--js-runtimes", "node",
+    "-j",
+    "--no-download",
+    url,
+  ]);
+  const metadata = JSON.parse(stdout);
+  return {
+    heatmap: (metadata.heatmap ?? []) as Array<{
+      start_time: number;
+      end_time: number;
+      value: number;
+    }>,
+  };
 }

@@ -11,6 +11,7 @@ import { startWorkers, stopWorkers } from "./infrastructure/workers";
 import { PrismaService } from "./infrastructure/database/prisma.service";
 import { AuthService } from "./infrastructure/auth/auth.service";
 import { FFMPEG_SERVICE } from "./infrastructure/external/external.module";
+import { YtdlpService } from "./infrastructure/external/ytdlp.service";
 
 const logger = new Logger("Bootstrap");
 
@@ -84,7 +85,8 @@ async function bootstrap() {
     const authService = app.get(AuthService);
     const storage = app.get("STORAGE_SERVICE");
     const ffmpeg = app.get(FFMPEG_SERVICE);
-    startWorkers(prisma, authService, storage, ffmpeg);
+    const ytdlp = app.get(YtdlpService);
+    startWorkers(prisma, authService, storage, ffmpeg, ytdlp);
   } catch (err) {
     logger.warn(`Failed to start workers (Redis may be unavailable): ${err instanceof Error ? err.message : err}`);
   }
@@ -100,11 +102,13 @@ process.on("uncaughtException", (err) => {
 });
 
 process.on("SIGTERM", async () => {
+  logger.log("SIGTERM received, shutting down gracefully...");
   await stopWorkers();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
+  logger.log("SIGINT received, shutting down gracefully...");
   await stopWorkers();
   process.exit(0);
 });

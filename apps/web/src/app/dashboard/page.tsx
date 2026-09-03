@@ -25,7 +25,7 @@ function DashboardContent() {
 
   const { job, isLoading, error, analyze, loadJob } = useAnalyzeVideo(refreshUser);
   const { jobHistory } = useJobHistory(user?.id);
-  const { progress, elapsedTime } = useAnalysisProgress(isLoading, job?.status);
+  const { progress, elapsedTime } = useAnalysisProgress(isLoading, job?.status, job?.id);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | undefined>(undefined);
   const [editedScenes, setEditedScenes] = useState<EditableScene[]>([]);

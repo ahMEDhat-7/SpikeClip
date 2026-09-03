@@ -1,13 +1,12 @@
 import { Logger } from "@nestjs/common";
 import { Job as BullMQJob, Worker } from "bullmq";
 import { PrismaService } from "../database/prisma.service";
-import { execFile } from "child_process";
-import { promisify } from "util";
-import { mkdir } from "fs/promises";
+import { StorageService } from "../storage/storage.interface";
+import { YtdlpService } from "../external/ytdlp.service";
 import { getSourcePath, SOURCE_DIR } from "./source-path";
-import { QueueName, JobStatus, YTDLP_FORMAT } from "@spikeclip/shared";
-
-const execFileAsync = promisify(execFile);
+import { mkdir } from "fs/promises";
+import { QueueName, JobStatus, YTDLP_FORMAT, MimeTypes } from "@spikeclip/shared";
+import { publishJobProgress } from "../redis/progress-publisher";
 
 interface SourceJobData {
   jobId: string;
@@ -23,7 +22,11 @@ const connectionOptions = {
   maxRetriesPerRequest: null,
 };
 
-export function createSourceWorker(prisma: PrismaService): Worker {
+export function createSourceWorker(
+  prisma: PrismaService,
+  ytdlp?: YtdlpService,
+  storage?: StorageService
+): Worker {
   const logger = new Logger("SourceWorker");
 
   const worker = new Worker(
@@ -31,6 +34,8 @@ export function createSourceWorker(prisma: PrismaService): Worker {
     async (bullJob: BullMQJob<SourceJobData>) => {
       const { jobId, start, end } = bullJob.data;
       logger.log(`Preparing shared source for job ${jobId} (${start}-${end}s)`);
+
+      publishJobProgress(jobId, 5, "downloading_source");
 
       const job = await prisma.job.findUnique({
         where: { id: jobId },
@@ -45,22 +50,41 @@ export function createSourceWorker(prisma: PrismaService): Worker {
       const sourcePath = getSourcePath(jobId);
 
       try {
-        await execFileAsync("yt-dlp", [
-          "--js-runtimes", "node",
-          "-f",
-          YTDLP_FORMAT,
-          "--download-sections",
-          `*${start}-${end}`,
-          "--force-keyframes-at-cuts",
-          "-o",
-          sourcePath,
-          job.url,
-        ]);
+        // Use cached YtdlpService which checks file existence before downloading
+        if (ytdlp) {
+          await ytdlp.downloadSection(job.url, start, end, sourcePath);
+        } else {
+          const { execFile } = await import("child_process");
+          const { promisify } = await import("util");
+          const execFileAsync = promisify(execFile);
+          await execFileAsync("yt-dlp", [
+            "--js-runtimes", "node",
+            "-f", YTDLP_FORMAT,
+            "--download-sections", `*${start}-${end}`,
+            "--force-keyframes-at-cuts",
+            "-o", sourcePath,
+            job.url,
+          ]);
+        }
+
+        publishJobProgress(jobId, 80, "uploading_source");
+
+        // Upload to storage for cross-worker access
+        const storageKey = `sources/${jobId}/full.mp4`;
+        if (storage) {
+          try {
+            await storage.uploadFromFile(sourcePath, storageKey, MimeTypes.VIDEO_MP4);
+          } catch (err) {
+            logger.warn(`Failed to upload source to storage for ${jobId}: ${err}`);
+          }
+        }
 
         await prisma.job.update({
           where: { id: jobId },
-          data: { sourceKey: sourcePath, sourceStart: start },
+          data: { sourceKey: sourcePath, sourceStart: start, progress: 100 },
         });
+
+        publishJobProgress(jobId, 100, "source_ready");
 
         logger.log(`Shared source ready for job ${jobId}: ${sourcePath}`);
       } catch (error) {
@@ -74,6 +98,8 @@ export function createSourceWorker(prisma: PrismaService): Worker {
           where: { id: jobId },
           data: { status: JobStatus.FAILED, errorMessage: message },
         }).catch(() => {});
+
+        publishJobProgress(jobId, 0, "failed");
       }
     },
     {

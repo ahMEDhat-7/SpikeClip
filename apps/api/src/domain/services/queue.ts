@@ -47,4 +47,9 @@ export interface QueueService {
   addAnalysisJob(jobId: string, data: { url: string; userId: string }): Promise<void>;
   addExportJob(jobId: string, data: ExportJobConfig, dependsOn?: string): Promise<void>;
   addSourceJob(jobId: string, data: { userId: string; start: number; end: number }): Promise<string>;
+  getJobCounts(): Promise<{
+    analysis: { waiting: number; active: number; completed: number; failed: number };
+    export: { waiting: number; active: number; completed: number; failed: number };
+    source: { waiting: number; active: number; completed: number; failed: number };
+  }>;
 }
