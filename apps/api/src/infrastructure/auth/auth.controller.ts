@@ -36,17 +36,18 @@ function setAuthCookie(res: Response, token: string): void {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax",
+    sameSite: isProduction ? "strict" : "lax",
     path: "/",
     maxAge: COOKIE_MAX_AGE,
   });
 }
 
 function clearAuthCookie(res: Response): void {
+  const isProduction = process.env.NODE_ENV === "production";
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "strict" : "lax",
     path: "/",
   });
 }

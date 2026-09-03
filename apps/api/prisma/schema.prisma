@@ -49,6 +49,7 @@ model Job {
   errorMessage     String?
   createdAt        DateTime @default(now())
   completedAt      DateTime?
+  deletedAt        DateTime?
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   clips            Clip[]
 
@@ -72,6 +73,7 @@ model Clip {
   errorMessage    String?
   createdAt       DateTime @default(now())
   completedAt     DateTime?
+  deletedAt       DateTime?
   job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])

@@ -1,6 +1,6 @@
-export type { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "@spikeclip/shared";
+export type { ScoredBlock, HeatmapSpike, JobStatusValue, ClipStatusValue } from "@spikeclip/shared";
 
-import type { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
+import type { JobStatusValue, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
 
 export const JOB_STATUS = {
   PENDING: "pending",
@@ -26,7 +26,7 @@ export interface Job {
   videoViewCount?: number;
   videoUploadDate?: string;
   videoChannelName?: string;
-  status: JobStatus;
+  status: JobStatusValue;
   scenes?: ScoredBlock[];
   heatmapData?: HeatmapSpike[];
   errorMessage?: string;

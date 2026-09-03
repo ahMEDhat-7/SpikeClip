@@ -1,17 +1,18 @@
 import { IsString, IsIn, IsOptional, Matches, IsNotEmpty } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { PlanTier, BillingInterval } from "@spikeclip/shared";
 
 export class CreateCheckoutSessionDto {
-  @ApiProperty({ description: "Subscription plan", enum: ["pro", "team"] })
+  @ApiProperty({ description: "Subscription plan", enum: [PlanTier.PRO, PlanTier.TEAM] })
   @IsString()
   @IsNotEmpty()
-  @IsIn(["pro", "team"])
+  @IsIn([PlanTier.PRO, PlanTier.TEAM])
   plan!: "pro" | "team";
 
-  @ApiPropertyOptional({ description: "Billing interval", enum: ["monthly", "yearly"], default: "monthly" })
+  @ApiPropertyOptional({ description: "Billing interval", enum: [BillingInterval.MONTHLY, BillingInterval.YEARLY], default: BillingInterval.MONTHLY })
   @IsString()
   @IsOptional()
-  @IsIn(["monthly", "yearly"])
+  @IsIn([BillingInterval.MONTHLY, BillingInterval.YEARLY])
   interval?: "monthly" | "yearly";
 
   @ApiPropertyOptional({ description: "Success redirect URL (relative)", example: "/dashboard" })

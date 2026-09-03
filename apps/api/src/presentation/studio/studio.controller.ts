@@ -24,6 +24,8 @@ import { AuthService } from "../../infrastructure/auth/auth.service";
 import type { StudioAction } from "@spikeclip/shared";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { UploadedFile } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
+import { Platform, TMP_PREVIEW_DIR, MimeTypes, PREVIEW_CACHE_CONTROL, UPLOAD_MAX_SIZE_BYTES } from "@spikeclip/shared";
 
 interface MulterFile {
   fieldname: string;
@@ -53,7 +55,7 @@ interface GeneratePreviewDto {
   platform: string;
 }
 
-const PREVIEW_TMP = "/tmp/spikeclips-preview";
+const PREVIEW_TMP = TMP_PREVIEW_DIR;
 
 @ApiTags("studio")
 @ApiBearerAuth()
@@ -68,6 +70,7 @@ export class StudioController {
 
   @Post("translate")
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: "Translate a natural language prompt into StudioActions" })
   @ApiResponse({ status: 200, description: "Actions and FFmpeg command generated" })
   @ApiResponse({ status: 400, description: "Invalid prompt or clarification needed" })
@@ -79,7 +82,7 @@ export class StudioController {
         prompt: { type: "string", example: "Add bold white captions saying 'Highlight' from 0-3s" },
         sceneStart: { type: "number", example: 0 },
         sceneEnd: { type: "number", example: 15 },
-        platform: { type: "string", enum: ["youtube_shorts", "instagram_reels", "tiktok"], example: "youtube_shorts" },
+        platform: { type: "string", enum: Object.values(Platform), example: Platform.YOUTUBE_SHORTS },
       },
     },
   })
@@ -89,6 +92,7 @@ export class StudioController {
 
   @Post("preview")
   @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: "Generate a preview video with applied actions" })
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 400, description: "Invalid actions or scene" })
@@ -98,6 +102,7 @@ export class StudioController {
 
   @Post("preview/:jobId/:sceneIndex")
   @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: "Generate preview for a specific job scene" })
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 404, description: "Job or scene not found" })
@@ -137,8 +142,8 @@ export class StudioController {
     }
 
     res.set({
-      "Content-Type": "video/mp4",
-      "Cache-Control": "private, max-age=3600",
+      "Content-Type": MimeTypes.VIDEO_MP4,
+      "Cache-Control": PREVIEW_CACHE_CONTROL,
     });
 
     const stream = createReadStream(previewFile);
@@ -218,7 +223,7 @@ export class StudioController {
   @ApiResponse({ status: 400, description: "Invalid job, file, or unauthorized" })
   @UseInterceptors(
     FileInterceptor("file", {
-      limits: { fileSize: 500 * 1024 * 1024 },
+      limits: { fileSize: UPLOAD_MAX_SIZE_BYTES },
     })
   )
   async uploadClip(

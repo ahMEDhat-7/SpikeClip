@@ -1,21 +1,18 @@
 import { Injectable, Logger, BadRequestException } from "@nestjs/common";
 import Stripe from "stripe";
-import { PrismaService } from "../../infrastructure/database/prisma.service";
+import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
+import { Inject } from "@nestjs/common";
+import { PlanTier, type PlanTierValue, PLAN_LIMITS, BillingInterval } from "@spikeclip/shared";
 
 const PLAN_PRICES: Record<string, { monthly: string; yearly: string }> = {
-  pro: {
+  [PlanTier.PRO]: {
     monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || "price_pro_monthly",
     yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID || "price_pro_yearly",
   },
-  team: {
+  [PlanTier.TEAM]: {
     monthly: process.env.STRIPE_TEAM_MONTHLY_PRICE_ID || "price_team_monthly",
     yearly: process.env.STRIPE_TEAM_YEARLY_PRICE_ID || "price_team_yearly",
   },
-};
-
-const PLAN_LIMITS: Record<string, { analysesLimit: number; scenesLimit: number }> = {
-  pro: { analysesLimit: -1, scenesLimit: 10 },
-  team: { analysesLimit: -1, scenesLimit: 25 },
 };
 
 @Injectable()
@@ -23,7 +20,9 @@ export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
   private readonly stripe: Stripe | null;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository
+  ) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
       this.logger.warn("STRIPE_SECRET_KEY not set — payments disabled");
@@ -44,7 +43,7 @@ export class PaymentsService {
     userId: string,
     email: string,
     plan: "pro" | "team",
-    interval: "monthly" | "yearly" = "monthly",
+    interval: "monthly" | "yearly" = BillingInterval.MONTHLY,
     successUrl?: string,
     cancelUrl?: string
   ): Promise<{ url: string }> {
@@ -52,7 +51,7 @@ export class PaymentsService {
       throw new BadRequestException("Stripe is not configured");
     }
 
-    let user = await this.prisma.user.findUnique({ where: { id: userId } });
+    let user = await this.userRepository.findById(userId);
     if (!user) throw new BadRequestException("User not found");
 
     let customerId = user.stripeCustomerId;
@@ -63,10 +62,7 @@ export class PaymentsService {
         metadata: { userId: user.id },
       });
       customerId = customer.id;
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { stripeCustomerId: customerId },
-      });
+      await this.userRepository.update(userId, { stripeCustomerId: customerId });
     }
 
     const priceId = PLAN_PRICES[plan][interval];
@@ -98,7 +94,7 @@ export class PaymentsService {
       throw new BadRequestException("Stripe is not configured");
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.userRepository.findById(userId);
     if (!user?.stripeCustomerId) {
       throw new BadRequestException("No Stripe customer found");
     }
@@ -155,9 +151,7 @@ export class PaymentsService {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
-        const user = await this.prisma.user.findFirst({
-          where: { stripeCustomerId: customerId },
-        });
+        const user = await this.userRepository.findByStripeCustomerId(customerId);
         if (user) {
           this.logger.warn(`Payment failed for user ${user.id}`);
         }
@@ -176,30 +170,25 @@ export class PaymentsService {
   }
 
   private async activatePlan(userId: string, plan: string): Promise<void> {
-    const limits = PLAN_LIMITS[plan];
+    const limits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS];
     if (!limits) return;
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        plan,
-        analysesLimit: limits.analysesLimit,
-        scenesLimit: limits.scenesLimit,
-      },
+    await this.userRepository.update(userId, {
+      plan: plan as PlanTierValue,
+      analysesLimit: limits.analysesLimit,
+      scenesLimit: limits.scenesLimit,
     });
 
     this.logger.log(`Plan activated: user=${userId}, plan=${plan}`);
   }
 
   private async deactivatePlan(userId: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        plan: "free",
-        analysesLimit: 3,
-        scenesLimit: 3,
-        clipsLimit: 2,
-      },
+    const limits = PLAN_LIMITS[PlanTier.FREE];
+    await this.userRepository.update(userId, {
+      plan: PlanTier.FREE,
+      analysesLimit: limits.analysesLimit,
+      scenesLimit: limits.scenesLimit,
+      clipsLimit: limits.clipsLimit,
     });
 
     this.logger.log(`Plan deactivated to free: user=${userId}`);

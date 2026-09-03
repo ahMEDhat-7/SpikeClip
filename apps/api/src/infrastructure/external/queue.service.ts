@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { randomUUID } from "crypto";
-import { Queue, Worker } from "bullmq";
+import { Queue, Worker, Job } from "bullmq";
 import { QueueService, ExportJobConfig } from "../../domain/services/queue";
 
 const connectionOptions = {
@@ -37,24 +37,31 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
 
   async addExportJob(
     jobId: string,
-    data: ExportJobConfig
+    data: ExportJobConfig,
+    dependsOn?: string
   ): Promise<void> {
-    await this.exportQueue.add("export-clip", { ...data, jobId }, {
+    const opts: Record<string, unknown> = {
       jobId: `export-${jobId}-${data.sceneIndex}-${randomUUID().slice(0, 8)}`,
       attempts: 2,
       backoff: { type: "exponential", delay: 10000 },
-    });
+    };
+    if (dependsOn) {
+      opts.dependencies = [dependsOn];
+    }
+    await this.exportQueue.add("export-clip", { ...data, jobId }, opts);
   }
 
   async addSourceJob(
     jobId: string,
     data: { userId: string; start: number; end: number }
-  ): Promise<void> {
+  ): Promise<string> {
+    const bullJobId = `source-${jobId}`;
     await this.sourceQueue.add("prepare-source", { ...data, jobId }, {
-      jobId: `source-${jobId}`,
+      jobId: bullJobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5000 },
     });
+    return bullJobId;
   }
 
   createWorker(

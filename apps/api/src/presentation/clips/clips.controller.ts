@@ -20,13 +20,15 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { Response } from "express";
-import { PrismaService } from "../../infrastructure/database/prisma.service";
+import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
+import { ClipRepository, CLIP_REPOSITORY } from "../../domain/repositories/clip.repository";
+import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
 import { ClipResponseDto } from "./dto/clip-response.dto";
 import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
 import { toClipResponse } from "../../application/mappers/clip.mapper";
-
 import { Public } from "../../infrastructure/auth/jwt-auth.guard";
+import { PlanTier, ClipStatus, EXTENSION_TO_MIME, AUDIO_EXTENSIONS, MimeTypes } from "@spikeclip/shared";
 
 @ApiTags("Clips")
 @Controller("clips")
@@ -34,7 +36,9 @@ export class ClipsController {
   private readonly logger = new Logger(ClipsController.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
+    @Inject(CLIP_REPOSITORY) private readonly clipRepository: ClipRepository,
+    @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService
   ) {}
 
@@ -52,16 +56,26 @@ export class ClipsController {
     @Param("jobId", ParseUUIDPipe) jobId: string,
     @Req() req: Request & { user?: { userId?: string } }
   ): Promise<ClipResponseDto[]> {
-    const job = await this.prisma.job.findUnique({ where: { id: jobId }, select: { userId: true } });
+    const job = await this.jobRepository.findById(jobId);
     if (!job) throw new NotFoundException(`Job ${jobId} not found`);
     if (job.userId !== req.user?.userId) throw new ForbiddenException("Job does not belong to you");
 
-    const clips = await this.prisma.clip.findMany({
-      where: { jobId },
-      orderBy: { sceneIndex: "asc" },
-    });
-
-    return clips.map(toClipResponse);
+    const clips = await this.clipRepository.findByJobId(jobId);
+    return clips.map((clip) => toClipResponse({
+      id: clip.id,
+      jobId: clip.jobId,
+      sceneIndex: clip.sceneIndex,
+      startTime: clip.startTime,
+      endTime: clip.endTime,
+      peakIntensity: clip.peakIntensity ?? null,
+      status: clip.status,
+      fileUrl: clip.fileUrl ?? null,
+      fileSize: clip.fileSize ?? null,
+      duration: clip.duration ?? null,
+      errorMessage: clip.errorMessage ?? null,
+      createdAt: clip.createdAt,
+      completedAt: clip.completedAt ?? null,
+    }));
   }
 
   @Get(":id/download")
@@ -80,22 +94,22 @@ export class ClipsController {
     @Req() req: Request & { user?: { userId?: string } },
     @Res() res: Response
   ): Promise<void> {
-    const clip = await this.prisma.clip.findUnique({ where: { id } });
+    const clip = await this.clipRepository.findById(id);
     if (!clip) {
       throw new NotFoundException(`Clip ${id} not found`);
     }
 
-    const job = await this.prisma.job.findUnique({ where: { id: clip.jobId }, select: { userId: true } });
+    const job = await this.jobRepository.findById(clip.jobId);
     if (!job || job.userId !== req.user?.userId) {
       throw new ForbiddenException("Clip does not belong to you");
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: req.user?.userId }, select: { plan: true } });
-    if (!user || user.plan === "free") {
+    const user = await this.userRepository.findById(req.user?.userId);
+    if (!user || user.plan === PlanTier.FREE) {
       throw new ForbiddenException("Pro or Team plan required to download clips");
     }
 
-    if (clip.status !== "completed" || !clip.fileUrl) {
+    if (clip.status !== ClipStatus.COMPLETED || !clip.fileUrl) {
       throw new NotFoundException(`Clip ${id} is not ready for download (status: ${clip.status})`);
     }
 
@@ -131,16 +145,8 @@ export class ClipsController {
     try {
       const stream = await this.storage.createReadStream(key);
       const ext = key.split(".").pop()?.toLowerCase() || "mp4";
-      const mimeMap: Record<string, string> = {
-        mp4: "video/mp4",
-        webm: "video/webm",
-        mp3: "audio/mpeg",
-        wav: "audio/wav",
-        ogg: "audio/ogg",
-        m4a: "audio/mp4",
-      };
-      const contentType = mimeMap[ext] || "application/octet-stream";
-      const isAudio = ["mp3", "wav", "ogg", "m4a"].includes(ext);
+      const contentType = EXTENSION_TO_MIME[ext] || MimeTypes.OCTET_STREAM;
+      const isAudio = AUDIO_EXTENSIONS.includes(ext);
       const filename = key.split("/").pop()?.replace(/[^a-zA-Z0-9._-]/g, "_") || `clip.${ext}`;
 
       res.set({

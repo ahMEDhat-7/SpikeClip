@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Param,
   Body,
   Inject,
@@ -28,11 +29,14 @@ import { ExportClipsDto } from "../../application/dto/export-clips.dto";
 import { JobResponseDto } from "../../application/dto/job-response.dto";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { JobNotFoundException } from "../../domain/exceptions/job-not-found.exception";
-import { PrismaService } from "../../infrastructure/database/prisma.service";
-import { ClipResponseDto } from "../clips/dto/clip-response.dto";
+import { ClipRepository, CLIP_REPOSITORY } from "../../domain/repositories/clip.repository";
 import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "../../infrastructure/auth/auth.service";
 import { toClipResponse } from "../../application/mappers/clip.mapper";
+import { ClipResponseDto } from "../clips/dto/clip-response.dto";
+import { RedisService } from "../../infrastructure/redis/redis.service";
+import { ServiceUnavailableException } from "@nestjs/common";
+import { JobStatus, PlanTier, MAX_SCENES_PER_EXPORT, FREE_PLAN_MAX_SCENES } from "@spikeclip/shared";
 
 @ApiTags("Jobs")
 @Controller("jobs")
@@ -42,8 +46,9 @@ export class JobsController {
     private readonly processHeatmapUseCase: ProcessHeatmapUseCase,
     private readonly exportClipsUseCase: ExportClipsUseCase,
     @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
-    private readonly prisma: PrismaService,
-    private readonly authService: AuthService
+    @Inject(CLIP_REPOSITORY) private readonly clipRepository: ClipRepository,
+    private readonly authService: AuthService,
+    private readonly redisService: RedisService
   ) {}
 
   @Post()
@@ -60,12 +65,16 @@ export class JobsController {
     if (!canAnalyze) {
       throw new ForbiddenException("Analysis quota exceeded. Upgrade your plan for unlimited analyses.");
     }
+    try {
+      await this.redisService.ping();
+    } catch {
+      throw new ServiceUnavailableException("Service temporarily unavailable. Please try again in a moment.");
+    }
     const job = await this.createJobUseCase.execute(dto.url, req.user.userId);
     const incremented = await this.authService.incrementAnalyses(req.user.userId);
     if (!incremented) {
-      // Race condition: quota exceeded between check and increment — clean up
-      await this.jobRepository.findById(job.id); // ensure job exists
-      await this.prisma.job.delete({ where: { id: job.id } }).catch(() => {});
+      await this.jobRepository.findById(job.id);
+      await this.jobRepository.softDelete(job.id).catch(() => {});
       throw new ForbiddenException("Analysis quota exceeded. Upgrade your plan for unlimited analyses.");
     }
     return job;
@@ -101,6 +110,29 @@ export class JobsController {
     return jobs.map(JobResponseDto.fromEntity);
   }
 
+  @Delete(":id")
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Delete a job", description: "Soft-deletes a job and its clips. The job will no longer appear in listings." })
+  @ApiParam({ name: "id", description: "Job UUID" })
+  @ApiResponse({ status: 200, description: "Job deleted" })
+  @ApiResponse({ status: 404, description: "Job not found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 403, description: "Forbidden — job does not belong to you" })
+  async remove(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Req() req: Request & { user: { userId: string } }
+  ): Promise<{ ok: true }> {
+    const job = await this.jobRepository.findById(id);
+    if (!job) throw new JobNotFoundException(id);
+    if (job.userId !== req.user.userId) {
+      throw new ForbiddenException("Job does not belong to you");
+    }
+    await this.jobRepository.softDelete(id);
+    await this.jobRepository.softDeleteClips(id);
+    return { ok: true };
+  }
+
   @Get(":id/clips")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get clips for a job", description: "Returns all clips (scenes) for a given job." })
@@ -111,18 +143,14 @@ export class JobsController {
   async getClips(
     @Param("id", ParseUUIDPipe) id: string,
     @Req() req: Request & { user: { userId: string } }
-  ): Promise<ClipResponseDto[]> {
+  ): Promise<import("../clips/dto/clip-response.dto").ClipResponseDto[]> {
     const job = await this.jobRepository.findById(id);
     if (!job) throw new NotFoundException(`Job ${id} not found`);
     if (job.userId !== req.user.userId) {
       throw new ForbiddenException("Job does not belong to you");
     }
 
-    const clips = await this.prisma.clip.findMany({
-      where: { jobId: id },
-      orderBy: { sceneIndex: "asc" },
-    });
-
+    const clips = await this.jobRepository.findClipsByJobId(id);
     return clips.map(toClipResponse);
   }
 
@@ -176,22 +204,17 @@ export class JobsController {
     if (job.userId !== req.user.userId) {
       throw new ForbiddenException("Job does not belong to you");
     }
-    if (job.status !== "completed") {
+    if (job.status !== JobStatus.COMPLETED) {
       throw new ForbiddenException("Job has not completed processing yet");
     }
 
     let scenes = dto.scenes;
 
-    const dbUser = await this.prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: { plan: true },
-    });
-
-    if (dbUser?.plan === "free" && scenes.length > 3) {
-      scenes = scenes.slice(0, 3);
+    const user = await this.authService.getProfile(req.user.userId);
+    if (user?.plan === PlanTier.FREE && scenes.length > FREE_PLAN_MAX_SCENES) {
+      scenes = scenes.slice(0, FREE_PLAN_MAX_SCENES);
     }
 
-    const MAX_SCENES_PER_EXPORT = 25;
     if (scenes.length > MAX_SCENES_PER_EXPORT) {
       scenes = scenes.slice(0, MAX_SCENES_PER_EXPORT);
     }

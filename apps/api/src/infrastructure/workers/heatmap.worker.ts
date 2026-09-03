@@ -6,6 +6,7 @@ import { AuthService } from "../auth/auth.service";
 import { Prisma } from "@prisma/client";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { QueueName, JobStatus } from "@spikeclip/shared";
 
 const execFileAsync = promisify(execFile);
 
@@ -26,7 +27,7 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
   const logger = new Logger("HeatmapWorker");
 
   const worker = new Worker(
-    "analysis",
+    QueueName.ANALYSIS,
     async (bullJob: BullMQJob<HeatmapJobData>) => {
       const { jobId, url, userId } = bullJob.data;
       logger.log(`Processing heatmap for job ${jobId}`);
@@ -34,7 +35,7 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
       try {
         await prisma.job.update({
           where: { id: jobId },
-          data: { status: "processing" },
+          data: { status: JobStatus.PROCESSING },
         });
 
         const { stdout } = await execFileAsync("yt-dlp", [
@@ -56,7 +57,7 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
 
           await prisma.job.update({
             where: { id: jobId },
-            data: { status: "failed", errorMessage: "No heatmap data found for this video" },
+            data: { status: JobStatus.FAILED, errorMessage: "No heatmap data found for this video" },
           });
           return;
         }
@@ -66,7 +67,7 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
         await prisma.job.update({
           where: { id: jobId },
           data: {
-            status: "completed",
+            status: JobStatus.COMPLETED,
             heatmapData: heatmap as unknown as Prisma.InputJsonValue,
             scenes: scenes as unknown as Prisma.InputJsonValue,
             completedAt: new Date(),
@@ -84,7 +85,7 @@ export function createHeatmapWorker(prisma: PrismaService, authService: AuthServ
 
         await prisma.job.update({
           where: { id: jobId },
-          data: { status: "failed", errorMessage: message },
+          data: { status: JobStatus.FAILED, errorMessage: message },
         });
       }
     },

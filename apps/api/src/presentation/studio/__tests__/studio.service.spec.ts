@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { StudioService } from "../studio.service";
-import type { StudioAction, JobStatus } from "@spikeclip/shared";
+import type { StudioAction, JobStatusValue } from "@spikeclip/shared";
 
 const storageMock = {
   upload: jest.fn().mockResolvedValue(undefined),
@@ -28,7 +28,7 @@ const ownedJob = {
   id: "job-1",
   userId: "user-1",
   url: "https://youtube.com/watch?v=abc",
-  status: "completed" as JobStatus,
+  status: "completed" as JobStatusValue,
 };
 
 const edits: Record<number, StudioAction[]> = {

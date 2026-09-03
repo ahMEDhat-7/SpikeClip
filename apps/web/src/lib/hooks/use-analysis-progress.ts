@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { JOB_STATUS, JobStatus } from "@/domain/entities/job";
+import { JOB_STATUS } from "@/domain/entities/job";
+import type { JobStatusValue } from "@spikeclip/shared";
 
-export function useAnalysisProgress(isLoading: boolean, jobStatus?: JobStatus) {
+export function useAnalysisProgress(isLoading: boolean, jobStatus?: JobStatusValue) {
   const [progress, setProgress] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);

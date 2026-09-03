@@ -1,4 +1,4 @@
-import { ScoredBlock, HeatmapSpike, JobStatus, ClipStatus } from "../entities/job";
+import { ScoredBlock, HeatmapSpike, type JobStatusValue, type ClipStatusValue } from "@spikeclip/shared";
 import { PlatformId } from "../entities/platform";
 import { OutputFormat, OutputQuality } from "../entities/export";
 import type { StudioAction } from "@spikeclip/shared";
@@ -107,7 +107,7 @@ export interface JobResponse {
   videoViewCount?: number;
   videoUploadDate?: string;
   videoChannelName?: string;
-  status: JobStatus;
+  status: JobStatusValue;
   scenes?: ScoredBlock[];
   heatmapData?: HeatmapSpike[];
   errorMessage?: string;
@@ -123,7 +123,7 @@ export interface ClipResponse {
   startTime: number;
   endTime: number;
   peakIntensity?: number;
-  status: ClipStatus;
+  status: ClipStatusValue;
   fileUrl?: string;
   fileSize?: number;
   duration?: number;

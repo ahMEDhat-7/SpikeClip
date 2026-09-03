@@ -5,6 +5,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { mkdir } from "fs/promises";
 import { getSourcePath, SOURCE_DIR } from "./source-path";
+import { QueueName, JobStatus, YTDLP_FORMAT } from "@spikeclip/shared";
 
 const execFileAsync = promisify(execFile);
 
@@ -26,7 +27,7 @@ export function createSourceWorker(prisma: PrismaService): Worker {
   const logger = new Logger("SourceWorker");
 
   const worker = new Worker(
-    "source",
+    QueueName.SOURCE,
     async (bullJob: BullMQJob<SourceJobData>) => {
       const { jobId, start, end } = bullJob.data;
       logger.log(`Preparing shared source for job ${jobId} (${start}-${end}s)`);
@@ -47,7 +48,7 @@ export function createSourceWorker(prisma: PrismaService): Worker {
         await execFileAsync("yt-dlp", [
           "--js-runtimes", "node",
           "-f",
-          "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+          YTDLP_FORMAT,
           "--download-sections",
           `*${start}-${end}`,
           "--force-keyframes-at-cuts",
@@ -71,7 +72,7 @@ export function createSourceWorker(prisma: PrismaService): Worker {
         logger.error(`Source job ${jobId} failed: ${message}`);
         await prisma.job.update({
           where: { id: jobId },
-          data: { status: "failed", errorMessage: message },
+          data: { status: JobStatus.FAILED, errorMessage: message },
         }).catch(() => {});
       }
     },

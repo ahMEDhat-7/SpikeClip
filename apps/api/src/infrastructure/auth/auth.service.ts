@@ -1,7 +1,9 @@
 import { Injectable, UnauthorizedException, Logger } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { randomUUID } from "crypto";
-import { PrismaService } from "../database/prisma.service";
+import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
+import { Inject } from "@nestjs/common";
+import { PlanTier, PLAN_LIMITS, UNLIMITED, PrismaErrorCode } from "@spikeclip/shared";
 
 interface OAuthProfile {
   provider: string;
@@ -15,7 +17,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService
   ) {}
 
@@ -31,47 +33,36 @@ export class AuthService {
     clipsUsed: number;
     clipsLimit: number;
   }> {
-    // Try to find by provider+id first
-    let user = await this.prisma.user.findFirst({
-      where: { oauthProvider: profile.provider, oauthProviderId: profile.providerId },
-    });
+    let user = await this.userRepository.findByOAuthProvider(profile.provider, profile.providerId);
 
     if (!user) {
-      // Try to find by email and link the OAuth provider
-      const existingByEmail = await this.prisma.user.findUnique({ where: { email: profile.email } });
+      const existingByEmail = await this.userRepository.findByEmail(profile.email);
       if (existingByEmail) {
-        user = await this.prisma.user.update({
-          where: { id: existingByEmail.id },
-          data: { oauthProvider: profile.provider, oauthProviderId: profile.providerId },
-        });
+        user = await this.userRepository.linkOAuthProvider(existingByEmail.id, profile.provider, profile.providerId);
       } else {
-        // Create new user — use upsert to handle race conditions
         try {
-          user = await this.prisma.user.create({
-            data: {
-              id: randomUUID(),
-              email: profile.email,
-              name: profile.name,
-              oauthProvider: profile.provider,
-              oauthProviderId: profile.providerId,
-              plan: "free",
-              analysesUsed: 0,
-              analysesLimit: 3,
-              scenesLimit: 3,
-            },
+          const limits = PLAN_LIMITS[PlanTier.FREE];
+          user = await this.userRepository.createOAuthUser({
+            id: randomUUID(),
+            email: profile.email,
+            name: profile.name,
+            oauthProvider: profile.provider,
+            oauthProviderId: profile.providerId,
+            plan: PlanTier.FREE,
+            analysesUsed: 0,
+            analysesLimit: limits.analysesLimit,
+            scenesLimit: limits.scenesLimit,
+            clipsLimit: limits.clipsLimit,
           });
         } catch (err: unknown) {
-          // Race condition: another request created the user, try finding again
           if (
             err instanceof Error &&
             "code" in err &&
-            (err as { code?: string }).code === "P2002"
+            (err as { code?: string }).code === PrismaErrorCode.UNIQUE_CONSTRAINT
           ) {
-            user = await this.prisma.user.findFirst({
-              where: { oauthProvider: profile.provider, oauthProviderId: profile.providerId },
-            });
+            user = await this.userRepository.findByOAuthProvider(profile.provider, profile.providerId);
             if (!user) {
-              user = await this.prisma.user.findUnique({ where: { email: profile.email } });
+              user = await this.userRepository.findByEmail(profile.email);
             }
           } else {
             throw err;
@@ -114,7 +105,7 @@ export class AuthService {
     clipsLimit: number;
     createdAt: Date;
   } | null> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.userRepository.findById(userId);
     if (!user) return null;
 
     return {
@@ -132,64 +123,34 @@ export class AuthService {
   }
 
   async checkCanAnalyze(userId: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.userRepository.findById(userId);
     if (!user) return false;
-    if (user.plan === "pro" || user.plan === "team") return true;
-    await this.checkAndResetMonthlyUsage(user.id, user.analysesResetAt);
-    const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT 1 as count FROM "User"
-      WHERE id = ${userId} AND ("analysesUsed" < "analysesLimit" OR "analysesLimit" = -1)
-    `;
-    return result.length > 0;
+    if (user.plan === PlanTier.PRO || user.plan === PlanTier.TEAM) return true;
+    await this.userRepository.checkAndResetMonthlyUsage(user.id, user.analysesResetAt);
+    return this.userRepository.canUserAnalyze(userId);
   }
 
   async incrementAnalyses(userId: string): Promise<boolean> {
-    await this.checkAndResetMonthlyUsage(userId);
-    const result = await this.prisma.$executeRaw`
-      UPDATE "User" SET "analysesUsed" = "analysesUsed" + 1
-      WHERE id = ${userId}
-        AND ("analysesUsed" < "analysesLimit" OR "analysesLimit" = -1)
-    `;
-    return result > 0;
+    await this.userRepository.checkAndResetMonthlyUsage(userId);
+    return this.userRepository.incrementAnalyses(userId);
   }
 
   async decrementAnalyses(userId: string): Promise<boolean> {
-    const result = await this.prisma.$executeRaw`
-      UPDATE "User" SET "analysesUsed" = GREATEST("analysesUsed" - 1, 0)
-      WHERE id = ${userId}
-    `;
-    return result > 0;
+    return this.userRepository.decrementAnalyses(userId);
   }
 
   async checkCanExportClips(userId: string, count: number): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.userRepository.findById(userId);
     if (!user) return false;
-    if (user.plan === "pro" || user.plan === "team") return true;
-    const result = await this.prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT 1 as count FROM "User"
-      WHERE id = ${userId} AND ("clipsUsed" + ${count} <= "clipsLimit" OR "clipsLimit" = -1)
-    `;
-    return result.length > 0;
+    if (user.plan === PlanTier.PRO || user.plan === PlanTier.TEAM) return true;
+    await this.userRepository.checkAndResetMonthlyUsage(user.id, user.analysesResetAt);
+    const refreshed = await this.userRepository.findById(userId);
+    if (!refreshed) return false;
+    return this.userRepository.canUserExportClips(userId, count);
   }
 
   async incrementClips(userId: string, count: number): Promise<boolean> {
-    const result = await this.prisma.$executeRaw`
-      UPDATE "User" SET "clipsUsed" = "clipsUsed" + ${count}
-      WHERE id = ${userId}
-        AND ("clipsUsed" + ${count} <= "clipsLimit" OR "clipsLimit" = -1)
-    `;
-    return result > 0;
-  }
-
-  private async checkAndResetMonthlyUsage(userId: string, resetAt?: Date | null): Promise<void> {
-    const now = new Date();
-    const shouldReset = !resetAt || (resetAt.getMonth() !== now.getMonth() || resetAt.getFullYear() !== now.getFullYear());
-    if (shouldReset) {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { analysesUsed: 0, analysesResetAt: now },
-      });
-    }
+    return this.userRepository.incrementClips(userId, count);
   }
 
   async updateProfile(
@@ -207,17 +168,12 @@ export class AuthService {
     clipsLimit: number;
     createdAt: Date;
   }> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedException("User not found");
     }
 
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-      },
-    });
+    const updated = await this.userRepository.update(userId, { name: data.name });
 
     this.logger.log(`Profile updated for user: ${this.maskEmail(updated.email)}`);
 

@@ -1,10 +1,10 @@
-import { PlanTier } from "@spikeclip/shared";
+import { type PlanTierValue } from "@spikeclip/shared";
 
 export interface UserResponse {
   id: string;
   email: string;
   name: string;
-  plan: PlanTier;
+  plan: PlanTierValue;
   analysesUsed: number;
   analysesLimit: number;
   scenesLimit: number;

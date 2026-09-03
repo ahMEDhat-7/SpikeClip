@@ -2,14 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { ClipRepository } from "../../../domain/repositories/clip.repository";
 import { Clip } from "../../../domain/entities/clip.entity";
-import { ClipStatus } from "@spikeclip/shared";
+import { type ClipStatusValue } from "@spikeclip/shared";
 
 @Injectable()
 export class PrismaClipRepository implements ClipRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): Promise<Clip | null> {
-    const clip = await this.prisma.clip.findUnique({ where: { id } });
+    const clip = await this.prisma.clip.findFirst({ where: { id, deletedAt: null } });
     if (!clip) return null;
 
     return new Clip(
@@ -19,7 +19,7 @@ export class PrismaClipRepository implements ClipRepository {
       clip.startTime,
       clip.endTime,
       clip.peakIntensity ?? undefined,
-      clip.status as ClipStatus,
+      clip.status as ClipStatusValue,
       clip.fileUrl ?? undefined,
       clip.fileSize ?? undefined,
       clip.duration ?? undefined,
@@ -31,7 +31,7 @@ export class PrismaClipRepository implements ClipRepository {
 
   async findByJobId(jobId: string): Promise<Clip[]> {
     const clips = await this.prisma.clip.findMany({
-      where: { jobId },
+      where: { jobId, deletedAt: null },
       orderBy: { sceneIndex: "asc" },
     });
 
@@ -44,7 +44,7 @@ export class PrismaClipRepository implements ClipRepository {
           clip.startTime,
           clip.endTime,
           clip.peakIntensity ?? undefined,
-          clip.status as ClipStatus,
+      clip.status as ClipStatusValue,
           clip.fileUrl ?? undefined,
           clip.fileSize ?? undefined,
           clip.duration ?? undefined,
@@ -79,7 +79,7 @@ export class PrismaClipRepository implements ClipRepository {
       created.startTime,
       created.endTime,
       created.peakIntensity ?? undefined,
-      created.status as ClipStatus,
+      created.status as ClipStatusValue,
       created.fileUrl ?? undefined,
       created.fileSize ?? undefined,
       created.duration ?? undefined,
@@ -109,7 +109,7 @@ export class PrismaClipRepository implements ClipRepository {
       updated.startTime,
       updated.endTime,
       updated.peakIntensity ?? undefined,
-      updated.status as ClipStatus,
+      updated.status as ClipStatusValue,
       updated.fileUrl ?? undefined,
       updated.fileSize ?? undefined,
       updated.duration ?? undefined,
@@ -117,5 +117,24 @@ export class PrismaClipRepository implements ClipRepository {
       updated.createdAt,
       updated.completedAt ?? undefined
     );
+  }
+
+  async countPendingByJob(jobId: string): Promise<number> {
+    return this.prisma.clip.count({
+      where: { jobId, deletedAt: null, status: { in: ["pending", "processing"] } },
+    });
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.prisma.clip.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async deleteMany(ids: string[]): Promise<void> {
+    await this.prisma.clip.deleteMany({
+      where: { id: { in: ids } },
+    });
   }
 }

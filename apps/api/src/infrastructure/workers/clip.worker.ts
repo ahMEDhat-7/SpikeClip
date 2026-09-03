@@ -10,6 +10,22 @@ import { promisify } from "util";
 import { unlink, mkdir, stat, access, rename, writeFile } from "fs/promises";
 import { join } from "path";
 import type { StudioAction } from "@spikeclip/shared";
+import {
+  QueueName,
+  ClipStatus,
+  Platform,
+  Quality,
+  Format,
+  type QualityValue,
+  type FormatValue,
+  FfmpegCodec,
+  VERTICAL_CROP_FILTER,
+  YTDLP_FORMAT,
+  MUSIC_SIGNED_URL_TTL,
+  CLIPS_STORAGE_PREFIX,
+  MimeTypes,
+  PLATFORM_CAST,
+} from "@spikeclip/shared";
 
 const execFileAsync = promisify(execFile);
 const TMP_DIR = "/tmp/spikeclips-export";
@@ -56,7 +72,7 @@ export function createClipWorker(
   const logger = new Logger("ClipWorker");
 
   const worker = new Worker(
-    "export",
+    QueueName.EXPORT,
     async (bullJob: BullMQJob<ClipExportJobData>) => {
       const {
         jobId, clipId, sceneIndex, videoUrl, startTime, endTime,
@@ -69,7 +85,7 @@ export function createClipWorker(
       try {
         await prisma.clip.update({
           where: { id: clipId },
-          data: { status: "processing" },
+          data: { status: ClipStatus.PROCESSING },
         });
 
         const tmpInput = join(TMP_DIR, `${clipId}-source.mp4`);
@@ -82,6 +98,7 @@ export function createClipWorker(
 
         // Step 1: Reuse the pre-downloaded shared source when available,
         // otherwise fall back to downloading this section directly.
+        // BullMQ job dependencies ensure the source job completes before this runs.
         const jobRecord = await prisma.job.findUnique({
           where: { id: jobId },
           select: { sourceKey: true, sourceStart: true },
@@ -91,12 +108,14 @@ export function createClipWorker(
 
         let usedSharedSource = false;
         if (sourceKey) {
-          for (let attempt = 0; attempt < 40; attempt++) {
+          // Source should already be ready due to BullMQ job dependencies,
+          // but verify with a short wait as a safety net
+          for (let attempt = 0; attempt < 5; attempt++) {
             if (await fileExists(sourceKey)) {
               usedSharedSource = true;
               break;
             }
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
 
@@ -107,7 +126,7 @@ export function createClipWorker(
             "-ss", String(offset),
             "-i", sourceKey,
             "-t", String(duration),
-            "-c:v", "libx264", "-c:a", "aac",
+            "-c:v", FfmpegCodec.VIDEO, "-c:a", FfmpegCodec.AUDIO,
             tmpInput,
           ]);
           logger.log(`Reused shared source for clip ${clipId} (offset ${offset}s)`);
@@ -118,7 +137,7 @@ export function createClipWorker(
           await execFileAsync("yt-dlp", [
             "--js-runtimes", "node",
             "-f",
-            "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
+            YTDLP_FORMAT,
             "--download-sections",
             `*${startTime}-${endTime}`,
             "--force-keyframes-at-cuts",
@@ -132,15 +151,15 @@ export function createClipWorker(
         if (vertical) {
           await execFileAsync("ffmpeg", [
             "-y", "-i", tmpInput,
-            "-vf", "crop=ih*9/16:ih,scale=1080:1920",
-            "-c:v", "libx264", "-c:a", "aac",
+            "-vf", VERTICAL_CROP_FILTER,
+            "-c:v", FfmpegCodec.VIDEO, "-c:a", FfmpegCodec.AUDIO,
             tmpCropped,
           ]);
         } else {
           await execFileAsync("ffmpeg", [
             "-y", "-i", tmpInput,
             "-t", String(duration),
-            "-c:v", "libx264", "-c:a", "aac",
+            "-c:v", FfmpegCodec.VIDEO, "-c:a", FfmpegCodec.AUDIO,
             tmpCropped,
           ]);
         }
@@ -177,9 +196,9 @@ export function createClipWorker(
               currentFile,
               actionsOutput,
               actions,
-              (bullJob.data.platform as "youtube-shorts" | "instagram-reels" | "tiktok") || "youtube-shorts",
-              (bullJob.data.quality as "720p" | "1080p") || "1080p",
-              (bullJob.data.format as "mp4" | "webm") || "mp4",
+              PLATFORM_CAST[bullJob.data.platform || Platform.YOUTUBE_SHORTS] || "youtube-shorts",
+              (bullJob.data.quality as QualityValue) || Quality.P1080,
+              (bullJob.data.format as FormatValue) || Format.MP4,
               0,
               duration
             );
@@ -193,7 +212,7 @@ export function createClipWorker(
         // Step 5: Music mix (with correct fade-out and -shortest)
         if (music) {
           try {
-            const musicSignedUrl = await storage.getSignedUrl(music.fileKey, 600);
+            const musicSignedUrl = await storage.getSignedUrl(music.fileKey, MUSIC_SIGNED_URL_TTL);
             const sanitizedKey = music.fileKey.replace(/[^a-zA-Z0-9._-]/g, "_");
             const musicPath = join(TMP_DIR, `${clipId}-music-${sanitizedKey}`);
             const response = await fetch(musicSignedUrl);
@@ -218,8 +237,8 @@ export function createClipWorker(
         }
 
         // Step 7: Upload to storage
-        const storageKey = `clips/${jobId}/${sceneIndex}-${randomUUID().slice(0, 8)}.mp4`;
-        await storage.uploadFromFile(tmpOutput, storageKey, "video/mp4");
+        const storageKey = `${CLIPS_STORAGE_PREFIX}${jobId}/${sceneIndex}-${randomUUID().slice(0, 8)}.mp4`;
+        await storage.uploadFromFile(tmpOutput, storageKey, MimeTypes.VIDEO_MP4);
         const fileUrl = storageKey;
         const fileSize = (await stat(tmpOutput)).size;
 
@@ -227,7 +246,7 @@ export function createClipWorker(
         await prisma.clip.update({
           where: { id: clipId },
           data: {
-            status: "completed",
+            status: ClipStatus.COMPLETED,
             fileUrl,
             fileSize,
             duration,
@@ -247,6 +266,19 @@ export function createClipWorker(
           await unlink(join(TMP_DIR, `${clipId}-music-${sanitizedKey}`)).catch(() => {});
         }
 
+        // Step 10: Cleanup shared source when all clips for this job are done
+        try {
+          const pendingClips = await prisma.clip.count({
+            where: { jobId, status: { in: [ClipStatus.PENDING, ClipStatus.PROCESSING] } },
+          });
+          if (pendingClips === 0 && jobRecord?.sourceKey) {
+            await unlink(jobRecord.sourceKey).catch(() => {});
+            logger.log(`Cleaned up shared source for job ${jobId}`);
+          }
+        } catch {
+          // Non-critical: source cleanup failure shouldn't fail the job
+        }
+
         logger.log(`Completed clip ${clipId}: ${fileUrl}`);
       } catch (error) {
         const raw = error instanceof Error ? error.message : "Unknown error";
@@ -257,7 +289,7 @@ export function createClipWorker(
         logger.error(`Clip ${clipId} failed: ${message}`);
         await prisma.clip.update({
           where: { id: clipId },
-          data: { status: "failed", errorMessage: message },
+          data: { status: ClipStatus.FAILED, errorMessage: message },
         });
       }
     },
