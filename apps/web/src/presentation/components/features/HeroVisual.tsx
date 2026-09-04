@@ -53,7 +53,8 @@ export function HeroVisual() {
               </div>
               <div className="flex gap-[2px] h-12 items-end">
                 {Array.from({ length: 60 }, (_, i) => {
-                  const intensity = Math.sin(i * 0.3) * 0.4 + Math.random() * 0.3 + 0.3;
+                  const pseudoRandom = Math.sin(i * 12345.6789) * 0.5 + 0.5;
+                  const intensity = Math.sin(i * 0.3) * 0.4 + pseudoRandom * 0.3 + 0.3;
                   const isHighlighted = (i >= 12 && i <= 18) || (i >= 35 && i <= 42) || (i >= 50 && i <= 56);
                   return (
                     <div
