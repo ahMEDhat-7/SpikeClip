@@ -41,7 +41,9 @@ export type ToEditorMessage =
   | { type: "openreel:saveProject" };
 
 export interface OpenReelEditorProps {
-  jobId: string;
+  jobId?: string;
+  sourceUrl?: string;
+  exportUrl?: string;
   start: number;
   end: number;
   platform?: string;
@@ -51,7 +53,7 @@ export interface OpenReelEditorProps {
 
 type PrepareStep = "download" | "upload" | "loading" | "ready";
 
-export function OpenReelEditor({ jobId, start, end, platform = "youtube-shorts", onExport, onExportComplete }: OpenReelEditorProps) {
+export function OpenReelEditor({ jobId, sourceUrl: preloadedSourceUrl, exportUrl, start, end, platform = "youtube-shorts", onExport, onExportComplete }: OpenReelEditorProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const sourceUrlRef = useRef<string | null>(null);
   const projectLoadedRef = useRef<unknown | null>(null);
@@ -149,6 +151,15 @@ export function OpenReelEditor({ jobId, start, end, platform = "youtube-shorts",
 
   // Prepare source — core download flow
   useEffect(() => {
+    if (preloadedSourceUrl) {
+      sourceUrlRef.current = preloadedSourceUrl;
+      rangeRef.current = { start, end };
+      setPrepareStep("ready");
+      setErrorMsg("");
+      loadSentRef.current = false;
+      maybeLoadEditor();
+      return;
+    }
     if (!jobId || Number.isNaN(start) || Number.isNaN(end) || end <= start) {
       setPrepareStep(null);
       return;
@@ -202,7 +213,7 @@ export function OpenReelEditor({ jobId, start, end, platform = "youtube-shorts",
       clearTimeout(timeout);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, start, end, retryKey, maybeLoadEditor]);
+  }, [jobId, start, end, retryKey, maybeLoadEditor, preloadedSourceUrl]);
 
   // Listen for editor messages + detect editor ready via postMessage
   useEffect(() => {
@@ -225,7 +236,7 @@ export function OpenReelEditor({ jobId, start, end, platform = "youtube-shorts",
           break;
         }
         case "openreel:exported": {
-          if (data.blob && jobId) {
+          if (data.blob && (jobId || exportUrl)) {
             setPrepareStep("upload");
             const formData = new FormData();
             formData.append("file", data.blob, `clip-${Date.now()}.mp4`);
@@ -234,7 +245,8 @@ export function OpenReelEditor({ jobId, start, end, platform = "youtube-shorts",
             formData.append("startTime", String(rangeRef.current.start));
             formData.append("endTime", String(rangeRef.current.end));
 
-            fetch(`/api/studio/${jobId}/clips`, {
+            const uploadUrl = exportUrl || `/api/studio/${jobId}/clips`;
+            fetch(uploadUrl, {
               method: "POST",
               credentials: "include",
               body: formData,
@@ -272,7 +284,7 @@ export function OpenReelEditor({ jobId, start, end, platform = "youtube-shorts",
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [editorOrigin, postToEditor, maybeLoadEditor, onExport, onExportComplete, persistProject, jobId]);
+  }, [editorOrigin, postToEditor, maybeLoadEditor, onExport, onExportComplete, persistProject, jobId, exportUrl]);
 
   // Detect iframe load failure: if editor doesn't send "ready" within timeout after iframe load
   useEffect(() => {

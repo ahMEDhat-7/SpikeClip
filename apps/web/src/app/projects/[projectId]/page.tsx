@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import React from "react";
 import { Loader2, ArrowLeft, Plus, Link, Youtube, Download, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,8 @@ import { VideoBrowser } from "@/presentation/components/youtube/VideoBrowser";
 import { UrlSourceInput } from "@/presentation/components/projects/UrlSourceInput";
 import { SourceList } from "@/presentation/components/projects/SourceList";
 import { SceneResults } from "@/presentation/components/scenes/SceneResults";
+import { PlatformSelector } from "@/presentation/components/studio/PlatformSelector";
+import { PLATFORMS, type Platform, type PlatformId } from "@/domain/entities/platform";
 import { useProjectDetails } from "@/application/hooks/use-projects";
 import { useYoutubeConnection } from "@/application/hooks/use-youtube-connection";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -34,6 +37,7 @@ function ProjectDetailContent() {
   const [generatingSourceId, setGeneratingSourceId] = useState<string | null>(null);
   const [selectedSceneIds, setSelectedSceneIds] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(PLATFORMS[0]);
 
   const handleGenerateScenes = async (sourceId: string) => {
     setGeneratingSourceId(sourceId);
@@ -70,7 +74,7 @@ function ProjectDetailContent() {
   const handleExport = async (sceneIds: string[]) => {
     setExporting(true);
     try {
-      const result = await exportClips(sceneIds);
+      const result = await exportClips(sceneIds, { platform: selectedPlatform?.id });
       toastSuccess(`Enqueued ${result.count} clip(s) for export`);
       setSelectedSceneIds(new Set());
       await refresh();
@@ -97,12 +101,25 @@ function ProjectDetailContent() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">{error ?? "Project not found"}</p>
-        <Button variant="outline" onClick={() => router.push("/dashboard")}>
-          Back to Dashboard
+        <Button variant="outline" onClick={() => router.push("/projects")}>
+          Back to Projects
         </Button>
       </div>
     );
   }
+
+  const hasSource = data.sources.length > 0;
+  const hasAnalyzed = data.sources.some((s) => s.sourceStatus === "completed");
+  const isAnalyzing = data.sources.some((s) => s.sourceStatus === "analyzing");
+  const hasScenes = data.scenes.length > 0;
+  const hasClips = data.clips.length > 0;
+
+  const steps = [
+    { label: "Source", done: hasSource },
+    { label: "Analyze", done: hasAnalyzed, active: isAnalyzing },
+    { label: "Scenes", done: hasScenes },
+    { label: "Export", done: hasClips },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,10 +127,10 @@ function ProjectDetailContent() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push("/projects")}
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Dashboard
+          Projects
         </Button>
         <span className="truncate text-sm font-medium text-foreground/80">
           {data.project.name}
@@ -134,15 +151,40 @@ function ProjectDetailContent() {
                 {channel.title} ({channel.videoCount} videos)
               </span>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/projects/${projectId}/editor`)}
-            >
-              Open Editor
-            </Button>
           </div>
         </div>
+
+        {/* Step Indicator */}
+        <div className="flex items-center justify-center gap-2 py-2">
+          {steps.map((step, i) => (
+            <React.Fragment key={step.label}>
+              {i > 0 && (
+                <div className={`h-px w-8 transition-colors ${step.done ? "bg-green-500" : "bg-muted"}`} />
+              )}
+              <div className="flex items-center gap-1.5">
+                <div className={`h-2 w-2 rounded-full transition-colors ${
+                  step.done ? "bg-green-500" : step.active ? "bg-blue-500 animate-pulse" : "bg-muted"
+                }`} />
+                <span className={`text-xs transition-colors ${
+                  step.done || step.active ? "text-foreground" : "text-muted-foreground"
+                }`}>
+                  {step.label}
+                </span>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Suggested next step */}
+        {!hasSource && (
+          <Card className="border-dashed">
+            <CardContent className="py-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Paste a YouTube URL above to get started
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
@@ -187,27 +229,31 @@ function ProjectDetailContent() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Scenes ({data.scenes.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">Scenes ({data.scenes.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
               <SceneResults
                 scenes={data.scenes}
                 onRefresh={refresh}
                 onSelectScene={(scene) => {
-                  const source = data.sources.find((s) => s.id === scene.sourceId);
-                  if (source) {
-                    router.push(`/projects/${projectId}/editor?sourceId=${source.id}`);
-                  }
+                  router.push(`/projects/${projectId}/editor?sceneId=${scene.id}&platform=${selectedPlatform?.id || "youtube-shorts"}`);
+                }}
+                onOpenEditor={(scene) => {
+                  router.push(`/projects/${projectId}/editor?sceneId=${scene.id}&platform=${selectedPlatform?.id || "youtube-shorts"}`);
                 }}
                 selectedSceneIds={selectedSceneIds}
                 onToggleScene={handleToggleScene}
                 onExport={handleExport}
                 exporting={exporting}
               />
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <PlatformSelector selected={selectedPlatform} onSelect={setSelectedPlatform} />
+          </div>
         </div>
 
         {data.clips.length > 0 && (

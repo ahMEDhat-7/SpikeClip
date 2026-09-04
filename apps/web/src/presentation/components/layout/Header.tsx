@@ -13,8 +13,7 @@ import {
   X,
   LogOut,
   User,
-  LayoutDashboard,
-  Film,
+  FolderKanban,
 } from "lucide-react";
 import { useAuth } from "@/application/hooks/use-auth";
 
@@ -137,8 +136,6 @@ export function Header() {
     setMobileOpen(false);
   }, [pathname]);
 
-  if (pathname.startsWith("/studio")) return null;
-
   const isActive = (path: string) => pathname === path;
 
   return (
@@ -188,22 +185,13 @@ export function Header() {
                   </div>
 
                   <Link
-                    href="/dashboard"
+                    href="/projects"
                     role="menuitem"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors"
                   >
-                    <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/studio"
-                    role="menuitem"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors"
-                  >
-                    <Film className="h-4 w-4 text-muted-foreground" />
-                    Studio
+                    <FolderKanban className="h-4 w-4 text-muted-foreground" />
+                    Projects
                   </Link>
                   {user.plan === "free" && (
                     <Link
@@ -337,20 +325,12 @@ export function Header() {
                 </div>
               </div>
               <Link
-                href="/dashboard"
+                href="/projects"
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboard
-              </Link>
-              <Link
-                href="/studio"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                <Film className="h-4 w-4" />
-                Studio
+                <FolderKanban className="h-4 w-4" />
+                Projects
               </Link>
               {user.plan === "free" && (
                 <Link

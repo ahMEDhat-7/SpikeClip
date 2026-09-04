@@ -11,7 +11,7 @@ import { useProjects } from "@/application/hooks/use-projects";
 import { useYoutubeConnection } from "@/application/hooks/use-youtube-connection";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-function DashboardContent() {
+function ProjectsContent() {
   const router = useRouter();
   const { projects, loading, error, create, remove } = useProjects();
   const { connected, channel, connect } = useYoutubeConnection();
@@ -47,8 +47,8 @@ function DashboardContent() {
       <div className="mx-auto max-w-6xl space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Manage your projects</p>
+            <h1 className="text-2xl font-bold">Projects</h1>
+            <p className="text-muted-foreground">Manage your video clip projects</p>
           </div>
           <div className="flex items-center gap-2">
             {connected ? (
@@ -186,7 +186,7 @@ function DashboardContent() {
   );
 }
 
-export default function DashboardPage() {
+export default function ProjectsPage() {
   return (
     <Suspense
       fallback={
@@ -195,7 +195,7 @@ export default function DashboardPage() {
         </div>
       }
     >
-      <DashboardContent />
+      <ProjectsContent />
     </Suspense>
   );
 }

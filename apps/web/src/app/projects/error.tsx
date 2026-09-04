@@ -2,7 +2,7 @@
 
 import { ErrorPage } from "@/presentation/components/ui/error-page";
 
-export default function DashboardError({
+export default function ProjectsError({
   error,
   reset,
 }: {
@@ -11,8 +11,8 @@ export default function DashboardError({
 }) {
   return (
     <ErrorPage
-      title="Dashboard error"
-      message="Failed to load your dashboard. Please try again."
+      title="Projects error"
+      message="Failed to load your projects. Please try again."
       error={error}
       reset={reset}
     />

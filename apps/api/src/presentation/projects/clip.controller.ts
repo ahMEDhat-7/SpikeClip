@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Delete, Param, Req, Body, Res } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Param, Req, Body, Res, UseInterceptors, UploadedFile } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { Request, Response } from "express";
 import { ClipService } from "./clip.service";
 import { ProjectExportService } from "../../application/services/project-export.service";
+
+const UPLOAD_MAX_SIZE_BYTES = 500 * 1024 * 1024;
+
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+}
 
 @ApiTags("Clips")
 @ApiBearerAuth()
@@ -45,6 +57,31 @@ export class ClipController {
       body.sceneIds,
       { platform: body.platform, quality: body.quality, format: body.format },
     );
+  }
+
+  @Post("editor-source")
+  @ApiOperation({ summary: "Prepare source video for the editor (downloads section, returns signed URL)" })
+  async prepareEditorSource(
+    @Req() req: Request & { user: { userId: string } },
+    @Param("projectId") projectId: string,
+    @Body() body: { sourceId: string; startTime: number; endTime: number },
+  ) {
+    return this.clipService.prepareEditorSource(req.user.userId, projectId, body);
+  }
+
+  @Post("editor-export")
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: UPLOAD_MAX_SIZE_BYTES } }))
+  @ApiOperation({ summary: "Save an exported clip from the editor" })
+  async exportEditorClip(
+    @Req() req: Request & { user: { userId: string } },
+    @Param("projectId") projectId: string,
+    @UploadedFile() file: MulterFile | undefined,
+    @Body() body: { startTime?: string; endTime?: string; platform?: string; duration?: string; peakIntensity?: string },
+  ) {
+    if (!file) {
+      return { error: "No file provided" };
+    }
+    return this.clipService.exportEditorClip(req.user.userId, projectId, file, body);
   }
 
   @Get(":clipId/download")

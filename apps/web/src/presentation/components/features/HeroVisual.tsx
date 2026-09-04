@@ -16,7 +16,7 @@ export function HeroVisual() {
             </div>
             <div className="flex-1 mx-4">
               <div className="rounded-lg bg-background/60 px-3 py-1 text-xs text-muted-foreground font-mono">
-                spikeclip.app/dashboard
+                spikeclip.app/projects
               </div>
             </div>
           </div>

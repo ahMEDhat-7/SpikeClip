@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Play, BarChart3, Download } from "lucide-react";
+import { Loader2, RefreshCw, Play, BarChart3, Download, Pencil } from "lucide-react";
 
 interface SceneItem {
   id: string;
@@ -22,6 +22,7 @@ interface SceneResultsProps {
   loading?: boolean;
   onRefresh?: () => void;
   onSelectScene?: (scene: SceneItem) => void;
+  onOpenEditor?: (scene: SceneItem) => void;
   selectedSceneIds?: Set<string>;
   onToggleScene?: (sceneId: string) => void;
   onExport?: (sceneIds: string[]) => Promise<void>;
@@ -46,6 +47,7 @@ export function SceneResults({
   loading = false,
   onRefresh,
   onSelectScene,
+  onOpenEditor,
   selectedSceneIds = new Set(),
   onToggleScene,
   onExport,
@@ -61,6 +63,15 @@ export function SceneResults({
           {onRefresh && (
             <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          )}
+          {onOpenEditor && selectedSceneIds.size === 1 && (
+            <Button variant="outline" size="sm" onClick={() => {
+              const scene = scenes.find((s) => selectedSceneIds.has(s.id));
+              if (scene) onOpenEditor(scene);
+            }}>
+              <Pencil className="mr-1 h-3 w-3" />
+              Edit
             </Button>
           )}
           {onExport && selectedSceneIds.size > 0 && (

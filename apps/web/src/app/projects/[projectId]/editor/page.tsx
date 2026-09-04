@@ -1,73 +1,114 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { SceneResults } from "@/presentation/components/scenes/SceneResults";
-import { ScenePreview } from "@/presentation/components/scenes/ScenePreview";
-import { SceneAdjuster } from "@/presentation/components/scenes/SceneAdjuster";
-import { SourceList } from "@/presentation/components/projects/SourceList";
+import { OpenReelEditor } from "@/presentation/components/studio/OpenReelEditor";
 import { useProjectDetails } from "@/application/hooks/use-projects";
-import { toastError, toastSuccess } from "@/lib/toast";
+
+interface SceneData {
+  id: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  sourceId: string;
+}
 
 function ProjectEditorContent() {
-  const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const projectId = params.projectId as string;
-  const sourceId = searchParams.get("sourceId") || "";
+  const sceneId = searchParams.get("sceneId");
+  const platform = searchParams.get("platform") || "youtube-shorts";
 
-  const { data, loading, error, addSource, removeSource, generateScenes, updateScene, refresh } = useProjectDetails(projectId);
-  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
-  const [generatingSourceId, setGeneratingSourceId] = useState<string | null>(null);
+  const { data, loading, error } = useProjectDetails(projectId);
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [scene, setScene] = useState<SceneData | null>(null);
+  const [preparing, setPreparing] = useState(true);
+  const [prepareError, setPrepareError] = useState<string | null>(null);
 
-  const selectedScene = data?.scenes.find((s) => s.id === selectedSceneId);
-  const source = data?.sources.find((s) => s.id === sourceId);
+  useEffect(() => {
+    if (!data || !sceneId) return;
 
-  const handleGenerateScenes = async (sid: string) => {
-    setGeneratingSourceId(sid);
-    try {
-      const result = await generateScenes(sid);
-      if (result.status === "already_running") {
-        toastError("Scene generation already in progress");
-      } else if (result.status === "completed" && result.sceneCount && result.sceneCount > 0) {
-        toastSuccess(`Generated ${result.sceneCount} scenes`);
-      } else if (result.status === "error") {
-        toastError(result.message ?? "No heatmap data available for this video");
-      } else if (result.status === "timeout") {
-        toastError(result.message ?? "Generation is taking longer than expected");
-      }
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : "Failed to generate scenes");
-    } finally {
-      setGeneratingSourceId(null);
+    const foundScene = data.scenes.find((s) => s.id === sceneId);
+    if (!foundScene) {
+      setPrepareError("Scene not found");
+      setPreparing(false);
+      return;
     }
-  };
 
-  if (loading) {
+    setScene(foundScene);
+
+    const prepareSource = async () => {
+      try {
+        const res = await fetch(`/api/projects/${projectId}/clips/editor-source`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            sourceId: foundScene.sourceId,
+            startTime: foundScene.startTime,
+            endTime: foundScene.endTime,
+          }),
+        });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.message || `Failed to prepare source (${res.status})`);
+        }
+
+        const result = (await res.json()) as { url: string };
+        setSourceUrl(result.url);
+      } catch (err) {
+        setPrepareError(err instanceof Error ? err.message : "Failed to prepare source");
+      } finally {
+        setPreparing(false);
+      }
+    };
+
+    prepareSource();
+  }, [data, sceneId, projectId]);
+
+  if (loading || preparing) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            {preparing ? "Preparing source video..." : "Loading project..."}
+          </p>
+        </div>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+      <div className="flex h-screen flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">{error ?? "Project not found"}</p>
-        <Button variant="outline" onClick={() => router.push("/dashboard")}>
-          Back to Dashboard
+        <Button variant="outline" onClick={() => router.push("/projects")}>
+          Back to Projects
+        </Button>
+      </div>
+    );
+  }
+
+  if (prepareError || !scene || !sourceUrl) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">{prepareError ?? "Could not prepare source video"}</p>
+        <Button variant="outline" onClick={() => router.push(`/projects/${projectId}`)}>
+          Back to Project
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex items-center gap-3 border-b bg-background/80 px-4 py-2 backdrop-blur-sm">
+    <div className="h-screen flex flex-col">
+      <header className="flex items-center gap-3 border-b bg-background/80 px-4 py-2 backdrop-blur-sm">
         <Button
           variant="ghost"
           size="sm"
@@ -79,56 +120,16 @@ function ProjectEditorContent() {
         <span className="truncate text-sm font-medium text-foreground/80">
           {data.project.name}
         </span>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {selectedScene && source ? (
-            <ScenePreview
-              videoId={source.youtubeVideoId}
-              startTime={selectedScene.startTime}
-              endTime={selectedScene.endTime}
-              duration={selectedScene.duration}
-            />
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <p className="text-muted-foreground">Select a scene to preview</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {selectedScene && (
-            <SceneAdjuster
-              sceneId={selectedScene.id}
-              startTime={selectedScene.startTime}
-              endTime={selectedScene.endTime}
-              duration={selectedScene.duration}
-              onSave={async (data) => {
-                await updateScene(selectedScene.id, {
-                  startTime: data.startTime,
-                  endTime: data.endTime,
-                });
-              }}
-            />
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <SourceList
-            sources={data.sources}
-            compact
-            onRemove={(id) => removeSource(id)}
-            onGenerateScenes={handleGenerateScenes}
-            generatingSourceId={generatingSourceId}
-          />
-
-          <SceneResults
-            scenes={data.scenes}
-            onSelectScene={(scene) => setSelectedSceneId(scene.id)}
-            onRefresh={refresh}
-          />
-        </div>
+      </header>
+      <div className="flex-1 overflow-hidden">
+        <OpenReelEditor
+          sourceUrl={sourceUrl}
+          exportUrl={`/api/projects/${projectId}/clips/editor-export`}
+          start={scene.startTime}
+          end={scene.endTime}
+          platform={platform}
+          onExportComplete={() => router.push(`/projects/${projectId}`)}
+        />
       </div>
     </div>
   );

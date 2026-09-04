@@ -6,8 +6,6 @@ import { usePathname } from "next/navigation";
 export function Footer() {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/studio")) return null;
-
   return (
     <footer className="border-t border-hairline bg-background">
       <div className="container mx-auto px-6 md:px-12 py-section">
@@ -44,13 +42,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link href="/studio" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Studio
+                <Link href="/projects" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Projects
                 </Link>
               </li>
             </ul>
