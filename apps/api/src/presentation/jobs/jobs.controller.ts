@@ -56,7 +56,7 @@ export class JobsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Create a new analysis job", description: "Submits a YouTube URL for heatmap analysis. Extracts video metadata and queues the job for processing." })
   @ApiResponse({ status: 201, description: "Job created successfully", type: JobResponseDto })
@@ -158,7 +158,7 @@ export class JobsController {
   }
 
   @Post(":id/process")
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Retry processing for a failed job", description: "Re-enqueues a failed job for heatmap analysis. Use this to retry after a transient failure." })
   @ApiParam({ name: "id", description: "Job UUID" })
@@ -233,7 +233,7 @@ export class JobsController {
   }
 
   @Post(":id/export")
-  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: "Export clips from job", description: "Queues export jobs for selected scenes. Returns clip job IDs for tracking." })
   @ApiParam({ name: "id", description: "Job UUID" })

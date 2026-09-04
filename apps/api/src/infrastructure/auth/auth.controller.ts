@@ -13,6 +13,7 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import {
   ApiTags,
   ApiOperation,
@@ -29,7 +30,7 @@ import { Public } from "./jwt-auth.guard";
 import { GoogleOAuthGuard } from "./google-auth.guard";
 
 const COOKIE_NAME = "access_token";
-const COOKIE_MAX_AGE = 15 * 60 * 1000; // 15 minutes
+const COOKIE_MAX_AGE = 1 * 24 * 60 * 60 * 1000; // 1 day
 
 function setAuthCookie(res: Response, token: string): void {
   const isProduction = process.env.NODE_ENV === "production";
@@ -57,7 +58,10 @@ function clearAuthCookie(res: Response): void {
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Public()
   @Post("logout")
@@ -74,11 +78,16 @@ export class AuthController {
   @ApiOperation({ summary: "Get current user", description: "Returns the authenticated user's profile." })
   @ApiResponse({ status: 200, description: "User profile", type: UserResponseDto })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getProfile(@Request() req: { user: { userId: string } }): Promise<UserResponseDto> {
+  async getProfile(
+    @Request() req: { user: { userId: string; email: string } },
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<UserResponseDto> {
     const profile = await this.authService.getProfile(req.user.userId);
     if (!profile) {
       throw new NotFoundException("User not found");
     }
+    const newToken = this.jwtService.sign({ sub: req.user.userId, email: req.user.email });
+    setAuthCookie(res, newToken);
     return profile;
   }
 

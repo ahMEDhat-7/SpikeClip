@@ -26,6 +26,8 @@ model User {
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   jobs                   Job[]
+  youtubeConnections     YoutubeConnection[]
+  projects               Project[]
 
   @@index([stripeCustomerId])
   @@index([oauthProvider, oauthProviderId])
@@ -85,4 +87,121 @@ model Clip {
   @@index([jobId])
   @@index([status])
   @@index([jobId, sceneIndex])
+}
+
+model YoutubeConnection {
+  id               String    @id @default(uuid())
+  userId           String
+  channelId        String
+  channelTitle     String?
+  channelThumbnail String?
+  provider         String    @default("youtube-studio-mcp")
+  status           String    @default("active")
+  lastSyncedAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects         Project[]
+
+  @@unique([userId, channelId])
+  @@index([userId])
+}
+
+model Project {
+  id                  String    @id @default(uuid())
+  userId              String
+  youtubeConnectionId String?
+  name                String
+  description         String?
+  status              String    @default("active")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  youtubeConnection   YoutubeConnection? @relation(fields: [youtubeConnectionId], references: [id], onDelete: SetNull)
+  sources             ProjectSource[]
+  scenes              ProjectScene[]
+  clips               GeneratedClip[]
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+model ProjectSource {
+  id              String   @id @default(uuid())
+  projectId       String
+  youtubeVideoId  String
+  youtubeUrl      String
+  title           String?
+  description     String?
+  thumbnailUrl    String?
+  duration        Float?
+  publishedAt     String?
+  viewCount       Int?
+  likeCount       Int?
+  commentCount    Int?
+  privacyStatus   String?
+  metadataJson    Json?
+  analyticsJson   Json?
+  sourceStatus    String   @default("discovered")
+  mediaStatus     String   @default("not_downloaded")
+  storageKey      String?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scenes          ProjectScene[]
+  clips           GeneratedClip[]
+
+  @@unique([projectId, youtubeVideoId])
+  @@index([projectId])
+  @@index([sourceStatus])
+}
+
+model ProjectScene {
+  id           String   @id @default(uuid())
+  projectId    String
+  sourceId     String
+  startTime    Float
+  endTime      Float
+  duration     Float
+  score        Float?
+  rank         Int?
+  analysisJson Json?
+  status       String   @default("candidate")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  source       ProjectSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  clips        GeneratedClip[]
+
+  @@index([projectId])
+  @@index([sourceId])
+  @@index([status])
+}
+
+model GeneratedClip {
+  id               String   @id @default(uuid())
+  projectId        String
+  sceneId          String
+  sourceId         String
+  status           String   @default("draft")
+  platform         String?
+  aspectRatio      String?
+  duration         Float?
+  editorConfigJson Json?
+  outputStorageKey String?
+  fileUrl          String?
+  size             Int?
+  progress         Int      @default(0)
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scene            ProjectScene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  source           ProjectSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([sceneId])
+  @@index([status])
 }

@@ -70,7 +70,7 @@ export class StudioController {
 
   @Post("translate")
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: "Translate a natural language prompt into StudioActions" })
   @ApiResponse({ status: 200, description: "Actions and FFmpeg command generated" })
   @ApiResponse({ status: 400, description: "Invalid prompt or clarification needed" })
@@ -92,7 +92,7 @@ export class StudioController {
 
   @Post("preview")
   @HttpCode(HttpStatus.ACCEPTED)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 15, ttl: 60_000 } })
   @ApiOperation({ summary: "Generate a preview video with applied actions" })
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 400, description: "Invalid actions or scene" })
@@ -102,7 +102,7 @@ export class StudioController {
 
   @Post("preview/:jobId/:sceneIndex")
   @HttpCode(HttpStatus.ACCEPTED)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 15, ttl: 60_000 } })
   @ApiOperation({ summary: "Generate preview for a specific job scene" })
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 404, description: "Job or scene not found" })

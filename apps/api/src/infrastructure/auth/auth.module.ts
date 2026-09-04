@@ -21,7 +21,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.register({
       secret: jwtSecret!,
-      signOptions: { expiresIn: "15m" },
+      signOptions: { expiresIn: "7d" },
     }),
   ],
   controllers: [AuthController],

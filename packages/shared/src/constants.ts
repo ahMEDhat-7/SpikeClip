@@ -81,6 +81,7 @@ export const QueueName = {
   ANALYSIS: "analysis",
   EXPORT: "export",
   SOURCE: "source",
+  SCENE_GENERATION: "scene-generation",
 } as const;
 export type QueueNameValue = (typeof QueueName)[keyof typeof QueueName];
 

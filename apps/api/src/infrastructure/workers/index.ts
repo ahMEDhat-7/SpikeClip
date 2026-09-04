@@ -8,6 +8,7 @@ import { YtdlpService } from "../external/ytdlp.service";
 import { createHeatmapWorker } from "./heatmap.worker";
 import { createClipWorker } from "./clip.worker";
 import { createSourceWorker } from "./source.worker";
+import { createSceneGenerationWorker } from "./scene-generation.worker";
 import { closeProgressPublisher } from "../redis/progress-publisher";
 
 const logger = new Logger("Workers");
@@ -15,6 +16,7 @@ const logger = new Logger("Workers");
 let heatmapWorker: Worker | null = null;
 let clipWorker: Worker | null = null;
 let sourceWorker: Worker | null = null;
+let sceneGenerationWorker: Worker | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let isShuttingDown = false;
 
@@ -29,6 +31,7 @@ function tryStartWorkers(
     heatmapWorker = createHeatmapWorker(prisma, authService, ytdlp);
     clipWorker = createClipWorker(prisma, storage, ffmpeg, ytdlp);
     sourceWorker = createSourceWorker(prisma, ytdlp, storage);
+    sceneGenerationWorker = createSceneGenerationWorker(prisma, ytdlp);
     logger.log("All workers started");
     return true;
   } catch (error) {
@@ -91,6 +94,10 @@ export async function stopWorkers(): Promise<void> {
   if (sourceWorker) {
     await sourceWorker.close();
     sourceWorker = null;
+  }
+  if (sceneGenerationWorker) {
+    await sceneGenerationWorker.close();
+    sceneGenerationWorker = null;
   }
   await closeProgressPublisher();
   logger.log("All workers stopped");

@@ -21,11 +21,13 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
   private readonly analysisQueue: Queue;
   private readonly exportQueue: Queue;
   private readonly sourceQueue: Queue;
+  private readonly sceneGenerationQueue: Queue;
 
   constructor() {
     this.analysisQueue = new Queue("analysis", { connection: connectionOptions });
     this.exportQueue = new Queue("export", { connection: connectionOptions });
     this.sourceQueue = new Queue("source", { connection: connectionOptions });
+    this.sceneGenerationQueue = new Queue("scene-generation", { connection: connectionOptions });
     this.logger.log("Queues initialized");
   }
 
@@ -66,6 +68,19 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
     await this.sourceQueue.add("prepare-source", { ...data, jobId }, {
       jobId: bullJobId,
       attempts: 3,
+      backoff: { type: "exponential", delay: 5000 },
+      ...JOB_CLEANUP,
+    });
+    return bullJobId;
+  }
+
+  async addSceneGenerationJob(
+    data: { sourceId: string; projectId: string; userId: string }
+  ): Promise<string> {
+    const bullJobId = `scene-${data.sourceId}-${randomUUID().slice(0, 8)}`;
+    await this.sceneGenerationQueue.add("generate-scenes", data, {
+      jobId: bullJobId,
+      attempts: 2,
       backoff: { type: "exponential", delay: 5000 },
       ...JOB_CLEANUP,
     });
@@ -125,6 +140,11 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       await this.sourceQueue.close();
     } catch (err) {
       this.logger.error(`Failed to close source queue: ${err}`);
+    }
+    try {
+      await this.sceneGenerationQueue.close();
+    } catch (err) {
+      this.logger.error(`Failed to close scene generation queue: ${err}`);
     }
   }
 }
