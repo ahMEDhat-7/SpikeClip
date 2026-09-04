@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, Play, BarChart3 } from "lucide-react";
+import { Loader2, RefreshCw, Play, BarChart3, Download } from "lucide-react";
 
 interface SceneItem {
   id: string;
@@ -22,6 +22,10 @@ interface SceneResultsProps {
   loading?: boolean;
   onRefresh?: () => void;
   onSelectScene?: (scene: SceneItem) => void;
+  selectedSceneIds?: Set<string>;
+  onToggleScene?: (sceneId: string) => void;
+  onExport?: (sceneIds: string[]) => Promise<void>;
+  exporting?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -37,20 +41,39 @@ function getScoreColor(score: number | null): string {
   return "text-orange-500";
 }
 
-export function SceneResults({ scenes, loading = false, onRefresh, onSelectScene }: SceneResultsProps) {
-  const selectedScenes = scenes.filter((s) => s.status === "selected");
-
+export function SceneResults({
+  scenes,
+  loading = false,
+  onRefresh,
+  onSelectScene,
+  selectedSceneIds = new Set(),
+  onToggleScene,
+  onExport,
+  exporting = false,
+}: SceneResultsProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-lg font-semibold">
           Scenes ({scenes.length})
         </CardTitle>
-        {onRefresh && (
-          <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {onRefresh && (
+            <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          )}
+          {onExport && selectedSceneIds.size > 0 && (
+            <Button size="sm" onClick={() => onExport(Array.from(selectedSceneIds))} disabled={exporting}>
+              {exporting ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <Download className="mr-1 h-3 w-3" />
+              )}
+              Export {selectedSceneIds.size} Clip{selectedSceneIds.size !== 1 ? "s" : ""}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -64,39 +87,56 @@ export function SceneResults({ scenes, loading = false, onRefresh, onSelectScene
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              {selectedScenes.length} selected for export
-            </p>
+            {selectedSceneIds.size > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {selectedSceneIds.size} selected for export
+              </p>
+            )}
             <div className="space-y-2">
-              {scenes.map((scene) => (
-                <div
-                  key={scene.id}
-                  className={`flex items-center gap-3 rounded-md border p-3 transition-colors cursor-pointer hover:bg-accent ${
-                    scene.status === "selected" ? "border-primary bg-primary/5" : ""
-                  }`}
-                  onClick={() => onSelectScene?.(scene)}
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                    {scene.rank ?? "-"}
+              {scenes.map((scene) => {
+                const isSelected = selectedSceneIds.has(scene.id);
+                return (
+                  <div
+                    key={scene.id}
+                    className={`flex items-center gap-3 rounded-md border p-3 transition-colors cursor-pointer hover:bg-accent ${
+                      isSelected ? "border-primary bg-primary/5" : ""
+                    }`}
+                    onClick={() => {
+                      if (onToggleScene) {
+                        onToggleScene(scene.id);
+                      } else {
+                        onSelectScene?.(scene);
+                      }
+                    }}
+                  >
+                    {onToggleScene && (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggleScene(scene.id)}
+                        className="h-4 w-4 rounded border-primary"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    )}
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                      {scene.rank ?? "-"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">
+                        {formatTime(scene.startTime)} - {formatTime(scene.endTime)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {scene.duration.toFixed(1)}s
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-medium ${getScoreColor(scene.score)}`}>
+                        {scene.score !== null ? (scene.score * 100).toFixed(0) : "-"}%
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
-                      {formatTime(scene.startTime)} - {formatTime(scene.endTime)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {scene.duration.toFixed(1)}s
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-medium ${getScoreColor(scene.score)}`}>
-                      {scene.score !== null ? (scene.score * 100).toFixed(0) : "-"}%
-                    </p>
-                    <Badge variant={scene.status === "selected" ? "default" : "secondary"}>
-                      {scene.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

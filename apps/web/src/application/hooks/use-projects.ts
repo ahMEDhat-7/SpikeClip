@@ -60,9 +60,11 @@ interface UseProjectDetailsReturn {
   loading: boolean;
   error: string | null;
   addSource: (videoId: string) => Promise<void>;
+  addSourceByUrl: (url: string) => Promise<void>;
   removeSource: (sourceId: string) => Promise<void>;
   generateScenes: (sourceId: string) => Promise<{ status: string; message?: string; sceneCount?: number }>;
   updateScene: (sceneId: string, data: { startTime?: number; endTime?: number; status?: string }) => Promise<void>;
+  exportClips: (sceneIds: string[], config?: { platform?: string; quality?: string; format?: string }) => Promise<{ clipIds: string[]; count: number }>;
   refresh: () => Promise<void>;
 }
 
@@ -89,6 +91,11 @@ export function useProjectDetails(projectId: string): UseProjectDetailsReturn {
 
   const addSource = useCallback(async (videoId: string) => {
     await projectApi.addSource(projectId, videoId);
+    await loadDetails();
+  }, [projectApi, projectId, loadDetails]);
+
+  const addSourceByUrl = useCallback(async (url: string) => {
+    await projectApi.addSourceByUrl(projectId, url);
     await loadDetails();
   }, [projectApi, projectId, loadDetails]);
 
@@ -141,5 +148,9 @@ export function useProjectDetails(projectId: string): UseProjectDetailsReturn {
     }
   }, [loadDetails]);
 
-  return { data, loading, error, addSource, removeSource, generateScenes, updateScene, refresh };
+  const exportClips = useCallback(async (sceneIds: string[], config?: { platform?: string; quality?: string; format?: string }) => {
+    return projectApi.exportClips(projectId, sceneIds, config);
+  }, [projectApi, projectId]);
+
+  return { data, loading, error, addSource, addSourceByUrl, removeSource, generateScenes, updateScene, exportClips, refresh };
 }

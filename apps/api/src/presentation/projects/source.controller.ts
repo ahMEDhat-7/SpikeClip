@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Req } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Param, Req, Body } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { Request } from "express";
 import { SourceService } from "./source.service";
@@ -16,6 +16,16 @@ export class SourceController {
     @Param("projectId") projectId: string,
   ) {
     return this.sourceService.list(req.user.userId, projectId);
+  }
+
+  @Post("by-url")
+  @ApiOperation({ summary: "Add a YouTube video by URL (uses yt-dlp, no MCP needed)" })
+  async addByUrl(
+    @Req() req: Request & { user: { userId: string } },
+    @Param("projectId") projectId: string,
+    @Body() body: { url: string },
+  ) {
+    return this.sourceService.addByUrl(req.user.userId, projectId, body.url);
   }
 
   @Post(":videoId")

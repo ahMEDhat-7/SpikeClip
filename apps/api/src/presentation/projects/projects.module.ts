@@ -19,10 +19,12 @@ import { GENERATED_CLIP_REPOSITORY } from "../../domain/repositories/generated-c
 import { YOUTUBE_CONNECTION_REPOSITORY } from "../../domain/repositories/youtube-connection.repository";
 import { YoutubeModule } from "../../infrastructure/youtube/youtube.module";
 import { ExternalModule } from "../../infrastructure/external/external.module";
+import { StorageModule } from "../../infrastructure/storage/storage.module";
 import { SceneGenerationModule } from "../../application/services/scene-generation.module";
+import { ProjectExportModule } from "../../application/services/project-export.module";
 
 @Module({
-  imports: [YoutubeModule, SceneGenerationModule, ExternalModule],
+  imports: [YoutubeModule, SceneGenerationModule, ProjectExportModule, ExternalModule, StorageModule],
   controllers: [ProjectController, SourceController, SceneController, ClipController],
   providers: [
     ProjectService,

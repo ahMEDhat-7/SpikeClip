@@ -24,14 +24,13 @@ import { Response } from "express";
 import { Observable } from "rxjs";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { ClipRepository, CLIP_REPOSITORY } from "../../domain/repositories/clip.repository";
-import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
 import { ClipResponseDto } from "./dto/clip-response.dto";
 import { STORAGE_SERVICE, StorageService } from "../../infrastructure/storage/storage.interface";
 import { LocalStorageService } from "../../infrastructure/storage/local-storage.service";
 import { toClipResponse } from "../../application/mappers/clip.mapper";
 import { Public } from "../../infrastructure/auth/jwt-auth.guard";
 import { subscribeToJobProgress } from "../../infrastructure/redis/progress-subscriber";
-import { PlanTier, ClipStatus, EXTENSION_TO_MIME, AUDIO_EXTENSIONS, MimeTypes } from "@spikeclip/shared";
+import { ClipStatus, EXTENSION_TO_MIME, AUDIO_EXTENSIONS, MimeTypes } from "@spikeclip/shared";
 
 @ApiTags("Clips")
 @Controller("clips")
@@ -41,7 +40,6 @@ export class ClipsController {
   constructor(
     @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
     @Inject(CLIP_REPOSITORY) private readonly clipRepository: ClipRepository,
-    @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService
   ) {}
 
@@ -146,11 +144,6 @@ export class ClipsController {
     const job = await this.jobRepository.findById(clip.jobId);
     if (!job || job.userId !== req.user?.userId) {
       throw new ForbiddenException("Clip does not belong to you");
-    }
-
-    const user = await this.userRepository.findById(req.user?.userId);
-    if (!user || user.plan === PlanTier.FREE) {
-      throw new ForbiddenException("Pro or Team plan required to download clips");
     }
 
     if (clip.status !== ClipStatus.COMPLETED || !clip.fileUrl) {

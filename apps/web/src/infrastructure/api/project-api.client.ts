@@ -62,6 +62,14 @@ export class ProjectApiClient implements ProjectApiPort {
     return fetchJson(`/api/projects/${projectId}/sources/${videoId}`, { method: "POST" });
   }
 
+  async addSourceByUrl(projectId: string, url: string): Promise<ProjectSource> {
+    return fetchJson(`/api/projects/${projectId}/sources/by-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+  }
+
   async removeSource(projectId: string, sourceId: string): Promise<void> {
     await fetchJson(`/api/projects/${projectId}/sources/${sourceId}`, { method: "DELETE" });
   }
@@ -96,5 +104,13 @@ export class ProjectApiClient implements ProjectApiPort {
 
   async removeClip(projectId: string, clipId: string): Promise<void> {
     await fetchJson(`/api/projects/${projectId}/clips/${clipId}`, { method: "DELETE" });
+  }
+
+  async exportClips(projectId: string, sceneIds: string[], config?: { platform?: string; quality?: string; format?: string }): Promise<{ clipIds: string[]; count: number }> {
+    return fetchJson(`/api/projects/${projectId}/clips/export`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sceneIds, ...config }),
+    });
   }
 }

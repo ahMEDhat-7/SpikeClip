@@ -1,7 +1,8 @@
-import { Injectable, Inject, Logger, NotFoundException } from "@nestjs/common";
+import { Injectable, Inject, Logger, NotFoundException, BadRequestException } from "@nestjs/common";
 import { PROJECT_SOURCE_REPOSITORY, type ProjectSourceRepository } from "../../domain/repositories/project-source.repository";
 import { PROJECT_REPOSITORY, type ProjectRepository } from "../../domain/repositories/project.repository";
 import { YOUTUBE_STUDIO_PROVIDER, type YoutubeStudioProvider } from "../../domain/ports/youtube-studio.provider";
+import { YtdlpService } from "../../infrastructure/external/ytdlp.service";
 
 @Injectable()
 export class SourceService {
@@ -11,6 +12,7 @@ export class SourceService {
     @Inject(PROJECT_SOURCE_REPOSITORY) private readonly sourceRepo: ProjectSourceRepository,
     @Inject(PROJECT_REPOSITORY) private readonly projectRepo: ProjectRepository,
     @Inject(YOUTUBE_STUDIO_PROVIDER) private readonly youtubeProvider: YoutubeStudioProvider,
+    private readonly ytdlpService: YtdlpService,
   ) {}
 
   async list(userId: string, projectId: string) {
@@ -43,6 +45,46 @@ export class SourceService {
       metadataJson: { tags: video.tags, categoryId: video.categoryId, defaultLanguage: video.defaultLanguage },
     });
     return source.toRaw();
+  }
+
+  async addByUrl(userId: string, projectId: string, url: string) {
+    await this.ensureOwnership(userId, projectId);
+
+    const videoId = this.extractVideoId(url);
+    if (!videoId) {
+      throw new BadRequestException("Invalid YouTube URL. Must be a youtube.com or youtu.be link.");
+    }
+
+    const existing = await this.sourceRepo.findByProjectIdAndVideoId(projectId, videoId);
+    if (existing) {
+      return existing.toRaw();
+    }
+
+    const metadata = await this.ytdlpService.extractMetadata(url);
+
+    const source = await this.sourceRepo.create({
+      projectId,
+      youtubeVideoId: videoId,
+      youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+      title: metadata.title,
+      thumbnailUrl: metadata.thumbnail,
+      duration: metadata.duration,
+      publishedAt: metadata.uploadDate,
+      viewCount: metadata.viewCount ?? 0,
+      metadataJson: { channelName: metadata.channelName },
+    });
+    return source.toRaw();
+  }
+
+  private extractVideoId(url: string): string | null {
+    const patterns = [
+      /(?:youtube\.com\/watch\?.*?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const p of patterns) {
+      const m = url.match(p);
+      if (m) return m[1];
+    }
+    return null;
   }
 
   async remove(userId: string, projectId: string, sourceId: string) {

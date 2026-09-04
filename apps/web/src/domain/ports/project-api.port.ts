@@ -84,6 +84,7 @@ export interface ProjectApiPort {
   getDetails(projectId: string): Promise<ProjectWithDetails>;
   listSources(projectId: string): Promise<ProjectSource[]>;
   addSource(projectId: string, videoId: string): Promise<ProjectSource>;
+  addSourceByUrl(projectId: string, url: string): Promise<ProjectSource>;
   removeSource(projectId: string, sourceId: string): Promise<void>;
   listScenes(projectId: string): Promise<ProjectScene[]>;
   generateScenes(projectId: string, sourceId: string): Promise<{ status: string; bullJobId?: string; sourceId?: string; message?: string }>;
@@ -92,4 +93,5 @@ export interface ProjectApiPort {
   listClips(projectId: string): Promise<GeneratedClip[]>;
   getClip(projectId: string, clipId: string): Promise<GeneratedClip>;
   removeClip(projectId: string, clipId: string): Promise<void>;
+  exportClips(projectId: string, sceneIds: string[], config?: { platform?: string; quality?: string; format?: string }): Promise<{ clipIds: string[]; count: number }>;
 }

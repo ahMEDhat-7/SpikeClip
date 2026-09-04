@@ -2,10 +2,12 @@
 
 import { Suspense, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Plus } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Link, Youtube, Download, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { VideoBrowser } from "@/presentation/components/youtube/VideoBrowser";
+import { UrlSourceInput } from "@/presentation/components/projects/UrlSourceInput";
 import { SourceList } from "@/presentation/components/projects/SourceList";
 import { SceneResults } from "@/presentation/components/scenes/SceneResults";
 import { useProjectDetails } from "@/application/hooks/use-projects";
@@ -17,9 +19,21 @@ function ProjectDetailContent() {
   const router = useRouter();
   const projectId = params.projectId as string;
   const { connected, channel } = useYoutubeConnection();
-  const { data, loading, error, addSource, removeSource, generateScenes, refresh } = useProjectDetails(projectId);
-  const [showBrowser, setShowBrowser] = useState(false);
+  const {
+    data,
+    loading,
+    error,
+    addSource,
+    addSourceByUrl,
+    removeSource,
+    generateScenes,
+    exportClips,
+    refresh,
+  } = useProjectDetails(projectId);
+  const [addMode, setAddMode] = useState<"url" | "browse">("url");
   const [generatingSourceId, setGeneratingSourceId] = useState<string | null>(null);
+  const [selectedSceneIds, setSelectedSceneIds] = useState<Set<string>>(new Set());
+  const [exporting, setExporting] = useState(false);
 
   const handleGenerateScenes = async (sourceId: string) => {
     setGeneratingSourceId(sourceId);
@@ -39,6 +53,36 @@ function ProjectDetailContent() {
     } finally {
       setGeneratingSourceId(null);
     }
+  };
+
+  const handleToggleScene = (sceneId: string) => {
+    setSelectedSceneIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sceneId)) {
+        next.delete(sceneId);
+      } else {
+        next.add(sceneId);
+      }
+      return next;
+    });
+  };
+
+  const handleExport = async (sceneIds: string[]) => {
+    setExporting(true);
+    try {
+      const result = await exportClips(sceneIds);
+      toastSuccess(`Enqueued ${result.count} clip(s) for export`);
+      setSelectedSceneIds(new Set());
+      await refresh();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Failed to export clips");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadClip = async (clipId: string) => {
+    window.open(`/api/projects/${projectId}/clips/${clipId}/download`, "_blank");
   };
 
   if (loading) {
@@ -104,17 +148,29 @@ function ProjectDetailContent() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Sources ({data.sources.length})</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowBrowser(!showBrowser)}
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Add Video
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant={addMode === "url" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAddMode("url")}
+                >
+                  <Link className="mr-1 h-3 w-3" />
+                  Paste URL
+                </Button>
+                <Button
+                  variant={addMode === "browse" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAddMode("browse")}
+                >
+                  <Youtube className="mr-1 h-3 w-3" />
+                  Browse
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {showBrowser && (
+              {addMode === "url" ? (
+                <UrlSourceInput onAddUrl={addSourceByUrl} />
+              ) : (
                 <VideoBrowser
                   onAddVideo={async (videoId) => {
                     await addSource(videoId);
@@ -132,7 +188,7 @@ function ProjectDetailContent() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Scenes ({data.scenes.length})</CardTitle>
             </CardHeader>
             <CardContent>
@@ -145,10 +201,65 @@ function ProjectDetailContent() {
                     router.push(`/projects/${projectId}/editor?sourceId=${source.id}`);
                   }
                 }}
+                selectedSceneIds={selectedSceneIds}
+                onToggleScene={handleToggleScene}
+                onExport={handleExport}
+                exporting={exporting}
               />
             </CardContent>
           </Card>
         </div>
+
+        {data.clips.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Clips ({data.clips.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {data.clips.map((clip) => (
+                  <div
+                    key={clip.id}
+                    className="flex items-center gap-3 rounded-md border p-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        Clip {clip.id.slice(0, 8)}
+                      </p>
+                      {clip.errorMessage && (
+                        <p className="text-xs text-destructive truncate">{clip.errorMessage}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        clip.status === "completed" ? "default" :
+                        clip.status === "failed" ? "destructive" :
+                        "secondary"
+                      }>
+                        {clip.status}
+                      </Badge>
+                      {clip.status === "completed" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadClip(clip.id)}
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {clip.status === "failed" && (
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      )}
+                      {clip.status === "completed" && (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

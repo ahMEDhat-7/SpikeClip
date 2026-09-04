@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { randomUUID } from "crypto";
 import { Queue, Worker, Job } from "bullmq";
-import { QueueService, ExportJobConfig } from "../../domain/services/queue";
+import { QueueService, ExportJobConfig, ProjectExportJobData } from "../../domain/services/queue";
 
 const connectionOptions = {
   host: process.env.REDIS_HOST || "localhost",
@@ -22,12 +22,14 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
   private readonly exportQueue: Queue;
   private readonly sourceQueue: Queue;
   private readonly sceneGenerationQueue: Queue;
+  private readonly projectExportQueue: Queue;
 
   constructor() {
     this.analysisQueue = new Queue("analysis", { connection: connectionOptions });
     this.exportQueue = new Queue("export", { connection: connectionOptions });
     this.sourceQueue = new Queue("source", { connection: connectionOptions });
     this.sceneGenerationQueue = new Queue("scene-generation", { connection: connectionOptions });
+    this.projectExportQueue = new Queue("project-export", { connection: connectionOptions });
     this.logger.log("Queues initialized");
   }
 
@@ -82,6 +84,17 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       jobId: bullJobId,
       attempts: 2,
       backoff: { type: "exponential", delay: 5000 },
+      ...JOB_CLEANUP,
+    });
+    return bullJobId;
+  }
+
+  async addProjectExportJob(data: ProjectExportJobData): Promise<string> {
+    const bullJobId = `proj-export-${data.clipId}-${randomUUID().slice(0, 8)}`;
+    await this.projectExportQueue.add("export-clip", data, {
+      jobId: bullJobId,
+      attempts: 2,
+      backoff: { type: "exponential", delay: 10000 },
       ...JOB_CLEANUP,
     });
     return bullJobId;
@@ -145,6 +158,11 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       await this.sceneGenerationQueue.close();
     } catch (err) {
       this.logger.error(`Failed to close scene generation queue: ${err}`);
+    }
+    try {
+      await this.projectExportQueue.close();
+    } catch (err) {
+      this.logger.error(`Failed to close project export queue: ${err}`);
     }
   }
 }

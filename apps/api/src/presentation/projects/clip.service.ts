@@ -2,6 +2,7 @@ import { Injectable, Inject, Logger, NotFoundException } from "@nestjs/common";
 import { GENERATED_CLIP_REPOSITORY, type GeneratedClipRepository } from "../../domain/repositories/generated-clip.repository";
 import { PROJECT_SCENE_REPOSITORY, type ProjectSceneRepository } from "../../domain/repositories/project-scene.repository";
 import { PROJECT_REPOSITORY, type ProjectRepository } from "../../domain/repositories/project.repository";
+import { STORAGE_SERVICE, type StorageService } from "../../infrastructure/storage/storage.interface";
 
 @Injectable()
 export class ClipService {
@@ -11,6 +12,7 @@ export class ClipService {
     @Inject(GENERATED_CLIP_REPOSITORY) private readonly clipRepo: GeneratedClipRepository,
     @Inject(PROJECT_SCENE_REPOSITORY) private readonly sceneRepo: ProjectSceneRepository,
     @Inject(PROJECT_REPOSITORY) private readonly projectRepo: ProjectRepository,
+    @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
   ) {}
 
   async list(userId: string, projectId: string) {
@@ -37,6 +39,10 @@ export class ClipService {
   async remove(userId: string, projectId: string, clipId: string) {
     await this.ensureOwnership(userId, projectId);
     return this.clipRepo.delete(clipId);
+  }
+
+  async getSignedDownloadUrl(fileUrl: string): Promise<string> {
+    return this.storage.getSignedUrl(fileUrl);
   }
 
   private async ensureOwnership(userId: string, projectId: string) {
