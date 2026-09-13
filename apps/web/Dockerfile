@@ -1,9 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ─── Builder ───
-FROM node:22-slim AS builder
-
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+FROM spikeclip-base:ci AS builder
 
 WORKDIR /app
 
@@ -11,6 +9,8 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
+# Copy vendor submodule for @openreel/core dependency (file: protocol)
+COPY vendor/openreel-video ./vendor/openreel-video
 RUN pnpm install --frozen-lockfile
 
 # Build shared package
@@ -22,9 +22,7 @@ COPY apps/web ./apps/web
 RUN pnpm --filter @spikeclip/web build
 
 # ─── Runtime ───
-FROM node:22-slim AS runtime
-
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+FROM spikeclip-base:ci AS runtime
 
 WORKDIR /app
 

@@ -125,14 +125,49 @@ jobs:
       - run: pnpm build
 
   # ─────────────────────────────────────────────────────────────────────────
+  # NEW: builds shared base image with ffmpeg, python3, yt-dlp, pnpm
+  # Cached via GHA cache for fast subsequent runs
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-base:
+    name: Build Base Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+
+      - name: Build base image
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: .
+          file: docker/base.Dockerfile
+          push: false
+          load: true
+          tags: spikeclip-base:ci
+          cache-from: type=gha,scope=base
+          cache-to: type=gha,mode=max,scope=base
+
+      - name: Save base image for docker-build job
+        run: docker save spikeclip-base:ci -o /tmp/base.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-base
+          path: /tmp/base.tar
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
   # NEW: builds each service's Docker image and caches it for the
-  # connectivity job below. Adjust `dockerfile` paths if yours differ —
-  # these assume Dockerfiles live in `docker/`, per the current repo layout.
+  # connectivity job below. Uses shared base image from docker-base job.
   # ─────────────────────────────────────────────────────────────────────────
   docker-build:
     name: Build Docker Images (${{ matrix.service }})
     runs-on: ubuntu-latest
-    needs: [lint, prisma-validate, test, security-audit]
+    needs: [docker-base]
+    timeout-minutes: 15
     strategy:
       matrix:
         include:
@@ -144,6 +179,14 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           submodules: recursive
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-base
+          path: /tmp
+
+      - name: Load base image
+        run: docker load -i /tmp/base.tar
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.0.0

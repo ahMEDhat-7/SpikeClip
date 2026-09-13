@@ -1,18 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ─── Builder ───
-FROM node:22-slim AS builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    python3 \
-    python3-pip \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip3 install --break-system-packages yt-dlp
-
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+FROM spikeclip-base:ci AS builder
 
 WORKDIR /app
 
@@ -34,18 +23,7 @@ COPY apps/api ./apps/api
 RUN pnpm --filter @spikeclip/api build
 
 # ─── Runtime ───
-FROM node:22-slim AS runtime
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    python3 \
-    python3-pip \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip3 install --break-system-packages yt-dlp
-
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+FROM spikeclip-base:ci AS runtime
 
 WORKDIR /app
 
