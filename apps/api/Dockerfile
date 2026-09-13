@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ─── Builder ───
-FROM node:24-slim AS builder
+FROM node:22-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
@@ -34,7 +34,7 @@ COPY apps/api ./apps/api
 RUN pnpm --filter @spikeclip/api build
 
 # ─── Runtime ───
-FROM node:24-slim AS runtime
+FROM node:22-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \

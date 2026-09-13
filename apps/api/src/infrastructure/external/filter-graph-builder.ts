@@ -9,6 +9,7 @@ import {
   SetTransitionAction,
   AddBackgroundAction,
   TrimAction,
+  HookOverlayAction,
   PlatformId,
   OutputQuality,
   OutputFormat,
@@ -121,6 +122,9 @@ export class FilterGraphBuilder {
         break;
       case "trim":
         this.applyTrim(action, chain);
+        break;
+      case "hook_overlay":
+        this.applyHookOverlay(action, chain);
         break;
     }
   }
@@ -431,6 +435,48 @@ export class FilterGraphBuilder {
     } else if (action.endTime !== undefined) {
       chain.trimDuration = action.endTime;
     }
+  }
+
+  private applyHookOverlay(action: HookOverlayAction, chain: FilterChain): void {
+    const duration = action.durationSec ?? 1.5;
+    const bg = (action.backgroundColor ?? "#000000CC").replace("#", "0x");
+    const textColor = (action.textColor ?? "#FFFFFF").replace("#", "0x");
+    const fontSize = Math.round((action.fontSize ?? 72) * 0.5);
+    const escaped = this.escapeText(action.text);
+
+    let yExpr: string;
+    switch (action.position) {
+      case "top": yExpr = "h*0.15"; break;
+      case "bottom": yExpr = "h-text_h-h*0.15"; break;
+      default: yExpr = "(h-text_h)/2";
+    }
+
+    const fadeIn = Math.min(0.3, duration * 0.3);
+    const holdStart = fadeIn;
+    const fadeOutStart = Math.max(0, duration - fadeIn);
+    const fadeOut = fadeIn;
+
+    chain.videoFilters.push(
+      `drawbox=x=0:y=(ih/2)-${fontSize + 20}:w=iw:h=${fontSize + 40}:color=${bg}@enable='between(t,0,${duration})'`
+    );
+
+    let drawtext =
+      `drawtext=text='${escaped}'` +
+      `:fontsize=${fontSize}` +
+      `:fontcolor=${textColor}` +
+      `:x=(w-text_w)/2` +
+      `:y=${yExpr}` +
+      `:enable='between(t,0,${duration})'`;
+
+    if (action.animation === "fade") {
+      drawtext += `:alpha='if(between(t,0,${fadeIn}),t/${fadeIn},if(between(t,${fadeOutStart},${duration}),(${duration}-t)/${fadeOut},1))'`;
+    } else if (action.animation === "pop") {
+      drawtext += `:alpha='if(between(t,0,${fadeIn}),min(t/${fadeIn}*1.5,1),if(between(t,${fadeOutStart},${duration}),(${duration}-t)/${fadeOut},1))'`;
+    } else if (action.animation === "slide") {
+      drawtext += `:x='if(between(t,0,${fadeIn}),(w-text_w)*(1-t/${fadeIn})/2+(text_w)/2,(w-text_w)/2)'`;
+    }
+
+    chain.videoFilters.push(drawtext);
   }
 
   buildPreviewCommand(input: BuildCommandInput): BuildCommandResult {

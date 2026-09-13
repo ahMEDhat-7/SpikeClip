@@ -14,7 +14,7 @@ export class User {
     public clipsLimit: number = 2,
     public analysesResetAt?: Date,
     public readonly createdAt: Date = new Date(),
-    public updatedAt: Date = new Date()
+    public updatedAt: Date = new Date(),
   ) {}
 
   canAnalyze(): boolean {

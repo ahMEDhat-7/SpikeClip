@@ -8,13 +8,20 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
   private readonly logger = new Logger(GoogleStrategy.name);
 
   constructor(private readonly authService: AuthService) {
+    const youtubeScopes = [
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/youtube.readonly",
+      "https://www.googleapis.com/auth/yt-analytics.readonly",
+    ];
+
     super({
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: `${process.env.BACKEND_URL || "http://localhost:3001"}/api/auth/google/callback`,
-      scope: ["email", "profile"],
+      scope: youtubeScopes,
       state: false,
-    });
+    } as any);
   }
 
   async validate(
@@ -37,6 +44,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
         providerId: id,
         email,
         name: displayName || email.split("@")[0],
+        youtubeTokens: {
+          accessToken,
+          refreshToken: refreshToken || undefined,
+          expiresAt: new Date(Date.now() + 3600 * 1000),
+        },
       });
       done(null, user);
     } catch (err) {

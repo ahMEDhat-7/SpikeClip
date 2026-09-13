@@ -7,10 +7,12 @@ import { FilterGraphBuilder } from "./filter-graph-builder";
 import { MimoLLMProvider } from "./mimo-llm.provider";
 import { LLM_PROVIDER } from "./llm-provider.interface";
 import { QUEUE_SERVICE } from "../../domain/services/queue";
+import { PatternPresetModule } from "../../application/services/pattern-preset.module";
 
 export const FFMPEG_SERVICE = "FFMPEG_SERVICE";
 
 @Module({
+  imports: [PatternPresetModule],
   providers: [
     { provide: FFMPEG_SERVICE, useClass: FfmpegService },
     { provide: QUEUE_SERVICE, useClass: BullMQQueueService },

@@ -1,7 +1,8 @@
-export type CaptionFont = "inter" | "impact" | "bebas" | "playfair" | "mono";
+export type CaptionFont = "inter" | "impact" | "bebas" | "playfair" | "mono" | "noto-arabic" | "noto-naskh" | "noto-kufi";
 export type CaptionPosition = "top" | "center" | "bottom" | "left" | "right";
 export type CaptionTextStyle = "bold" | "outlined" | "shadow" | "neon";
 export type CaptionTextAlign = "left" | "center" | "right";
+export type TextDirection = "ltr" | "rtl" | "auto";
 
 export interface Caption {
   id: string;
@@ -23,6 +24,7 @@ export interface Caption {
   shadowRadius: number;
   x?: number;
   y?: number;
+  direction?: TextDirection;
 }
 
 export function createCaption(overrides?: Partial<Caption>): Caption {
@@ -45,6 +47,20 @@ export function createCaption(overrides?: Partial<Caption>): Caption {
     shadowRadius: 0,
     x: 50,
     y: 50,
+    direction: "auto",
     ...overrides,
   };
+}
+
+export function detectTextDirection(text: string): TextDirection {
+  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  return arabicRegex.test(text) ? "rtl" : "ltr";
+}
+
+export function autoCaptionFont(text: string, currentFont: CaptionFont): CaptionFont {
+  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  if (arabicRegex.test(text) && !["noto-arabic", "noto-naskh", "noto-kufi"].includes(currentFont)) {
+    return "noto-arabic";
+  }
+  return currentFont;
 }

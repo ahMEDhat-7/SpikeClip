@@ -11,19 +11,21 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   PNPM_VERSION: "9.0.0"
+  API_PORT: "3001"
+  WEB_PORT: "3000"
 
 jobs:
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -35,11 +37,11 @@ jobs:
     name: Prisma Schema Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -50,11 +52,11 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -69,11 +71,11 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -86,13 +88,184 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, prisma-validate, test, security-audit]
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # NEW: builds each service's Docker image and caches it for the
+  # connectivity job below. Adjust `dockerfile` paths if yours differ —
+  # these assume Dockerfiles live in `docker/`, per the current repo layout.
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-build:
+    name: Build Docker Images (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [lint, prisma-validate, test, security-audit]
+    strategy:
+      matrix:
+        include:
+          - service: api
+            dockerfile: apps/api/Dockerfile
+          - service: web
+            dockerfile: apps/web/Dockerfile
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+
+      - name: Build ${{ matrix.service }} image
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: spikeclip-${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      - name: Save image for the connectivity job
+        run: docker save spikeclip-${{ matrix.service }}:ci -o /tmp/${{ matrix.service }}.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ matrix.service }}
+          path: /tmp/${{ matrix.service }}.tar
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # NEW: boots the full stack (Postgres, Redis, MinIO, api, web) with real
+  # healthchecks and fails the build unless every service reports healthy
+  # AND the api container can actually reach postgres/redis/minio, and the
+  # web container can actually reach the api container.
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-connectivity:
+    name: Container Connectivity Check
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-api
+          path: /tmp
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-web
+          path: /tmp
+
+      - name: Load built images
+        run: |
+          docker load -i /tmp/api.tar
+          docker load -i /tmp/web.tar
+
+      - name: Start full stack
+        run: docker compose -f docker/docker-compose.ci.yml up -d --wait
+        # --wait blocks until every service with a healthcheck reports
+        # healthy, and fails this step if any of them don't in time —
+        # this alone proves postgres/redis/minio came up and the api's
+        # migrate step completed before api itself started.
+
+      - name: Show container status
+        if: always()
+        run: docker compose -f docker/docker-compose.ci.yml ps
+
+      - name: Verify API can reach Postgres, Redis, and MinIO
+        # localhost is correct here: this step runs on the runner, which
+        # reaches containers only via their published ports, not by
+        # compose service name (that only resolves inside the compose
+        # network — see the by-name step below).
+        run: |
+          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.API_PORT }}/health | tee /tmp/api-health.json
+          grep -q '"database":"ok"' /tmp/api-health.json
+          grep -q '"redis":"ok"' /tmp/api-health.json
+          grep -q '"storage":"ok"' /tmp/api-health.json
+
+      - name: Verify web can reach the API
+        run: |
+          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.WEB_PORT }}
+          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.WEB_PORT }}/api/health
+
+      - name: Verify containers reach each other by service name (not localhost)
+        # These run *inside* the api container, on the compose network,
+        # where service-name DNS resolution actually works.
+        run: |
+          docker compose -f docker/docker-compose.ci.yml exec -T api sh -c \
+            "curl -sf http://minio:9000/minio/health/live" \
+            && echo "api -> minio (by name): OK"
+          docker compose -f docker/docker-compose.ci.yml exec -T api sh -c \
+            "curl -sf http://web:${{ env.WEB_PORT }}" \
+            && echo "api -> web (by name): OK"
+          # api -> postgres and api -> redis are already proven by the
+          # /health check above: it only reports "up" because
+          # DATABASE_URL / REDIS_URL in docker-compose.ci.yml point at
+          # `postgres` and `redis` by service name, not localhost.
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f docker/docker-compose.ci.yml logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker/docker-compose.ci.yml down -v
+  # ─────────────────────────────────────────────────────────────────────────
+  # NEW: pushes the SAME image artifact that already passed
+  # docker-connectivity — never rebuilds. Only runs on a real push to
+  # main/develop (not on pull requests, where Docker Hub secrets aren't
+  # available to forked-repo PRs anyway).
+  #
+  # Requires two repo secrets (Settings → Secrets and variables → Actions):
+  #   DOCKERHUB_USERNAME  — your Docker Hub username or org
+  #   DOCKERHUB_TOKEN     — a Docker Hub access token (not your password —
+  #                         create one at hub.docker.com → Account Settings
+  #                         → Security → New Access Token)
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-push:
+    name: Push Docker Image (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [docker-connectivity]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    strategy:
+      matrix:
+        service: [api, web]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-${{ matrix.service }}
+          path: /tmp
+
+      - name: Load the exact image that passed the connectivity check
+        run: docker load -i /tmp/${{ matrix.service }}.tar
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4.5.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag and push
+        env:
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/spikeclip-${{ matrix.service }}
+          SHA_TAG: ${{ github.sha }}
+        run: |
+          SHORT_SHA=$(echo "$SHA_TAG" | cut -c1-7)
+          BRANCH_TAG=${{ github.ref_name }}
+
+          docker tag spikeclip-${{ matrix.service }}:ci "$IMAGE:$SHORT_SHA"
+          docker tag spikeclip-${{ matrix.service }}:ci "$IMAGE:$BRANCH_TAG"
+          docker push "$IMAGE:$SHORT_SHA"
+          docker push "$IMAGE:$BRANCH_TAG"
+
+          if [ "$BRANCH_TAG" = "main" ]; then
+            docker tag spikeclip-${{ matrix.service }}:ci "$IMAGE:latest"
+            docker push "$IMAGE:latest"
+          fi

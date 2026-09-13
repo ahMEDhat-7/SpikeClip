@@ -4,12 +4,19 @@ import { randomUUID } from "crypto";
 import { UserRepository, USER_REPOSITORY } from "../../domain/repositories/user.repository";
 import { Inject } from "@nestjs/common";
 import { PlanTier, PLAN_LIMITS, UNLIMITED, PrismaErrorCode } from "@spikeclip/shared";
+import { AuthTokenVaultService } from "../youtube/auth-token-vault.service";
+import { PrismaService } from "../database/prisma.service";
 
 interface OAuthProfile {
   provider: string;
   providerId: string;
   email: string;
   name: string;
+  youtubeTokens?: {
+    accessToken: string;
+    refreshToken?: string;
+    expiresAt: Date;
+  };
 }
 
 @Injectable()
@@ -18,7 +25,9 @@ export class AuthService {
 
   constructor(
     @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly tokenVault: AuthTokenVaultService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async findOrCreateOAuthUser(profile: OAuthProfile): Promise<{
@@ -75,6 +84,10 @@ export class AuthService {
       throw new UnauthorizedException("Failed to create or find user");
     }
 
+    if (profile.youtubeTokens?.refreshToken) {
+      await this.storeYoutubeTokens(user.id, profile.youtubeTokens);
+    }
+
     const accessToken = this.jwtService.sign({ sub: user.id, email: user.email });
 
     this.logger.log(`OAuth login: ${profile.provider} user=${this.maskEmail(user.email)}`);
@@ -91,6 +104,34 @@ export class AuthService {
       clipsUsed: user.clipsUsed,
       clipsLimit: user.clipsLimit,
     };
+  }
+
+  private async storeYoutubeTokens(
+    userId: string,
+    tokens: { accessToken: string; refreshToken?: string; expiresAt: Date },
+  ): Promise<void> {
+    try {
+      const channel = await this.prisma.youtubeConnection.findFirst({
+        where: { userId, provider: "youtube-data-api" },
+      });
+
+      if (!channel) {
+        this.logger.warn(`No YoutubeConnection found for user ${userId}, skipping token storage`);
+        return;
+      }
+
+      if (tokens.refreshToken) {
+        await this.tokenVault.storeTokens(
+          channel.id,
+          tokens.accessToken,
+          tokens.refreshToken,
+          tokens.expiresAt,
+        );
+        this.logger.log(`Stored YouTube tokens for user ${userId}, connection ${channel.id}`);
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to store YouTube tokens: ${error instanceof Error ? error.message : error}`);
+    }
   }
 
   async getProfile(userId: string): Promise<{

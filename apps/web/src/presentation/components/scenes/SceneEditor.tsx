@@ -46,6 +46,7 @@ export function SceneEditor({
   } = useSceneEditor(suggestedScenes, scenesLimit, onScenesChange);
 
   const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [dragPreview, setDragPreview] = useState<{ start: number; end: number } | null>(null);
 
   const handleChartClick = useCallback(
     (time: number) => {
@@ -62,6 +63,27 @@ export function SceneEditor({
   const handleChartMouseMove = useCallback((time: number | null) => {
     setHoverTime(time);
   }, []);
+
+  const handleDragCreate = useCallback(
+    (startTime: number, endTime: number) => {
+      if (!canAddMore) return;
+      const start = Math.min(startTime, endTime);
+      const end = Math.max(startTime, endTime);
+      if (end - start < 1) return;
+
+      const newScene: EditableScene = {
+        start_time: start,
+        end_time: end,
+        peak_intensity: 0,
+        score: 0,
+        isCustom: true,
+      };
+
+      const updated = [...scenes, newScene].sort((a, b) => a.start_time - b.start_time);
+      onScenesChange?.(updated);
+    },
+    [canAddMore, scenes, onScenesChange]
+  );
 
   const handleExport = useCallback(() => {
     if (!onExport) return;
@@ -89,17 +111,22 @@ export function SceneEditor({
               Cancel
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (hoverTime !== null) startAddScene(hoverTime);
-              }}
-              disabled={!canAddMore}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Scene
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (hoverTime !== null) startAddScene(hoverTime);
+                }}
+                disabled={!canAddMore}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Scene
+              </Button>
+              <div className="text-[10px] text-muted-foreground self-center hidden sm:block">
+                or drag on chart
+              </div>
+            </>
           )}
           <Button variant="outline" size="sm" onClick={resetToSuggestions}>
             <RotateCcw className="h-4 w-4 mr-1" />
@@ -133,6 +160,8 @@ export function SceneEditor({
           hoverTime={hoverTime}
           onChartClick={handleChartClick}
           onChartMouseMove={handleChartMouseMove}
+          onDragCreate={handleDragCreate}
+          dragPreview={dragPreview}
         />
       </div>
 

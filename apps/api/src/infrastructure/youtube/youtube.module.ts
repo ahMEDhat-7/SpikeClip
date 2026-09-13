@@ -1,16 +1,18 @@
 import { Module } from "@nestjs/common";
-import { McpClient } from "./mcp-client";
-import { YoutubeStudioMcpService } from "./youtube-studio-mcp.service";
+import { YoutubeDirectApiService } from "./youtube-direct-api.service";
+import { AuthTokenVaultService } from "./auth-token-vault.service";
+import { YouTubeQuotaGuard } from "./youtube-quota-guard.service";
 import { YOUTUBE_STUDIO_PROVIDER } from "../../domain/ports/youtube-studio.provider";
 
 @Module({
   providers: [
-    McpClient,
+    AuthTokenVaultService,
+    YouTubeQuotaGuard,
     {
       provide: YOUTUBE_STUDIO_PROVIDER,
-      useClass: YoutubeStudioMcpService,
+      useClass: YoutubeDirectApiService,
     },
   ],
-  exports: [YOUTUBE_STUDIO_PROVIDER, McpClient],
+  exports: [YOUTUBE_STUDIO_PROVIDER, AuthTokenVaultService, YouTubeQuotaGuard],
 })
 export class YoutubeModule {}

@@ -6,6 +6,9 @@ export const CAPTION_FONTS: Record<CaptionFont, { label: string; className: stri
   bebas: { label: "Bebas Neue", className: "font-bebas", cssFamily: "'Bebas Neue', sans-serif" },
   playfair: { label: "Playfair Display", className: "font-playfair", cssFamily: "'Playfair Display', serif" },
   mono: { label: "JetBrains Mono", className: "font-mono", cssFamily: "'JetBrains Mono', monospace" },
+  "noto-arabic": { label: "Noto Arabic", className: "font-noto-arabic", cssFamily: "'Noto Sans Arabic UI', sans-serif" },
+  "noto-naskh": { label: "Noto Naskh", className: "font-noto-naskh", cssFamily: "'Noto Naskh Arabic', serif" },
+  "noto-kufi": { label: "Noto Kufi", className: "font-noto-kufi", cssFamily: "'Noto Kufi Arabic', sans-serif" },
 };
 
 export const CAPTION_COLORS = [

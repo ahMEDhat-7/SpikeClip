@@ -4,6 +4,7 @@ import { PromptTranslationService } from "../prompt-translation.service";
 import { RedisService } from "../../redis/redis.service";
 import { LLM_PROVIDER, ChatMessage } from "../llm-provider.interface";
 import { StudioEditContext, StudioAction } from "@spikeclip/shared";
+import { PatternPresetService } from "../../../application/services/pattern-preset.service";
 
 const mockRedis = {
   get: jest.fn().mockResolvedValue(null),
@@ -28,6 +29,11 @@ const mockConfig = {
 
 const mockLlm = {
   complete: jest.fn(),
+};
+
+const mockPresets = {
+  matchPreset: jest.fn().mockResolvedValue(null),
+  extractOverrides: jest.fn(),
 };
 
 const context: StudioEditContext = {
@@ -57,6 +63,7 @@ describe("PromptTranslationService", () => {
         { provide: ConfigService, useValue: mockConfig },
         { provide: RedisService, useValue: mockRedis },
         { provide: LLM_PROVIDER, useValue: mockLlm },
+        { provide: PatternPresetService, useValue: mockPresets },
       ],
     }).compile();
     service = module.get<PromptTranslationService>(PromptTranslationService);

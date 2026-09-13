@@ -4,7 +4,28 @@ export const FONT_MAP: Record<string, string> = {
   bebas: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
   playfair: "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
   mono: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+  "noto-arabic": "/usr/share/fonts/truetype/noto/NotoSansArabicUI-Regular.ttf",
+  "noto-naskh": "/usr/share/fonts/truetype/noto/NotoNaskhArabic-Bold.ttf",
+  "noto-kufi": "/usr/share/fonts/truetype/noto/NotoKufiArabic-Regular.ttf",
 };
+
+export const ARABIC_FONTS = ["noto-arabic", "noto-naskh", "noto-kufi"] as const;
+export type ArabicFont = (typeof ARABIC_FONTS)[number];
+
+export function isArabicText(text: string): boolean {
+  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  return arabicRegex.test(text);
+}
+
+export function getFontForText(text: string, requestedFont?: string): string {
+  if (requestedFont && FONT_MAP[requestedFont]) {
+    return FONT_MAP[requestedFont];
+  }
+  if (isArabicText(text)) {
+    return FONT_MAP["noto-arabic"];
+  }
+  return FONT_MAP.inter;
+}
 
 // ── Plan Tiers ──────────────────────────────────────────────────────────────
 export const PlanTier = {

@@ -14,6 +14,7 @@ const ACTION_ICONS: Record<string, string> = {
   set_transition: "→",
   add_background: "■",
   trim: "✂",
+  hook_overlay: "⚡",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ const ACTION_LABELS: Record<string, string> = {
   set_transition: "Transition",
   add_background: "Background",
   trim: "Trim",
+  hook_overlay: "Hook",
 };
 
 interface ActionCardProps {

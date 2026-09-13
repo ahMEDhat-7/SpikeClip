@@ -23,7 +23,9 @@ interface HeatmapChartProps {
   hoverTime?: number | null;
   onChartClick?: (time: number) => void;
   onChartMouseMove?: (time: number | null) => void;
+  onDragCreate?: (startTime: number, endTime: number) => void;
   interactive?: boolean;
+  dragPreview?: { start: number; end: number } | null;
 }
 
 export function HeatmapChart({
@@ -34,9 +36,14 @@ export function HeatmapChart({
   hoverTime = null,
   onChartClick,
   onChartMouseMove,
+  onDragCreate,
   interactive = false,
+  dragPreview = null,
 }: HeatmapChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragCurrent, setDragCurrent] = useState<number | null>(null);
 
   const data = heatmap.map((point) => ({
     time: point.start_time,
@@ -44,38 +51,105 @@ export function HeatmapChart({
     label: formatTime(point.start_time),
   }));
 
+  const getTimeFromMouseEvent = useCallback(
+    (e: React.MouseEvent): number | null => {
+      if (!chartRef.current) return null;
+      const rect = chartRef.current.querySelector(".recharts-wrapper");
+      if (!rect) return null;
+
+      const chartArea = chartRef.current.querySelector(".recharts-surface");
+      if (!chartArea) return null;
+
+      const bounds = chartArea.getBoundingClientRect();
+      const x = e.clientX - bounds.left;
+      const fraction = Math.max(0, Math.min(1, x / bounds.width));
+
+      const maxTime = heatmap.length > 0 ? heatmap[heatmap.length - 1].start_time : 100;
+      return fraction * maxTime;
+    },
+    [heatmap]
+  );
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!interactive || !onDragCreate) return;
+      const time = getTimeFromMouseEvent(e);
+      if (time === null) return;
+
+      setIsDragging(true);
+      setDragStart(time);
+      setDragCurrent(time);
+    },
+    [interactive, onDragCreate, getTimeFromMouseEvent]
+  );
+
+  const handleMouseMove = useCallback(
+    (state: { activePayload?: Array<{ payload: { time: number } }> }) => {
+      const payload = state?.activePayload?.[0]?.payload;
+
+      if (isDragging && payload) {
+        setDragCurrent(payload.time);
+        return;
+      }
+
+      if (interactive && onChartMouseMove && payload) {
+        onChartMouseMove(payload.time);
+      }
+    },
+    [isDragging, interactive, onChartMouseMove]
+  );
+
+  const handleMouseUp = useCallback(
+    (state: { activePayload?: Array<{ payload: { time: number } }> }) => {
+      if (!isDragging || dragStart === null) return;
+
+      const payload = state?.activePayload?.[0]?.payload;
+      const endTime = payload?.time ?? dragCurrent ?? dragStart;
+
+      const start = Math.min(dragStart, endTime);
+      const end = Math.max(dragStart, endTime);
+
+      if (end - start >= 1 && onDragCreate) {
+        onDragCreate(start, end);
+      }
+
+      setIsDragging(false);
+      setDragStart(null);
+      setDragCurrent(null);
+    },
+    [isDragging, dragStart, dragCurrent, onDragCreate]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragCurrent(null);
+    }
+    if (interactive && onChartMouseMove) {
+      onChartMouseMove(null);
+    }
+  }, [isDragging, interactive, onChartMouseMove]);
+
   const handleClick = useCallback(
     (state: { activePayload?: Array<{ payload: { time: number } }> }) => {
-      if (!interactive || !onChartClick) return;
+      if (isDragging || !interactive || !onChartClick) return;
       const payload = state?.activePayload?.[0]?.payload;
       if (payload) {
         onChartClick(payload.time);
       }
     },
-    [interactive, onChartClick]
+    [isDragging, interactive, onChartClick]
   );
 
-  const handleMouseMove = useCallback(
-    (state: { activePayload?: Array<{ payload: { time: number } }> }) => {
-      if (!interactive || !onChartMouseMove) return;
-      const payload = state?.activePayload?.[0]?.payload;
-      if (payload) {
-        onChartMouseMove(payload.time);
-      }
-    },
-    [interactive, onChartMouseMove]
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    if (interactive && onChartMouseMove) {
-      onChartMouseMove(null);
-    }
-  }, [interactive, onChartMouseMove]);
+  const activeDragStart = dragPreview?.start ?? (isDragging && dragStart !== null ? dragStart : null);
+  const activeDragEnd = dragPreview?.end ?? (isDragging && dragCurrent !== null ? dragCurrent : null);
 
   return (
     <div
       ref={chartRef}
       className={`w-full h-full ${interactive ? "cursor-crosshair" : ""} transition-opacity duration-500`}
+      onMouseDown={handleMouseDown}
     >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
@@ -83,6 +157,7 @@ export function HeatmapChart({
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           onClick={handleClick}
           onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
         >
           <defs>
@@ -99,6 +174,11 @@ export function HeatmapChart({
               <stop offset="0%" stopColor="#FF6B35" stopOpacity={0.5} />
               <stop offset="50%" stopColor="#FF6B35" stopOpacity={0.15} />
               <stop offset="100%" stopColor="#FF6B35" stopOpacity={0.02} />
+            </linearGradient>
+            <linearGradient id="dragGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} />
+              <stop offset="50%" stopColor="#22c55e" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="#22c55e" stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" strokeOpacity={0.15} />
@@ -177,6 +257,17 @@ export function HeatmapChart({
               }}
             />
           ))}
+          {activeDragStart !== null && activeDragEnd !== null && (
+            <ReferenceArea
+              x1={formatTime(Math.min(activeDragStart, activeDragEnd))}
+              x2={formatTime(Math.max(activeDragStart, activeDragEnd))}
+              fill="url(#dragGradient)"
+              stroke="#22c55e"
+              strokeOpacity={0.8}
+              strokeWidth={2}
+              strokeDasharray="6 3"
+            />
+          )}
           {addStartMarker !== null && (
             <ReferenceLine
               x={formatTime(addStartMarker)}
@@ -192,7 +283,7 @@ export function HeatmapChart({
               }}
             />
           )}
-          {hoverTime !== null && addStartMarker === null && (
+          {hoverTime !== null && addStartMarker === null && !isDragging && (
             <ReferenceLine
               x={formatTime(hoverTime)}
               stroke="var(--color-muted-foreground)"

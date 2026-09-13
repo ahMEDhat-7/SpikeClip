@@ -54,3 +54,6 @@ package-lock.json
 
 # Test screenshots
 test-*.png
+
+# LinkedIn posts (personal content, not application code)
+linkedin-posts/

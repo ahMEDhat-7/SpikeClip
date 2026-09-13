@@ -1,4 +1,4 @@
-import { UndoRedoManager } from "@/presentation/components/studio/timeline/timeline-state";
+import { UndoRedoManager } from "@/lib/utils/undo-redo-manager";
 
 describe("UndoRedoManager grouping", () => {
   it("a single commit of multiple items is undone in one step", () => {

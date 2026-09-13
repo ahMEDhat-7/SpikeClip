@@ -192,6 +192,46 @@ export default function PricingPage() {
         </div>
       </section>
       </ScrollReveal>
+
+      <ScrollReveal>
+      <section className="relative bg-background border-t border-hairline py-section">
+        <DotsBackground opacity={0.7} />
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-3xl">
+          <div className="text-center space-y-3 mb-8">
+            <h2 className="text-2xl font-semibold" style={{ letterSpacing: "var(--tracking-display, -0.04em)" }}>
+              Built for MENA clippers
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Lower CPMs in MENA ($0.34–$1.93) mean every view counts more.
+              SpikeClip helps you find the moments viewers actually rewatch.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="text-center">
+              <CardContent className="pt-6">
+                <p className="text-3xl font-mono font-bold text-primary">$0.34</p>
+                <p className="text-sm text-muted-foreground mt-1">Egypt CPM</p>
+                <p className="text-xs text-muted-foreground mt-2">Every clip must perform</p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardContent className="pt-6">
+                <p className="text-3xl font-mono font-bold text-primary">50K+</p>
+                <p className="text-sm text-muted-foreground mt-1">Arabic clippers</p>
+                <p className="text-xs text-muted-foreground mt-2">No self-serve tooling until now</p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardContent className="pt-6">
+                <p className="text-3xl font-mono font-bold text-primary">173M+</p>
+                <p className="text-sm text-muted-foreground mt-1">MENA TikTok users</p>
+                <p className="text-xs text-muted-foreground mt-2">Fastest-growing short-form market</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+      </ScrollReveal>
     </main>
   );
 }

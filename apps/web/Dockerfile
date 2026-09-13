@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ─── Builder ───
-FROM node:24-slim AS builder
+FROM node:22-slim AS builder
 
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
@@ -22,7 +22,7 @@ COPY apps/web ./apps/web
 RUN pnpm --filter @spikeclip/web build
 
 # ─── Runtime ───
-FROM node:24-slim AS runtime
+FROM node:22-slim AS runtime
 
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
