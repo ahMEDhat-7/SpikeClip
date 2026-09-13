@@ -38,6 +38,21 @@ jobs:
   prisma-validate:
     name: Prisma Schema Validation
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: spikeclip
+          POSTGRES_PASSWORD: spikeclip
+          POSTGRES_DB: spikeclip
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U spikeclip"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://spikeclip:spikeclip@localhost:5432/spikeclip
     steps:
       - uses: actions/checkout@v7.0.1
         with:

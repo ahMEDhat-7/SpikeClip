@@ -25,6 +25,7 @@ interface FilterChain {
   duration?: number;
   trimStart?: number;
   trimDuration?: number;
+  overlayInputs: string[];
 }
 
 interface BuildCommandInput {
@@ -36,6 +37,7 @@ interface BuildCommandInput {
   outputPath: string;
   startTime?: number;
   duration?: number;
+  overlayAssets?: Record<string, string>;
 }
 
 interface BuildCommandResult {
@@ -46,12 +48,12 @@ interface BuildCommandResult {
 @Injectable()
 export class FilterGraphBuilder {
   buildCommand(input: BuildCommandInput): BuildCommandResult {
-    const { actions, platform, quality, format, inputPath, outputPath, startTime, duration } = input;
+    const { actions, platform, quality, format, inputPath, outputPath, startTime, duration, overlayAssets } = input;
     const preset = getPlatformEncodingPreset(platform);
     const qualityPreset = getQualityPreset(quality);
     const formatCodecs = getFormatCodecs(format);
 
-    const chain: FilterChain = { videoFilters: [], audioFilters: [], duration };
+    const chain: FilterChain = { videoFilters: [], audioFilters: [], duration, overlayInputs: [] };
 
     chain.videoFilters.push(`crop=ih*9/16:ih,scale=${preset.resolution.width}:${preset.resolution.height}`);
 
@@ -62,11 +64,41 @@ export class FilterGraphBuilder {
     const effectiveStartTime = chain.trimStart ?? startTime;
     const effectiveDuration = chain.trimDuration ?? duration;
 
-    const videoFilterStr = chain.videoFilters.join(",");
+    const baseVideoFilters = chain.videoFilters.filter(f => !f.startsWith("overlay_"));
+    const overlayFilters = chain.videoFilters.filter(f => f.startsWith("overlay_"));
+
+    let filterComplex = "";
+    let lastVideoLabel = "0:v";
+
+    if (baseVideoFilters.length > 0) {
+      filterComplex += `[0:v]${baseVideoFilters.join(",")}[vbase]`;
+      lastVideoLabel = "vbase";
+    }
+
+    for (let i = 0; i < overlayFilters.length; i++) {
+      const overlayFilter = overlayFilters[i];
+      const inputIndex = i + 1;
+      const outputLabel = i === overlayFilters.length - 1 ? "vout" : `vout${i}`;
+      
+      const match = overlayFilter.match(/overlay_(\d+)=(.+):scale=([\d.]+)/);
+      if (!match) continue;
+      
+      const overlayParams = match[2];
+      const scale = match[3];
+      
+      const scaledOverlay = `[${inputIndex}:v]scale=${scale}:flags=lanczos[ov${i}]`;
+      const overlayChain = `[${lastVideoLabel}][ov${i}]overlay=${overlayParams}[${outputLabel}]`;
+      
+      filterComplex += `;${scaledOverlay};${overlayChain}`;
+      lastVideoLabel = outputLabel;
+    }
+
+    if (baseVideoFilters.length === 0 && overlayFilters.length === 0) {
+      filterComplex = `[0:v]copy[vout]`;
+    }
+
     const hasAudioFilters = chain.audioFilters.length > 0;
     const audioFilterStr = hasAudioFilters ? chain.audioFilters.join(",") : null;
-
-    let filterComplex = `[0:v]${videoFilterStr}[vout]`;
     if (audioFilterStr) {
       filterComplex += `;[0:a]${audioFilterStr}[aout]`;
     }
@@ -79,12 +111,18 @@ export class FilterGraphBuilder {
 
     args.push("-i", inputPath);
 
+    if (overlayAssets) {
+      for (const [assetKey, assetPath] of Object.entries(overlayAssets)) {
+        args.push("-i", assetPath);
+      }
+    }
+
     if (effectiveDuration !== undefined) {
       args.push("-t", effectiveDuration.toString());
     }
 
     args.push("-filter_complex", filterComplex);
-    args.push("-map", "[vout]");
+    args.push("-map", `[${lastVideoLabel}]`);
 
     if (hasAudioFilters) {
       args.push("-map", "[aout]");
@@ -358,10 +396,23 @@ export class FilterGraphBuilder {
   }
 
   private applyOverlay(action: AddOverlayAction, chain: FilterChain): void {
-    const x = `${action.x}*iw/100`;
-    const y = `${action.y}*ih/100`;
+    const overlayIndex = chain.overlayInputs.length;
+    chain.overlayInputs.push(action.assetKey);
+
+    const x = `${action.x}*main_w/100`;
+    const y = `${action.y}*main_h/100`;
     const scale = action.scale ?? 1.0;
-    chain.videoFilters.push(`scale=${scale}:flags=lanczos`);
+    const opacity = action.opacity ?? 1.0;
+
+    let overlayParams = `x=${x}:y=${y}`;
+    if (opacity < 1) {
+      overlayParams += `:alpha=${opacity}`;
+    }
+    if (action.startTime !== undefined && action.endTime !== undefined) {
+      overlayParams += `:enable='between(t,${action.startTime},${action.endTime})'`;
+    }
+
+    chain.videoFilters.push(`overlay_${overlayIndex}=${overlayParams}:scale=${scale}`);
   }
 
   private applyTransition(action: SetTransitionAction, chain: FilterChain): void {
