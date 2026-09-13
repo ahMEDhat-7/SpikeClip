@@ -1,36 +1,28 @@
 # syntax=docker/dockerfile:1
 
-# ─── Builder ───
-FROM spikeclip-base:ci AS builder
+# ─── Base (shared deps) ───
+FROM spikeclip-base:ci AS base
 
 WORKDIR /app
 
-# Install dependencies
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
-# Copy vendor submodule for @openreel/core dependency (file: protocol)
 COPY vendor/openreel-video ./vendor/openreel-video
-RUN pnpm install --frozen-lockfile
 
-# Build shared package
+# ─── Builder (dev deps + build) ───
+FROM base AS builder
+
+RUN pnpm install --frozen-lockfile
 COPY packages/shared ./packages/shared
 RUN pnpm --filter @spikeclip/shared build
-
-# Build web (NEXT_PUBLIC vars injected at build time)
 COPY apps/web ./apps/web
 RUN pnpm --filter @spikeclip/web build
 
-# ─── Runtime ───
-FROM spikeclip-base:ci AS runtime
+# ─── Production (prod deps only) ───
+FROM base AS production
 
-WORKDIR /app
-
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/web/package.json ./apps/web/
 RUN pnpm install --frozen-lockfile --prod
-
 COPY --from=builder /app/apps/web/.next ./apps/web/.next
 COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/next.config.ts ./apps/web/next.config.ts
