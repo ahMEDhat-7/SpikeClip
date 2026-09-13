@@ -33,7 +33,6 @@ FROM base AS production
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/shared ./packages/shared
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs && chown -R nestjs:nodejs /app
 
