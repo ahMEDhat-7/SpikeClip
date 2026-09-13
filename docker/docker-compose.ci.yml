@@ -41,18 +41,21 @@ services:
       retries: 10
       start_period: 10s
 
-  # One-off job: applies migrations before `api` is allowed to start.
-  # Proves the api image itself (not just a local `pnpm` process) can
-  # reach postgres.
-  migrate:
-    image: spikeclip-api:ci
-    command: pnpm --filter @spikeclip/api prisma:deploy
-    environment:
-      DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: "no"
+# One-off job: applies migrations before `api` is allowed to start.
+# Proves the api image itself (not just a local `pnpm` process) can
+# reach postgres.
+migrate:
+  image: spikeclip-api:ci
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+    target: migrate
+  environment:
+    DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
+  depends_on:
+    postgres:
+      condition: service_healthy
+  restart: "no"
 
   api:
     image: spikeclip-api:ci

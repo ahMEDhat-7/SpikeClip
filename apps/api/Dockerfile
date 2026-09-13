@@ -21,6 +21,12 @@ COPY apps/api ./apps/api
 RUN pnpm --filter @spikeclip/api build
 RUN pnpm --filter @spikeclip/api exec prisma generate
 
+# ─── Migrate (dev deps + prisma CLI for migrations) ───
+FROM builder AS migrate
+
+WORKDIR /app/apps/api
+CMD ["pnpm", "exec", "prisma", "migrate", "deploy"]
+
 # ─── Production (prod deps only) ───
 FROM base AS production
 
