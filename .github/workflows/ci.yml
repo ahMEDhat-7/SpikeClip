@@ -144,8 +144,6 @@ jobs:
           push: false
           load: true
           tags: spikeclip-${{ matrix.service }}:ci
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
       - name: Save image for connectivity job
         run: docker save spikeclip-${{ matrix.service }}:ci -o /tmp/${{ matrix.service }}.tar
       - uses: actions/upload-artifact@v4
