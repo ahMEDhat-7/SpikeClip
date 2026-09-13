@@ -99,8 +99,6 @@ jobs:
           push: false
           load: true
           tags: spikeclip-base:ci
-          cache-from: type=gha,scope=base
-          cache-to: type=gha,mode=max,scope=base
       - name: Save base image
         run: docker save spikeclip-base:ci -o /tmp/base.tar
       - uses: actions/upload-artifact@v4
