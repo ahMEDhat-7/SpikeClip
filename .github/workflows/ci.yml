@@ -197,7 +197,7 @@ jobs:
         run: docker compose -f docker/docker-compose.ci.yml ps
       - name: Verify API can reach Postgres, Redis, and MinIO
         run: |
-          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.API_PORT }}/health | tee /tmp/api-health.json
+          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.API_PORT }}/api/health | tee /tmp/api-health.json
           grep -q '"database":"ok"' /tmp/api-health.json
           grep -q '"redis":"ok"' /tmp/api-health.json
           grep -q '"storage":"ok"' /tmp/api-health.json
