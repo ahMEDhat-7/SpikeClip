@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     ffmpeg \
     python3 \
     py3-pip \
-    curl
+    curl \
+    postgresql-client
 
 # Install yt-dlp
 RUN pip3 install --break-system-packages yt-dlp
