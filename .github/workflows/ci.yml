@@ -189,6 +189,9 @@ jobs:
             pnpm exec prisma migrate deploy
       - name: Start application services
         run: docker compose -f docker/docker-compose.ci.yml up -d --wait api web
+      - name: Check api container logs on failure
+        if: failure()
+        run: docker compose -f docker/docker-compose.ci.yml logs api
       - name: Show container status
         if: always()
         run: docker compose -f docker/docker-compose.ci.yml ps
