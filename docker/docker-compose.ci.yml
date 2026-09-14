@@ -51,6 +51,8 @@ services:
       MINIO_ACCESS_KEY: spikeclip
       MINIO_SECRET_KEY: spikeclip123
       PORT: "3001"
+      JWT_SECRET: "ci-test-jwt-secret-change-in-production"
+      NODE_ENV: "production"
     ports:
       - "3001:3001"
     depends_on:
