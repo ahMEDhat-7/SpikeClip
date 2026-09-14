@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/ahMEDhat-7/SpikeClip/actions/workflows/ci.yml/badge.svg)](https://github.com/ahMEDhat-7/SpikeClip/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue)](https://www.typescriptlang.org/)
-[![Node](https://img.shields.io/badge/Node-24-green)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/Node-22-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **SpikeClip extracts the most-replayed moments from YouTube videos using *actual viewer heatmap data* — not AI guesses.** It detects spikes in audience replay behavior and reformats those moments into vertical shorts ready for TikTok, YouTube Shorts, and Instagram Reels.
@@ -33,10 +33,6 @@ A walkthrough of SpikeClip running locally — landing page, the heatmap analysi
 | Page | Preview |
 |------|---------|
 | Landing (desktop) | ![Landing Desktop](./media/landing-desktop.png) |
-| Landing (mobile) | ![Landing Mobile](./media/landing-mobile.png) |
-| Pricing | ![Pricing](./media/pricing.png) |
-| Features | ![Features](./media/features.png) |
-| Full page | ![Full Page](./media/landing-full.png) |
 
 > Screenshots captured from the production build (`pnpm build && pnpm start`) via Chromium DevTools.
 
@@ -153,7 +149,7 @@ POST /api/jobs/:id/export  →  Clip rows created + export jobs enqueued
 
 ### Prerequisites
 
-- **Node.js** >= 24
+- **Node.js** >= 22
 - **pnpm** 9.x
 - **Docker** + Docker Compose v2
 - **yt-dlp** — `pip install yt-dlp`
@@ -246,7 +242,7 @@ pnpm test                              # all unit tests (shared + api + web)
 pnpm --filter @spikeclip/api test:e2e # e2e (needs docker compose up)
 ```
 
-CI runs 6 jobs: Lint, Security Audit, Test, API E2E (compose infra), Build, Docker Build.
+CI runs 8 jobs: Lint & Test, Prisma Schema Validation, Build Base Image, Build Docker Images (api/web), Container Connectivity Check, Push Docker Images.
 
 > **Note:** `lint` is `tsc --noEmit` per package (the web app uses `tsconfig.lint.json`). There is no ESLint config — type-checking is the lint step.
 

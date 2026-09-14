@@ -1,4 +1,9 @@
-SpikeClip — New End-to-End Pipeline
+# SpikeClip — New End-to-End Pipeline
+
+> **Status**: ✅ Phase 0 (MCP/YouTube Connection) — **DONE** | ✅ Phase 1 (Project/Source Model) — **DONE** | ✅ Phase 2 (Extract/Source Discovery) — **DONE** | ✅ Phase 3 (Generate/Scene Generation) — **DONE** | ✅ Phase 4 (Editor/OpenReel Integration) — **DONE** | ✅ Phase 5 (Export/Download) — **DONE** | 🔄 Phase 6 (YouTube MCP/Account-First Architecture) — **PLANNED**
+
+> **OpenReel Integration**: ✅ **COMPLETED** — Clip Studio now uses `@openreel/core` from vendored `vendor/openreel-video` (MIT licensed). Non-destructive multi-track timeline, typed editing-tool registry, model-agnostic AI agent, hybrid rendering (server ingest + in-browser WebCodecs/WebGPU export).
+
 0. Objective
 Replace the current:
 
