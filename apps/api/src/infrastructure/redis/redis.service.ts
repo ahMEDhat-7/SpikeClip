@@ -11,6 +11,7 @@ export class RedisService {
     const redisUrl = this.config.get<string>("REDIS_URL");
     if (redisUrl) {
       this.client = new Redis(redisUrl, {
+        family: 4,
         maxRetriesPerRequest: 3,
         retryStrategy(times) {
           const delay = Math.min(times * 50, 2000);
