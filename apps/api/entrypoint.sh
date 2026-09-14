@@ -26,6 +26,9 @@ echo "NODE_ENV: $NODE_ENV"
 echo "PORT: $PORT"
 echo "DATABASE_URL: $DATABASE_URL"
 
+# Create clips directory if it doesn't exist
+mkdir -p /tmp/spikeclips-clips
+
 # Start server in background to check if it starts
 node dist/main &
 SERVER_PID=$!
