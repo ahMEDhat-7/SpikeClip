@@ -22,4 +22,30 @@ pnpm exec prisma migrate deploy
 echo "Starting API server..."
 # Add debugging
 echo "Server starting on port 3001..."
-exec node dist/main
+echo "NODE_ENV: $NODE_ENV"
+echo "PORT: $PORT"
+echo "DATABASE_URL: $DATABASE_URL"
+
+# Start server in background to check if it starts
+node dist/main &
+SERVER_PID=$!
+
+# Wait a bit for server to start
+sleep 5
+
+# Check if server is running
+if kill -0 $SERVER_PID 2>/dev/null; then
+  echo "Server process is running (PID: $SERVER_PID)"
+  # Test health endpoint
+  if curl -f http://localhost:3001/health; then
+    echo "Health check passed!"
+  else
+    echo "Health check failed!"
+  fi
+else
+  echo "Server process died!"
+  exit 1
+fi
+
+# Wait for server process
+wait $SERVER_PID
