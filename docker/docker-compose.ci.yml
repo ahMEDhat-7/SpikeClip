@@ -46,6 +46,8 @@ services:
     environment:
       DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
       REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_ACCESS_KEY: spikeclip
