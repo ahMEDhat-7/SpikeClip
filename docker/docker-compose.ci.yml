@@ -1,3 +1,5 @@
+version: '3.8'
+
 # docker-compose.ci.yml
 #
 # Ephemeral stack used ONLY by the CI "docker-connectivity" job.
