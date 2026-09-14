@@ -45,7 +45,6 @@ services:
 # Proves the api image itself (not just a local `pnpm` process) can
 # reach postgres.
 migrate:
-  image: spikeclip-api:ci
   build:
     context: .
     dockerfile: apps/api/Dockerfile
