@@ -175,12 +175,20 @@ jobs:
         run: |
           docker load -i /tmp/api.tar
           docker load -i /tmp/web.tar
-      - name: Start full stack
-        run: docker compose -f docker/docker-compose.ci.yml up -d --wait
+      - name: Start infrastructure services
+        run: docker compose -f docker/docker-compose.ci.yml up -d postgres redis minio
+      - name: Wait for infrastructure to be healthy
+        run: |
+          docker compose -f docker/docker-compose.ci.yml up -d --wait --no-deps postgres redis minio
       - name: Run database migrations
         run: |
-          docker compose -f docker/docker-compose.ci.yml exec -T api \
+          docker run --rm \
+            --network $(docker network ls --filter "name=docker_default" --format "{{.Name}}") \
+            -e DATABASE_URL=postgresql://spikeclip:spikeclip@postgres:5432/spikeclip \
+            spikeclip-api:ci \
             pnpm exec prisma migrate deploy
+      - name: Start application services
+        run: docker compose -f docker/docker-compose.ci.yml up -d --wait api web
       - name: Show container status
         if: always()
         run: docker compose -f docker/docker-compose.ci.yml ps
