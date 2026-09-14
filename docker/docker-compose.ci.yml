@@ -43,20 +43,20 @@ services:
       retries: 10
       start_period: 10s
 
-# One-off job: applies migrations before `api` is allowed to start.
-# Proves the api image itself (not just a local `pnpm` process) can
-# reach postgres.
-migration:
-  build:
-    context: .
-    dockerfile: apps/api/Dockerfile
-    target: migrate
-  environment:
-    DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
-  depends_on:
-    postgres:
-      condition: service_healthy
-  restart: "no"
+  # One-off job: applies migrations before `api` is allowed to start.
+  # Proves the api image itself (not just a local `pnpm` process) can
+  # reach postgres.
+  db-migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
   api:
     image: spikeclip-api:ci
@@ -77,13 +77,9 @@ migration:
         condition: service_healthy
       minio:
         condition: service_healthy
-      migration:
+      db-migrate:
         condition: service_completed_successfully
     healthcheck:
-      # This endpoint must check DB/Redis/MinIO connectivity itself —
-      # a bare "process is running" check doesn't prove the containers
-      # can see each other. See NestJS Terminus note below if you don't
-      # have this yet.
       test: ["CMD", "curl", "-f", "http://localhost:${API_PORT:-3001}/health"]
       interval: 5s
       timeout: 5s
@@ -93,8 +89,6 @@ migration:
   web:
     image: spikeclip-web:ci
     environment:
-      # By service name (`api`), not localhost — this is how web actually
-      # reaches api once both are on the compose network.
       NEXT_PUBLIC_API_URL: http://api:${API_PORT:-3001}
       INTERNAL_API_URL: http://api:${API_PORT:-3001}
       PORT: "${WEB_PORT:-3000}"
