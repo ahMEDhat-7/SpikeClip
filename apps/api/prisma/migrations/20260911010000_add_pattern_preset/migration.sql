@@ -7,7 +7,7 @@ CREATE TABLE "PatternPreset" (
     "studioActionTemplate" JSONB NOT NULL,
     "sourceType" TEXT NOT NULL DEFAULT 'curated',
     "usageCount" INTEGER NOT NULL DEFAULT 0,
-    "avgPerformanceScore DOUBLE PRECISION,
+    "avgPerformanceScore" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
