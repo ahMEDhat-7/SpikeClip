@@ -37,7 +37,7 @@ sleep 5
 if kill -0 $SERVER_PID 2>/dev/null; then
   echo "Server process is running (PID: $SERVER_PID)"
   # Test health endpoint
-  if curl -f http://localhost:3001/health; then
+  if curl -f http://localhost:3001/api/health; then
     echo "Health check passed!"
   else
     echo "Health check failed!"
