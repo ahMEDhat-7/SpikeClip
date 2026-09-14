@@ -175,6 +175,13 @@ jobs:
         run: |
           docker load -i /tmp/api.tar
           docker load -i /tmp/web.tar
+      - name: Run database migrations
+        run: |
+          docker run --rm \
+            --network github_network_${{ github.job }} \
+            -e DATABASE_URL=postgresql://spikeclip:spikeclip@postgres:5432/spikeclip \
+            spikeclip-api:ci \
+            pnpm exec prisma migrate deploy
       - name: Start full stack
         run: docker compose -f docker/docker-compose.ci.yml up -d --wait
       - name: Show container status

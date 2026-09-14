@@ -43,43 +43,26 @@ services:
       retries: 10
       start_period: 10s
 
-  # One-off job: applies migrations before `api` is allowed to start.
-  # Proves the api image itself (not just a local `pnpm` process) can
-  # reach postgres.
-  db-migrate:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-      target: migrate
-    environment:
-      DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: "no"
-
-  api:
-    image: spikeclip-api:ci
-    environment:
-      DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
-      REDIS_URL: redis://redis:6379
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: "9000"
-      MINIO_ACCESS_KEY: spikeclip
-      MINIO_SECRET_KEY: spikeclip123
-      PORT: "${API_PORT:-3001}"
-    ports:
-      - "${API_PORT:-3001}:${API_PORT:-3001}"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      db-migrate:
-        condition: service_completed_successfully
-    healthcheck:
+api:
+  image: spikeclip-api:ci
+  environment:
+    DATABASE_URL: postgresql://spikeclip:spikeclip@postgres:5432/spikeclip
+    REDIS_URL: redis://redis:6379
+    MINIO_ENDPOINT: minio
+    MINIO_PORT: "9000"
+    MINIO_ACCESS_KEY: spikeclip
+    MINIO_SECRET_KEY: spikeclip123
+    PORT: "${API_PORT:-3001}"
+  ports:
+    - "${API_PORT:-3001}:${API_PORT:-3001}"
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
+  healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${API_PORT:-3001}/health"]
       interval: 5s
       timeout: 5s
