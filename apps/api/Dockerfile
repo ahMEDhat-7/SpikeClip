@@ -36,7 +36,10 @@ COPY --from=builder /app/packages/shared ./packages/shared
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs && chown -R nestjs:nodejs /app
 
+COPY apps/api/entrypoint.sh ./apps/api/entrypoint.sh
+RUN chmod +x ./apps/api/entrypoint.sh
+
 USER nestjs
 WORKDIR /app/apps/api
 EXPOSE 3001
-CMD ["node", "dist/main"]
+CMD ["./entrypoint.sh"]
