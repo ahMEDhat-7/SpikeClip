@@ -55,7 +55,7 @@ services:
       PORT: "3001"
       JWT_SECRET: "ci-test-jwt-secret-change-in-production"
       CLIP_SIGNING_SECRET: "ci-test-clip-signing-secret"
-      NODE_ENV: "production"
+      NODE_ENV: "test"
     ports:
       - "3001:3001"
     depends_on:
