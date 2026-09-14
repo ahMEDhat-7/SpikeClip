@@ -20,4 +20,6 @@ echo "Running database migrations..."
 pnpm exec prisma migrate deploy
 
 echo "Starting API server..."
+# Add debugging
+echo "Server starting on port 3001..."
 exec node dist/main
