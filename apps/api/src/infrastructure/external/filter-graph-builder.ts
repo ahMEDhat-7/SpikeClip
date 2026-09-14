@@ -244,7 +244,7 @@ export class FilterGraphBuilder {
       baseFilters.push(`fontsize='if(between(t,${action.start},${action.start + popDuration}),${action.size * 0.5}+${action.size * 2}*clip((t-${action.start})/${popDuration},0,1),${action.size})'`);
     } else if (action.animation === "slide") {
       const slideDuration = 0.4;
-      baseFilters.push(`y='if(between(t,${action.start},${action.start + slideDuration}),${y.replace(/\(/g, "(").replace(/\)/g, ")")}-h+(${y.replace(/\(/g, "(").replace(/\)/g, ")")}+h)*clip((t-${action.start})/${slideDuration},0,1),${y})'`);
+      baseFilters.push(`y='if(between(t,${action.start},${action.start + slideDuration}),${y}-h+${y}+h)*clip((t-${action.start})/${slideDuration},0,1),${y})'`);
       baseFilters.push(`alpha='if(between(t,${action.start},${action.start + slideDuration}),clip((t-${action.start})/${slideDuration},0,1),1)'`);
     } else if (action.animation === "typewriter") {
       const charCount = action.text.length;

@@ -17,11 +17,42 @@ import { createHash } from "crypto";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { mkdir, unlink } from "fs/promises";
-import { join } from "path";
+import { join, resolve, relative } from "path";
 
 const execFileAsync = promisify(execFile);
 const PREVIEW_TMP = "/tmp/spikeclips-preview";
 const YTDLP_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * Validates that a file path is within the allowed directory to prevent path traversal.
+ * @param path The file path to validate
+ * @param allowedDir The allowed directory (must be absolute)
+ * @returns The resolved absolute path if valid
+ * @throws BadRequestException if path tries to escape the allowed directory
+ */
+function validatePath(path: string, allowedDir: string): string {
+  const resolvedPath = resolve(path);
+  const resolvedAllowed = resolve(allowedDir);
+  const relativePath = relative(resolvedAllowed, resolvedPath);
+  if (relativePath.startsWith("..") || relativePath === "..") {
+    throw new BadRequestException("Invalid file path: path traversal detected");
+  }
+  return resolvedPath;
+}
+
+/**
+ * Safely unlinks a file after validating it's within the allowed directory.
+ * @param path The file path to unlink
+ * @param allowedDir The allowed directory (must be absolute)
+ */
+async function safeUnlink(path: string, allowedDir: string): Promise<void> {
+  try {
+    const safePath = validatePath(path, allowedDir);
+    await unlink(safePath).catch(() => {});
+  } catch {
+    // Ignore errors for non-existent files or validation failures
+  }
+}
 
 const PLATFORM_DEFAULTS: Record<string, { aspectRatio: string; maxDuration: number }> = {
   "youtube-shorts": { aspectRatio: "9:16", maxDuration: 60 },
@@ -204,8 +235,8 @@ export class StudioService {
       const url = await this.storage.getSignedUrl(storageKey, 3600);
       return { previewUrl: url, cached: false };
     } finally {
-      await unlink(tmpInput).catch(() => {});
-      await unlink(outputPath).catch(() => {});
+      await safeUnlink(tmpInput, PREVIEW_TMP);
+      await safeUnlink(outputPath, PREVIEW_TMP);
     }
   }
 
@@ -335,7 +366,7 @@ export class StudioService {
             ]);
             await this.storage.uploadFromFile(tmpTrimmed, storageKey, "video/mp4");
           } finally {
-            await unlink(tmpTrimmed).catch(() => {});
+            await safeUnlink(tmpTrimmed, PREVIEW_TMP);
           }
           return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };
         }
@@ -366,7 +397,7 @@ export class StudioService {
       );
       await this.storage.uploadFromFile(tmpInput, storageKey, "video/mp4");
     } finally {
-      await unlink(tmpInput).catch(() => {});
+      await safeUnlink(tmpInput, PREVIEW_TMP);
     }
 
     return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };

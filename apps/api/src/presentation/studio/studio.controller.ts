@@ -18,7 +18,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiConsumes } from "@nestjs/swagger";
 import { Response } from "express";
 import { createReadStream, existsSync } from "fs";
-import { join } from "path";
+import { join, resolve, relative } from "path";
 import { StudioService } from "./studio.service";
 import { AuthService } from "../../infrastructure/auth/auth.service";
 import type { StudioAction } from "@spikeclip/shared";
@@ -56,6 +56,23 @@ interface GeneratePreviewDto {
 }
 
 const PREVIEW_TMP = TMP_PREVIEW_DIR;
+
+/**
+ * Validates that a file path is within the allowed directory to prevent path traversal.
+ * @param path The file path to validate
+ * @param allowedDir The allowed directory (must be absolute)
+ * @returns The resolved absolute path if valid
+ * @throws BadRequestException if path tries to escape the allowed directory
+ */
+function validatePreviewPath(path: string, allowedDir: string): string {
+  const resolvedPath = resolve(path);
+  const resolvedAllowed = resolve(allowedDir);
+  const relativePath = relative(resolvedAllowed, resolvedPath);
+  if (relativePath.startsWith("..") || relativePath === "..") {
+    throw new BadRequestException("Invalid file path: path traversal detected");
+  }
+  return resolvedPath;
+}
 
 @ApiTags("studio")
 @ApiBearerAuth()
@@ -135,7 +152,13 @@ export class StudioController {
       throw new NotFoundException("Invalid scene index");
     }
 
-    const previewFile = join(PREVIEW_TMP, `${jobId}-${safeSceneIndex}-preview.mp4`);
+    // Validate jobId format (should be a UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(jobId)) {
+      throw new BadRequestException("Invalid job ID format");
+    }
+
+    const previewFile = validatePreviewPath(join(PREVIEW_TMP, `${jobId}-${safeSceneIndex}-preview.mp4`), PREVIEW_TMP);
 
     if (!existsSync(previewFile)) {
       throw new NotFoundException("Preview file not found. Generate a preview first.");
