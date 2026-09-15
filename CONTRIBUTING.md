@@ -41,13 +41,70 @@ chore: update dependencies
 docs: add API reference
 ```
 
-## PR Workflow
+## Branch Strategy (GitFlow-inspired)
 
-1. Create feature branch from `develop`
-2. Make changes following code style
-3. Run `pnpm lint` and `pnpm test`
-4. Commit with conventional format
-5. Open PR to `develop`
+| Branch | Purpose | Protection |
+|--------|---------|------------|
+| `main` | Production releases only | ✅ Ruleset (5 checks, linear, 1 review) |
+| `develop` | Integration / staging | ✅ Ruleset (5 checks, linear, 1 review) |
+| `feature/*` | New features | ❌ |
+| `fix/*` | Bug fixes | ❌ |
+| `hotfix/*` | Urgent production fixes | ❌ |
+| `release/*` | Release preparation (version bump, changelog) | ❌ |
+
+### Workflow
+
+1. **Start from `develop`**:
+   ```bash
+   git checkout develop && git pull && git checkout -b feature/your-feature-name
+   ```
+
+2. **Make changes** following code style
+
+3. **Run checks locally**:
+   ```bash
+   pnpm lint
+   pnpm test
+   ```
+
+4. **Commit with conventional format**:
+   ```bash
+   git commit -m "feat: add clip export endpoint"
+   ```
+
+5. **Open PR to `develop`** — not `main`
+
+6. **CI runs automatically** — all 5 checks must pass:
+   - Lint & Type Check
+   - Prisma Schema Validation
+   - Unit Tests
+   - Security Audit
+   - Build All Packages
+
+7. **At least 1 approving review required** before merge
+
+8. **Squash merge** — keeps linear history
+
+### Hotfixes (Urgent Production Fixes)
+
+```bash
+# From main
+git checkout main && git pull && git checkout -b hotfix/critical-bug
+
+# Fix, test, PR to main
+# After merge to main, backport to develop:
+git checkout develop && git pull && git merge main
+```
+
+### Releases
+
+```bash
+# From develop
+git checkout develop && git pull && git checkout -b release/v1.2.0
+
+# Update version, changelog, PR to main AND develop
+# After merge, tag release on main
+```
 
 ## Development Setup
 
