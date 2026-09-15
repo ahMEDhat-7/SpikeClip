@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      fast-xml-parser:
+        specifier: 5.10.1
+        version: 5.10.1
     devDependencies:
       turbo:
         specifier: ^2.10.4
@@ -1229,6 +1233,9 @@ packages:
 
   '@nodable/entities@2.2.0':
     resolution: {integrity: sha512-9uGyhaQavEUMC8AIddIjau4NsnsXhou+j5sBAGojCM1oxmQpVKTWR/9JxABD6UAv12vpIms55fPZKFQEhG6uBg==}
+
+  '@nodable/entities@3.0.0':
+    resolution: {integrity: sha512-8L9xFeTYKhm49xfIypoe2W5wV1m/3Z58kT+7kR9A8OyFxcPduI4VmxaUMQyKYrRjUoLLSXv6EKKID5Tvj9cUVw==}
 
   '@openreel/core@file:vendor/openreel-video/packages/core':
     resolution: {directory: vendor/openreel-video/packages/core, type: directory}
@@ -3257,6 +3264,10 @@ packages:
 
   fast-xml-parser@5.10.0:
     resolution: {integrity: sha512-SLhnTEqE5QpJHq/6zl9bsmImEP2adv+y6Wy+cJa7nVTRzQh1OZfCe9k29M5xN74LWnu0xa1zrUrq3KnOKl92Fg==}
+    hasBin: true
+
+  fast-xml-parser@5.10.1:
+    resolution: {integrity: sha512-IEMIf7298kXuZSRFoGfMYrl7is8LpavODgbNz1cwIudv7KwVFnuU+UsMporfq6PD6aXSlawZlARiA3UywCTfMw==}
     hasBin: true
 
   fb-watchman@2.0.2:
@@ -6356,6 +6367,8 @@ snapshots:
 
   '@nodable/entities@2.2.0': {}
 
+  '@nodable/entities@3.0.0': {}
+
   '@openreel/core@file:vendor/openreel-video/packages/core':
     dependencies:
       '@ffmpeg/core': 0.12.6
@@ -8473,6 +8486,15 @@ snapshots:
   fast-xml-parser@5.10.0:
     dependencies:
       '@nodable/entities': 2.2.0
+      fast-xml-builder: 1.3.0
+      is-unsafe: 2.0.0
+      path-expression-matcher: 1.6.2
+      strnum: 2.4.1
+      xml-naming: 0.3.0
+
+  fast-xml-parser@5.10.1:
+    dependencies:
+      '@nodable/entities': 3.0.0
       fast-xml-builder: 1.3.0
       is-unsafe: 2.0.0
       path-expression-matcher: 1.6.2
