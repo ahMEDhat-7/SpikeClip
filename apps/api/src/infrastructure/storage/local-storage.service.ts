@@ -12,11 +12,17 @@ const CLIPS_DIR = process.env.CLIPS_DIR || "/tmp/spikeclips-clips";
 export class LocalStorageService implements StorageService, OnModuleInit {
   private readonly logger = new Logger(LocalStorageService.name);
   private signingSecret!: string;
+  private previousSigningSecrets: string[] = [];
 
   onModuleInit() {
     this.signingSecret = process.env.CLIP_SIGNING_SECRET || "";
     if (!this.signingSecret) {
       throw new Error("CLIP_SIGNING_SECRET environment variable is required");
+    }
+    // Support secret rotation: comma-separated previous secrets remain valid for verification
+    const prevSecrets = process.env.CLIP_SIGNING_SECRET_PREVIOUS || "";
+    if (prevSecrets) {
+      this.previousSigningSecrets = prevSecrets.split(",").filter(Boolean);
     }
   }
 
@@ -86,7 +92,27 @@ export class LocalStorageService implements StorageService, OnModuleInit {
     if (Date.now() / 1000 > expires) return false;
 
     const signingSecret = process.env.CLIP_SIGNING_SECRET || "";
-    const expected = createHmac("sha256", signingSecret)
+    const previousSecrets = (process.env.CLIP_SIGNING_SECRET_PREVIOUS || "")
+      .split(",")
+      .filter(Boolean);
+
+    // Try current secret first
+    if (LocalStorageService.checkSignature(key, expires, sig, signingSecret)) {
+      return true;
+    }
+
+    // Try previous secrets for rotation grace period
+    for (const prevSecret of previousSecrets) {
+      if (LocalStorageService.checkSignature(key, expires, sig, prevSecret)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private static checkSignature(key: string, expires: number, sig: string, secret: string): boolean {
+    const expected = createHmac("sha256", secret)
       .update(`${key}:${expires}`)
       .digest("hex")
       .slice(0, 32);

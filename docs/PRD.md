@@ -8,6 +8,8 @@
 
 SpikeClip is a YouTube clip extraction tool that uses **actual viewer heatmap data** (audience replay behavior) to identify the most-replayed moments in a video — not AI-guessed predictions. It then reformats those moments into vertical short-form clips ready for TikTok, YouTube Shorts, and Instagram Reels.
 
+**Target market:** The MENA clipping industry — independent clippers, Arabic content creators, and clipping agencies who need better tooling to find high-performing moments in long-form content. No existing AI clipping tool (OpusClip, Klap, Vizard) is built Arabic-first, and none use heatmap data.
+
 **Two-stage product vision:**
 - **Stage 1 (SpikeClip):** Heatmap-driven clip extraction and vertical reformatting
 - **Stage 2 (Prompt Editing Layer):** Captions, cleanup, and styling (built only after Stage 1 has demand)
@@ -18,14 +20,16 @@ SpikeClip is a YouTube clip extraction tool that uses **actual viewer heatmap da
 
 ## 2. Problem Statement
 
-Content creators currently pick which moments to clip from long-form videos based on:
+Clippers — the freelance editors who cut long-form content into short-form clips for TikTok, YouTube Shorts, and Instagram Reels — currently pick which moments to clip based on:
 - **Instinct** — guessing what viewers found engaging
-- **AI predictions** — tools like OpusClip that use AI to guess viral moments
-- **Manual review** — watching the entire video to find highlights
+- **AI predictions** — tools like OpusClip that use AI to guess viral moments (English-first, Arabic support trails)
+- **Manual review** — scrubbing through hours of video to find highlights
 
 None of these use the **actual data** YouTube already collects: the audience heatmap showing exactly where viewers rewatch, skip, or drop off.
 
-**Result:** Creators waste hours clipping moments that don't perform, while genuinely replayed moments go unnoticed.
+In MENA specifically, 50,000+ clippers work through agencies like Arabic Clipping, but no self-serve tool exists that uses real viewer data to find the best moments. Every AI clipping tool treats Arabic as an afterthought.
+
+**Result:** Clippers waste 30–60 minutes per clip finding the right moment, produce clips that underperform, and earn less per view than they could with better data.
 
 ---
 
@@ -33,28 +37,19 @@ None of these use the **actual data** YouTube already collects: the audience hea
 
 | Segment | Use Case | Willingness to Pay |
 |---------|----------|-------------------|
-| Solo content creators | Repurpose long-form videos into shorts | $15–25/mo |
-| Social media agencies | Batch process client videos, team collaboration | $40–60/mo |
-| YouTubers/TikTokers | Find viral moments to repackage | $10–20/mo |
-
-### Ideal Customer Profile (ICP)
-
-**Persona:** Solo YouTubers, 20K–200K subscribers, visually-driven niche (film, art, fashion, lifestyle, premium tutorials), currently cut their own shorts manually.
-
-**Explicit Exclusions:**
-- Faceless/meme channels
-- High-volume-low-craft channels
-- Channels without heatmap data availability
+| Independent clippers (MENA + global) | Find better moments to clip, earn more per clip | $15–25/mo |
+| Arabic content creators | Clip own long-form Arabic content into shorts | $15–25/mo |
+| Clipping agencies (as team accounts) | Give clipper network better tooling | $40–60/mo |
 
 ---
 
 ## 4. Value Proposition
 
 **One-sentence value prop:**
-> Shows you which moments people actually rewatched, so you clip the right ones — not the ones an AI guesses.
+> Heatmap data beats AI guessing — find the moments viewers actually rewatch, so you clip better and earn more.
 
 **Competitive advantage:**
-Unlike AI-guessing products (OpusClip, Vexub), SpikeClip uses actual viewer behavior data (the YouTube heatmap) to find genuinely replayed moments — data-driven, not AI-guessed.
+Unlike AI-guessing products (OpusClip, Klap) that rely on transcript analysis and facial recognition, SpikeClip uses actual viewer behavior data (the YouTube heatmap) to find genuinely replayed moments. In MENA, where CPMs are lower ($0.34–$1.93), every clip needs to perform — heatmap data helps clippers pick winners, not guesses.
 
 ---
 
@@ -477,11 +472,16 @@ CREATE TABLE clips (
 
 | Tool | Data Source | Approach | Weakness |
 |------|-------------|----------|----------|
-| OpusClip | AI prediction | Guesses viral moments | No actual viewer data |
-| Vexub | AI prediction | Guesses viral moments | No actual viewer data |
+| OpusClip | AI prediction | Guesses viral moments | No actual viewer data; Arabic "trails English" |
+| Klap | AI prediction | Guesses viral moments | No actual viewer data; no MENA focus |
+| Vizard | AI prediction | Guesses viral moments | No actual viewer data; no MENA focus |
+| Arabic Clipping | Managed agency | 50K clippers, manual selection | No self-serve tooling for clippers |
+| Lumina Clippers | Managed agency | 62.9K clippers, manual selection | No self-serve tooling for clippers |
 | **SpikeClip** | **YouTube heatmap** | **Actual viewer behavior** | Requires heatmap data availability |
 
-**Moat:** Algorithm is simple; moat is product + UX + brand + the heatmap data advantage.
+**Positioning:** SpikeClip is the tooling layer — the software clippers use to create better clips. Not a campaign platform, not an agency, not a marketplace. Clippers who join campaigns on Arabic Clipping, Clipping.net, or Whop can use SpikeClip to find better moments faster.
+
+**Moat:** Algorithm is simple; moat is product + UX + brand + the heatmap data advantage + Arabic-first caption generation.
 
 ---
 
@@ -503,10 +503,11 @@ CREATE TABLE clips (
 ## 15. Success Criteria
 
 ### Validation (Phase 4 Go/No-Go)
-- [ ] 5-10 creators have used concierge MVP
+- [ ] 5-10 clippers have used concierge MVP
 - [ ] At least some clips posted and tracked
 - [ ] Positive willingness-to-pay signals
 - [ ] Heatmap-selected clips outperform or match self-selected clips
+- [ ] Arabic caption generation working on test videos
 
 ### Stage 1 Launch (Phase 5)
 - [ ] End-to-end pipeline works: URL → heatmap → scenes → clips

@@ -14,6 +14,8 @@ import { SentryModule } from "./infrastructure/sentry/sentry.module";
 import { PaymentsModule } from "./presentation/payments/payments.module";
 import { StudioModule } from "./presentation/studio/studio.module";
 import { RedisModule } from "./infrastructure/redis/redis.module";
+import { YoutubePresentationModule } from "./presentation/youtube/youtube.module";
+import { ProjectsModule } from "./presentation/projects/projects.module";
 import { JwtAuthGuard } from "./infrastructure/auth/jwt-auth.guard";
 import { RolesGuard } from "./infrastructure/auth/roles.guard";
 import { ThrottlerGuard } from "@nestjs/throttler";
@@ -31,6 +33,8 @@ import { ThrottlerGuard } from "@nestjs/throttler";
     ExternalModule,
     PaymentsModule,
     StudioModule,
+    YoutubePresentationModule,
+    ProjectsModule,
     RedisModule,
     SentryModule.forRoot({
       dsn: process.env.SENTRY_DSN || "",
@@ -41,12 +45,12 @@ import { ThrottlerGuard } from "@nestjs/throttler";
       {
         name: "global",
         ttl: 60_000,
-        limit: 30,
+        limit: 100,
       },
       {
         name: "auth",
         ttl: 60_000,
-        limit: 5,
+        limit: 20,
       },
     ]),
   ],

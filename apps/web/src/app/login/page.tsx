@@ -35,11 +35,11 @@ function GoogleIcon({ className }: { className?: string }) {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawCallbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/projects";
   const callbackUrl =
     rawCallbackUrl.startsWith("/") && !rawCallbackUrl.includes("://")
       ? rawCallbackUrl
-      : "/dashboard";
+      : "/projects";
   const { user, isLoading: authLoading } = useAuth();
   const [redirectError, setRedirectError] = useState(false);
   const [signingIn, setSigningIn] = useState(false);

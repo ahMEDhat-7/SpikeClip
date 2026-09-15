@@ -1,5 +1,5 @@
 import { Job } from "../../domain/entities/job.entity";
-import { JobStatus, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
+import { type JobStatusValue, ScoredBlock, HeatmapSpike } from "@spikeclip/shared";
 
 interface PrismaJob {
   id: string;
@@ -33,7 +33,7 @@ export class JobMapper {
       prismaJob.videoViewCount ?? undefined,
       prismaJob.videoUploadDate ?? undefined,
       prismaJob.videoChannelName ?? undefined,
-      prismaJob.status as JobStatus,
+      prismaJob.status as JobStatusValue,
       (prismaJob.scenes as ScoredBlock[]) ?? undefined,
       (prismaJob.heatmapData as HeatmapSpike[]) ?? undefined,
       prismaJob.errorMessage ?? undefined,

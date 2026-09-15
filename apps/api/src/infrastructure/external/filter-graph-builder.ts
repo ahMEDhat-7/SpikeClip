@@ -9,6 +9,7 @@ import {
   SetTransitionAction,
   AddBackgroundAction,
   TrimAction,
+  HookOverlayAction,
   PlatformId,
   OutputQuality,
   OutputFormat,
@@ -24,6 +25,7 @@ interface FilterChain {
   duration?: number;
   trimStart?: number;
   trimDuration?: number;
+  overlayInputs: string[];
 }
 
 interface BuildCommandInput {
@@ -35,6 +37,7 @@ interface BuildCommandInput {
   outputPath: string;
   startTime?: number;
   duration?: number;
+  overlayAssets?: Record<string, string>;
 }
 
 interface BuildCommandResult {
@@ -45,12 +48,12 @@ interface BuildCommandResult {
 @Injectable()
 export class FilterGraphBuilder {
   buildCommand(input: BuildCommandInput): BuildCommandResult {
-    const { actions, platform, quality, format, inputPath, outputPath, startTime, duration } = input;
+    const { actions, platform, quality, format, inputPath, outputPath, startTime, duration, overlayAssets } = input;
     const preset = getPlatformEncodingPreset(platform);
     const qualityPreset = getQualityPreset(quality);
     const formatCodecs = getFormatCodecs(format);
 
-    const chain: FilterChain = { videoFilters: [], audioFilters: [], duration };
+    const chain: FilterChain = { videoFilters: [], audioFilters: [], duration, overlayInputs: [] };
 
     chain.videoFilters.push(`crop=ih*9/16:ih,scale=${preset.resolution.width}:${preset.resolution.height}`);
 
@@ -61,11 +64,41 @@ export class FilterGraphBuilder {
     const effectiveStartTime = chain.trimStart ?? startTime;
     const effectiveDuration = chain.trimDuration ?? duration;
 
-    const videoFilterStr = chain.videoFilters.join(",");
+    const baseVideoFilters = chain.videoFilters.filter(f => !f.startsWith("overlay_"));
+    const overlayFilters = chain.videoFilters.filter(f => f.startsWith("overlay_"));
+
+    let filterComplex = "";
+    let lastVideoLabel = "0:v";
+
+    if (baseVideoFilters.length > 0) {
+      filterComplex += `[0:v]${baseVideoFilters.join(",")}[vbase]`;
+      lastVideoLabel = "vbase";
+    }
+
+    for (let i = 0; i < overlayFilters.length; i++) {
+      const overlayFilter = overlayFilters[i];
+      const inputIndex = i + 1;
+      const outputLabel = i === overlayFilters.length - 1 ? "vout" : `vout${i}`;
+      
+      const match = overlayFilter.match(/overlay_(\d+)=(.+):scale=([\d.]+)/);
+      if (!match) continue;
+      
+      const overlayParams = match[2];
+      const scale = match[3];
+      
+      const scaledOverlay = `[${inputIndex}:v]scale=${scale}:flags=lanczos[ov${i}]`;
+      const overlayChain = `[${lastVideoLabel}][ov${i}]overlay=${overlayParams}[${outputLabel}]`;
+      
+      filterComplex += `;${scaledOverlay};${overlayChain}`;
+      lastVideoLabel = outputLabel;
+    }
+
+    if (baseVideoFilters.length === 0 && overlayFilters.length === 0) {
+      filterComplex = `[0:v]copy[vout]`;
+    }
+
     const hasAudioFilters = chain.audioFilters.length > 0;
     const audioFilterStr = hasAudioFilters ? chain.audioFilters.join(",") : null;
-
-    let filterComplex = `[0:v]${videoFilterStr}[vout]`;
     if (audioFilterStr) {
       filterComplex += `;[0:a]${audioFilterStr}[aout]`;
     }
@@ -78,12 +111,18 @@ export class FilterGraphBuilder {
 
     args.push("-i", inputPath);
 
+    if (overlayAssets) {
+      for (const [assetKey, assetPath] of Object.entries(overlayAssets)) {
+        args.push("-i", assetPath);
+      }
+    }
+
     if (effectiveDuration !== undefined) {
       args.push("-t", effectiveDuration.toString());
     }
 
     args.push("-filter_complex", filterComplex);
-    args.push("-map", "[vout]");
+    args.push("-map", `[${lastVideoLabel}]`);
 
     if (hasAudioFilters) {
       args.push("-map", "[aout]");
@@ -121,6 +160,9 @@ export class FilterGraphBuilder {
         break;
       case "trim":
         this.applyTrim(action, chain);
+        break;
+      case "hook_overlay":
+        this.applyHookOverlay(action, chain);
         break;
     }
   }
@@ -202,7 +244,7 @@ export class FilterGraphBuilder {
       baseFilters.push(`fontsize='if(between(t,${action.start},${action.start + popDuration}),${action.size * 0.5}+${action.size * 2}*clip((t-${action.start})/${popDuration},0,1),${action.size})'`);
     } else if (action.animation === "slide") {
       const slideDuration = 0.4;
-      baseFilters.push(`y='if(between(t,${action.start},${action.start + slideDuration}),${y.replace(/\(/g, "(").replace(/\)/g, ")")}-h+(${y.replace(/\(/g, "(").replace(/\)/g, ")")}+h)*clip((t-${action.start})/${slideDuration},0,1),${y})'`);
+      baseFilters.push(`y='if(between(t,${action.start},${action.start + slideDuration}),${y}-h+${y}+h)*clip((t-${action.start})/${slideDuration},0,1),${y})'`);
       baseFilters.push(`alpha='if(between(t,${action.start},${action.start + slideDuration}),clip((t-${action.start})/${slideDuration},0,1),1)'`);
     } else if (action.animation === "typewriter") {
       const charCount = action.text.length;
@@ -354,10 +396,23 @@ export class FilterGraphBuilder {
   }
 
   private applyOverlay(action: AddOverlayAction, chain: FilterChain): void {
-    const x = `${action.x}*iw/100`;
-    const y = `${action.y}*ih/100`;
+    const overlayIndex = chain.overlayInputs.length;
+    chain.overlayInputs.push(action.assetKey);
+
+    const x = `${action.x}*main_w/100`;
+    const y = `${action.y}*main_h/100`;
     const scale = action.scale ?? 1.0;
-    chain.videoFilters.push(`scale=${scale}:flags=lanczos`);
+    const opacity = action.opacity ?? 1.0;
+
+    let overlayParams = `x=${x}:y=${y}`;
+    if (opacity < 1) {
+      overlayParams += `:alpha=${opacity}`;
+    }
+    if (action.startTime !== undefined && action.endTime !== undefined) {
+      overlayParams += `:enable='between(t,${action.startTime},${action.endTime})'`;
+    }
+
+    chain.videoFilters.push(`overlay_${overlayIndex}=${overlayParams}:scale=${scale}`);
   }
 
   private applyTransition(action: SetTransitionAction, chain: FilterChain): void {
@@ -431,6 +486,48 @@ export class FilterGraphBuilder {
     } else if (action.endTime !== undefined) {
       chain.trimDuration = action.endTime;
     }
+  }
+
+  private applyHookOverlay(action: HookOverlayAction, chain: FilterChain): void {
+    const duration = action.durationSec ?? 1.5;
+    const bg = (action.backgroundColor ?? "#000000CC").replace("#", "0x");
+    const textColor = (action.textColor ?? "#FFFFFF").replace("#", "0x");
+    const fontSize = Math.round((action.fontSize ?? 72) * 0.5);
+    const escaped = this.escapeText(action.text);
+
+    let yExpr: string;
+    switch (action.position) {
+      case "top": yExpr = "h*0.15"; break;
+      case "bottom": yExpr = "h-text_h-h*0.15"; break;
+      default: yExpr = "(h-text_h)/2";
+    }
+
+    const fadeIn = Math.min(0.3, duration * 0.3);
+    const holdStart = fadeIn;
+    const fadeOutStart = Math.max(0, duration - fadeIn);
+    const fadeOut = fadeIn;
+
+    chain.videoFilters.push(
+      `drawbox=x=0:y=(ih/2)-${fontSize + 20}:w=iw:h=${fontSize + 40}:color=${bg}@enable='between(t,0,${duration})'`
+    );
+
+    let drawtext =
+      `drawtext=text='${escaped}'` +
+      `:fontsize=${fontSize}` +
+      `:fontcolor=${textColor}` +
+      `:x=(w-text_w)/2` +
+      `:y=${yExpr}` +
+      `:enable='between(t,0,${duration})'`;
+
+    if (action.animation === "fade") {
+      drawtext += `:alpha='if(between(t,0,${fadeIn}),t/${fadeIn},if(between(t,${fadeOutStart},${duration}),(${duration}-t)/${fadeOut},1))'`;
+    } else if (action.animation === "pop") {
+      drawtext += `:alpha='if(between(t,0,${fadeIn}),min(t/${fadeIn}*1.5,1),if(between(t,${fadeOutStart},${duration}),(${duration}-t)/${fadeOut},1))'`;
+    } else if (action.animation === "slide") {
+      drawtext += `:x='if(between(t,0,${fadeIn}),(w-text_w)*(1-t/${fadeIn})/2+(text_w)/2,(w-text_w)/2)'`;
+    }
+
+    chain.videoFilters.push(drawtext);
   }
 
   buildPreviewCommand(input: BuildCommandInput): BuildCommandResult {

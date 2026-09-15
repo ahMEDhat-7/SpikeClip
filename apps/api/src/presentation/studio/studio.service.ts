@@ -17,11 +17,42 @@ import { createHash } from "crypto";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { mkdir, unlink } from "fs/promises";
-import { join } from "path";
+import { join, resolve, relative } from "path";
 
 const execFileAsync = promisify(execFile);
 const PREVIEW_TMP = "/tmp/spikeclips-preview";
 const YTDLP_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * Validates that a file path is within the allowed directory to prevent path traversal.
+ * @param path The file path to validate
+ * @param allowedDir The allowed directory (must be absolute)
+ * @returns The resolved absolute path if valid
+ * @throws BadRequestException if path tries to escape the allowed directory
+ */
+function validatePath(path: string, allowedDir: string): string {
+  const resolvedPath = resolve(path);
+  const resolvedAllowed = resolve(allowedDir);
+  const relativePath = relative(resolvedAllowed, resolvedPath);
+  if (relativePath.startsWith("..") || relativePath === "..") {
+    throw new BadRequestException("Invalid file path: path traversal detected");
+  }
+  return resolvedPath;
+}
+
+/**
+ * Safely unlinks a file after validating it's within the allowed directory.
+ * @param path The file path to unlink
+ * @param allowedDir The allowed directory (must be absolute)
+ */
+async function safeUnlink(path: string, allowedDir: string): Promise<void> {
+  try {
+    const safePath = validatePath(path, allowedDir);
+    await unlink(safePath).catch(() => {});
+  } catch {
+    // Ignore errors for non-existent files or validation failures
+  }
+}
 
 const PLATFORM_DEFAULTS: Record<string, { aspectRatio: string; maxDuration: number }> = {
   "youtube-shorts": { aspectRatio: "9:16", maxDuration: 60 },
@@ -204,8 +235,8 @@ export class StudioService {
       const url = await this.storage.getSignedUrl(storageKey, 3600);
       return { previewUrl: url, cached: false };
     } finally {
-      await unlink(tmpInput).catch(() => {});
-      await unlink(outputPath).catch(() => {});
+      await safeUnlink(tmpInput, PREVIEW_TMP);
+      await safeUnlink(outputPath, PREVIEW_TMP);
     }
   }
 
@@ -278,6 +309,8 @@ export class StudioService {
   /**
    * Download the requested source section once, cache it in storage, and return
    * a signed URL the OpenReel editor can import directly.
+   * First checks if the shared source from SourceWorker covers the range,
+   * and uses ffmpeg offset trimming instead of re-downloading.
    */
   async prepareSource(
     userId: string,
@@ -307,6 +340,41 @@ export class StudioService {
       }
     }
 
+    // Check if the shared source from SourceWorker covers the requested range
+    const sourceKey = (job as any).sourceKey as string | undefined;
+    const sourceStart = (job as any).sourceStart as number | undefined;
+    if (sourceKey && sourceStart !== undefined) {
+      const { access } = await import("fs/promises");
+      try {
+        await access(sourceKey);
+        // Shared source exists — check if our range is within it
+        const sourceEndEstimate = sourceStart + 300; // approximate from file; we'll use ffmpeg trim
+        if (safeStart >= sourceStart) {
+          // Our range starts within the shared source — use ffmpeg to trim
+          const offset = Math.max(0, safeStart - sourceStart);
+          const duration = safeEnd - safeStart;
+          const tmpTrimmed = join(PREVIEW_TMP, `${jobId}-${Date.now()}-trimmed.mp4`);
+          await mkdir(PREVIEW_TMP, { recursive: true });
+          try {
+            await execFileAsync("ffmpeg", [
+              "-y",
+              "-ss", String(offset),
+              "-i", sourceKey,
+              "-t", String(duration),
+              "-c:v", "libx264", "-c:a", "aac",
+              tmpTrimmed,
+            ]);
+            await this.storage.uploadFromFile(tmpTrimmed, storageKey, "video/mp4");
+          } finally {
+            await safeUnlink(tmpTrimmed, PREVIEW_TMP);
+          }
+          return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };
+        }
+      } catch {
+        // Shared source not accessible — fall through to yt-dlp download
+      }
+    }
+
     const tmpInput = join(PREVIEW_TMP, `${jobId}-${Date.now()}-source.mp4`);
     await mkdir(PREVIEW_TMP, { recursive: true });
     try {
@@ -329,7 +397,7 @@ export class StudioService {
       );
       await this.storage.uploadFromFile(tmpInput, storageKey, "video/mp4");
     } finally {
-      await unlink(tmpInput).catch(() => {});
+      await safeUnlink(tmpInput, PREVIEW_TMP);
     }
 
     return { url: await this.storage.getSignedUrl(storageKey, 3600), key: storageKey };

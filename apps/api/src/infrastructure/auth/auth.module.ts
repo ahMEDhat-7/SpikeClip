@@ -5,6 +5,8 @@ import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./jwt.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
+import { YoutubeModule } from "../youtube/youtube.module";
+import { PrismaModule } from "../database/prisma.module";
 
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) {
@@ -21,8 +23,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.register({
       secret: jwtSecret!,
-      signOptions: { expiresIn: "15m" },
+      signOptions: { expiresIn: "7d" },
     }),
+    YoutubeModule,
+    PrismaModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, ...oauthStrategies],

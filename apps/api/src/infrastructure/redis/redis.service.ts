@@ -9,8 +9,23 @@ export class RedisService {
 
   constructor(private readonly config: ConfigService) {
     const redisUrl = this.config.get<string>("REDIS_URL");
+    const redisHost = this.config.get<string>("REDIS_HOST");
+    const redisPort = this.config.get<number>("REDIS_PORT");
+    
     if (redisUrl) {
       this.client = new Redis(redisUrl, {
+        family: 4,
+        maxRetriesPerRequest: 3,
+        retryStrategy(times) {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
+      });
+    } else if (redisHost && redisPort) {
+      this.client = new Redis({
+        host: redisHost,
+        port: redisPort,
+        family: 4,
         maxRetriesPerRequest: 3,
         retryStrategy(times) {
           const delay = Math.min(times * 50, 2000);

@@ -3,13 +3,13 @@
 import { useState, useCallback, useEffect, useMemo, createContext, useContext, ReactNode } from "react";
 import { useAuthApi } from "@/application/providers/api-provider";
 import { toastWarning } from "@/lib/toast";
-import { PlanTier } from "@spikeclip/shared";
+import { type PlanTierValue } from "@spikeclip/shared";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  plan: PlanTier;
+  plan: PlanTierValue;
   analysesUsed: number;
   analysesLimit: number;
   scenesLimit: number;
@@ -41,7 +41,7 @@ function useAuthProvider(): AuthContextType {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const setUserFromProfile = useCallback((profile: { id: string; email: string; name: string; plan: PlanTier; analysesUsed: number; analysesLimit: number; scenesLimit: number; clipsUsed: number; clipsLimit: number; createdAt?: string }) => {
+  const setUserFromProfile = useCallback((profile: { id: string; email: string; name: string; plan: PlanTierValue; analysesUsed: number; analysesLimit: number; scenesLimit: number; clipsUsed: number; clipsLimit: number; createdAt?: string }) => {
     setUser({
       id: profile.id,
       email: profile.email,

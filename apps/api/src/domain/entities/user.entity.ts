@@ -1,11 +1,11 @@
-import { PlanTier } from "@spikeclip/shared";
+import { PlanTier, type PlanTierValue, UNLIMITED } from "@spikeclip/shared";
 
 export class User {
   constructor(
     public readonly id: string,
     public readonly email: string,
     public name?: string,
-    public plan: PlanTier = "free",
+    public plan: PlanTierValue = PlanTier.FREE,
     public stripeCustomerId?: string,
     public analysesUsed: number = 0,
     public analysesLimit: number = 3,
@@ -14,16 +14,16 @@ export class User {
     public clipsLimit: number = 2,
     public analysesResetAt?: Date,
     public readonly createdAt: Date = new Date(),
-    public updatedAt: Date = new Date()
+    public updatedAt: Date = new Date(),
   ) {}
 
   canAnalyze(): boolean {
-    if (this.analysesLimit === -1) return true;
+    if (this.analysesLimit === UNLIMITED) return true;
     return this.analysesUsed < this.analysesLimit;
   }
 
   canExportClips(count: number = 1): boolean {
-    if (this.clipsLimit === -1) return true;
+    if (this.clipsLimit === UNLIMITED) return true;
     return this.clipsUsed + count <= this.clipsLimit;
   }
 
@@ -33,7 +33,7 @@ export class User {
   }
 
   getClipsRemaining(): number {
-    if (this.clipsLimit === -1) return -1;
+    if (this.clipsLimit === UNLIMITED) return UNLIMITED;
     return Math.max(0, this.clipsLimit - this.clipsUsed);
   }
 }

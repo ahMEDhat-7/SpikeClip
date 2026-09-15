@@ -3,6 +3,7 @@ import { Job as BullMQJob, Worker } from "bullmq";
 import { PrismaService } from "../database/prisma.service";
 import { StorageService } from "../storage/storage.interface";
 import { FfmpegService } from "../external/ffmpeg.service";
+import { YtdlpService } from "../external/ytdlp.service";
 import { CaptionOverlay, MusicMixConfig } from "../../domain/services/video-processor";
 import { randomUUID } from "crypto";
 import { execFile } from "child_process";
@@ -10,6 +11,23 @@ import { promisify } from "util";
 import { unlink, mkdir, stat, access, rename, writeFile } from "fs/promises";
 import { join } from "path";
 import type { StudioAction } from "@spikeclip/shared";
+import {
+  QueueName,
+  ClipStatus,
+  Platform,
+  Quality,
+  Format,
+  type QualityValue,
+  type FormatValue,
+  FfmpegCodec,
+  VERTICAL_CROP_FILTER,
+  YTDLP_FORMAT,
+  MUSIC_SIGNED_URL_TTL,
+  CLIPS_STORAGE_PREFIX,
+  MimeTypes,
+  PLATFORM_CAST,
+} from "@spikeclip/shared";
+import { publishClipProgress } from "../redis/progress-publisher";
 
 const execFileAsync = promisify(execFile);
 const TMP_DIR = "/tmp/spikeclips-export";
@@ -51,12 +69,13 @@ async function fileExists(path: string): Promise<boolean> {
 export function createClipWorker(
   prisma: PrismaService,
   storage: StorageService,
-  ffmpeg?: FfmpegService
+  ffmpeg?: FfmpegService,
+  ytdlp?: YtdlpService
 ): Worker {
   const logger = new Logger("ClipWorker");
 
   const worker = new Worker(
-    "export",
+    QueueName.EXPORT,
     async (bullJob: BullMQJob<ClipExportJobData>) => {
       const {
         jobId, clipId, sceneIndex, videoUrl, startTime, endTime,
@@ -69,8 +88,10 @@ export function createClipWorker(
       try {
         await prisma.clip.update({
           where: { id: clipId },
-          data: { status: "processing" },
+          data: { status: ClipStatus.PROCESSING, startedAt: new Date(), progress: 0 },
         });
+
+        publishClipProgress(jobId, clipId, 5, "acquiring_source");
 
         const tmpInput = join(TMP_DIR, `${clipId}-source.mp4`);
         const tmpCropped = join(TMP_DIR, `${clipId}-cropped.mp4`);
@@ -91,12 +112,12 @@ export function createClipWorker(
 
         let usedSharedSource = false;
         if (sourceKey) {
-          for (let attempt = 0; attempt < 40; attempt++) {
+          for (let attempt = 0; attempt < 5; attempt++) {
             if (await fileExists(sourceKey)) {
               usedSharedSource = true;
               break;
             }
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
 
@@ -107,7 +128,7 @@ export function createClipWorker(
             "-ss", String(offset),
             "-i", sourceKey,
             "-t", String(duration),
-            "-c:v", "libx264", "-c:a", "aac",
+            "-c:v", FfmpegCodec.VIDEO, "-c:a", FfmpegCodec.AUDIO,
             tmpInput,
           ]);
           logger.log(`Reused shared source for clip ${clipId} (offset ${offset}s)`);
@@ -115,39 +136,44 @@ export function createClipWorker(
           if (sourceKey) {
             logger.warn(`Shared source not ready for clip ${clipId}, downloading section directly`);
           }
-          await execFileAsync("yt-dlp", [
-            "--js-runtimes", "node",
-            "-f",
-            "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
-            "--download-sections",
-            `*${startTime}-${endTime}`,
-            "--force-keyframes-at-cuts",
-            "-o",
-            tmpInput,
-            videoUrl,
-          ]);
+          // Use cached YtdlpService or fall back to direct execFile
+          if (ytdlp) {
+            await ytdlp.downloadSection(videoUrl, startTime, endTime, tmpInput);
+          } else {
+            await execFileAsync("yt-dlp", [
+              "--js-runtimes", "node",
+              "-f", YTDLP_FORMAT,
+              "--download-sections", `*${startTime}-${endTime}`,
+              "--force-keyframes-at-cuts",
+              "-o", tmpInput,
+              videoUrl,
+            ]);
+          }
         }
+
+        publishClipProgress(jobId, clipId, 25, "cropping_vertical");
 
         // Step 2: Vertical crop or pass-through encode
         if (vertical) {
           await execFileAsync("ffmpeg", [
             "-y", "-i", tmpInput,
-            "-vf", "crop=ih*9/16:ih,scale=1080:1920",
-            "-c:v", "libx264", "-c:a", "aac",
+            "-vf", VERTICAL_CROP_FILTER,
+            "-c:v", FfmpegCodec.VIDEO, "-c:a", FfmpegCodec.AUDIO,
             tmpCropped,
           ]);
         } else {
           await execFileAsync("ffmpeg", [
             "-y", "-i", tmpInput,
             "-t", String(duration),
-            "-c:v", "libx264", "-c:a", "aac",
+            "-c:v", FfmpegCodec.VIDEO, "-c:a", FfmpegCodec.AUDIO,
             tmpCropped,
           ]);
         }
 
         let currentFile = tmpCropped;
+        publishClipProgress(jobId, clipId, 40, "applying_captions");
 
-        // Step 3: Caption overlay (with timing from startFrame/endFrame)
+        // Step 3: Caption overlay
         if (captions && captions.length > 0 && ffmpeg) {
           try {
             await ffmpeg.overlayCaptions(currentFile, tmpCaptions, captions, duration);
@@ -158,7 +184,9 @@ export function createClipWorker(
           }
         }
 
-        // Step 4: Template effects (vignette, layout)
+        publishClipProgress(jobId, clipId, 55, "applying_effects");
+
+        // Step 4: Template effects
         if (templateConfig && ffmpeg) {
           try {
             await ffmpeg.applyTemplateEffects(currentFile, tmpEffects, templateConfig);
@@ -169,7 +197,7 @@ export function createClipWorker(
           }
         }
 
-        // Step 4.5: Apply StudioActions (effects, speed, overlays, etc.)
+        // Step 4.5: Apply StudioActions
         if (actions && actions.length > 0 && ffmpeg) {
           try {
             const actionsOutput = join(TMP_DIR, `${clipId}-actions.mp4`);
@@ -177,9 +205,9 @@ export function createClipWorker(
               currentFile,
               actionsOutput,
               actions,
-              (bullJob.data.platform as "youtube-shorts" | "instagram-reels" | "tiktok") || "youtube-shorts",
-              (bullJob.data.quality as "720p" | "1080p") || "1080p",
-              (bullJob.data.format as "mp4" | "webm") || "mp4",
+              PLATFORM_CAST[bullJob.data.platform || Platform.YOUTUBE_SHORTS] || "youtube-shorts",
+              (bullJob.data.quality as QualityValue) || Quality.P1080,
+              (bullJob.data.format as FormatValue) || Format.MP4,
               0,
               duration
             );
@@ -190,10 +218,12 @@ export function createClipWorker(
           }
         }
 
-        // Step 5: Music mix (with correct fade-out and -shortest)
+        publishClipProgress(jobId, clipId, 70, "mixing_music");
+
+        // Step 5: Music mix
         if (music) {
           try {
-            const musicSignedUrl = await storage.getSignedUrl(music.fileKey, 600);
+            const musicSignedUrl = await storage.getSignedUrl(music.fileKey, MUSIC_SIGNED_URL_TTL);
             const sanitizedKey = music.fileKey.replace(/[^a-zA-Z0-9._-]/g, "_");
             const musicPath = join(TMP_DIR, `${clipId}-music-${sanitizedKey}`);
             const response = await fetch(musicSignedUrl);
@@ -212,28 +242,35 @@ export function createClipWorker(
           }
         }
 
+        publishClipProgress(jobId, clipId, 85, "uploading");
+
         // Step 6: If no music mix wrote to tmpOutput, copy current state there
         if (currentFile !== tmpOutput) {
           await rename(currentFile, tmpOutput);
         }
 
         // Step 7: Upload to storage
-        const storageKey = `clips/${jobId}/${sceneIndex}-${randomUUID().slice(0, 8)}.mp4`;
-        await storage.uploadFromFile(tmpOutput, storageKey, "video/mp4");
+        const storageKey = `${CLIPS_STORAGE_PREFIX}${jobId}/${sceneIndex}-${randomUUID().slice(0, 8)}.mp4`;
+        await storage.uploadFromFile(tmpOutput, storageKey, MimeTypes.VIDEO_MP4);
         const fileUrl = storageKey;
         const fileSize = (await stat(tmpOutput)).size;
+
+        publishClipProgress(jobId, clipId, 95, "finalizing");
 
         // Step 8: Update DB
         await prisma.clip.update({
           where: { id: clipId },
           data: {
-            status: "completed",
+            status: ClipStatus.COMPLETED,
+            progress: 100,
             fileUrl,
             fileSize,
             duration,
             completedAt: new Date(),
           },
         });
+
+        publishClipProgress(jobId, clipId, 100, "completed");
 
         // Step 9: Cleanup temp files
         await unlink(tmpInput).catch(() => {});
@@ -247,6 +284,19 @@ export function createClipWorker(
           await unlink(join(TMP_DIR, `${clipId}-music-${sanitizedKey}`)).catch(() => {});
         }
 
+        // Step 10: Cleanup shared source when all clips for this job are done
+        try {
+          const pendingClips = await prisma.clip.count({
+            where: { jobId, status: { in: [ClipStatus.PENDING, ClipStatus.PROCESSING] } },
+          });
+          if (pendingClips === 0 && jobRecord?.sourceKey) {
+            await unlink(jobRecord.sourceKey).catch(() => {});
+            logger.log(`Cleaned up shared source for job ${jobId}`);
+          }
+        } catch {
+          // Non-critical: source cleanup failure shouldn't fail the job
+        }
+
         logger.log(`Completed clip ${clipId}: ${fileUrl}`);
       } catch (error) {
         const raw = error instanceof Error ? error.message : "Unknown error";
@@ -257,8 +307,10 @@ export function createClipWorker(
         logger.error(`Clip ${clipId} failed: ${message}`);
         await prisma.clip.update({
           where: { id: clipId },
-          data: { status: "failed", errorMessage: message },
+          data: { status: ClipStatus.FAILED, errorMessage: message },
         });
+
+        publishClipProgress(jobId, clipId, 0, "failed");
       }
     },
     {

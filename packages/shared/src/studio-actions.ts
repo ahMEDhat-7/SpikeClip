@@ -15,7 +15,8 @@ export type StudioAction =
   | AddOverlayAction
   | SetTransitionAction
   | AddBackgroundAction
-  | TrimAction;
+  | TrimAction
+  | HookOverlayAction;
 
 // ─── AddCaptions ────────────────────────────────────────────────────────────
 
@@ -150,6 +151,21 @@ export const TrimActionSchema = z.object({
 
 export type TrimAction = z.infer<typeof TrimActionSchema>;
 
+// ─── HookOverlay ───────────────────────────────────────────────────────────
+
+export const HookOverlayActionSchema = z.object({
+  action: z.literal("hook_overlay"),
+  text: z.string().min(1).max(200),
+  durationSec: z.number().positive().optional().default(1.5),
+  position: z.enum(["top", "center", "bottom"]).optional().default("center"),
+  backgroundColor: z.string().optional().default("#000000CC"),
+  textColor: z.string().optional().default("#FFFFFF"),
+  fontSize: z.number().positive().optional().default(72),
+  animation: z.enum(["fade", "slide", "pop"]).optional().default("fade"),
+});
+
+export type HookOverlayAction = z.infer<typeof HookOverlayActionSchema>;
+
 // ─── Combined Schema ────────────────────────────────────────────────────────
 
 export const StudioActionSchema = z.discriminatedUnion("action", [
@@ -161,6 +177,7 @@ export const StudioActionSchema = z.discriminatedUnion("action", [
   SetTransitionActionSchema,
   AddBackgroundActionSchema,
   TrimActionSchema,
+  HookOverlayActionSchema,
 ]);
 
 export const StudioActionsArraySchema = z.array(StudioActionSchema).min(1).max(10);

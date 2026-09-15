@@ -3,7 +3,7 @@ import { PrismaService } from "../prisma.service";
 import { JobRepository } from "../../../domain/repositories/job.repository";
 import { Job } from "../../../domain/entities/job.entity";
 import { JobMapper } from "../../../application/mappers/job.mapper";
-import { JobStatus } from "@spikeclip/shared";
+import { type JobStatusValue } from "@spikeclip/shared";
 import { Prisma } from "@prisma/client";
 
 @Injectable()
@@ -11,13 +11,18 @@ export class PrismaJobRepository implements JobRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): Promise<Job | null> {
+    const job = await this.prisma.job.findFirst({ where: { id, deletedAt: null } });
+    return job ? JobMapper.toEntity(job) : null;
+  }
+
+  async findByIdIncludeDeleted(id: string): Promise<Job | null> {
     const job = await this.prisma.job.findUnique({ where: { id } });
     return job ? JobMapper.toEntity(job) : null;
   }
 
   async findByUserId(userId: string): Promise<Job[]> {
     const jobs = await this.prisma.job.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { createdAt: "desc" },
     });
     return jobs.map(JobMapper.toEntity);
@@ -50,10 +55,51 @@ export class PrismaJobRepository implements JobRepository {
     return JobMapper.toEntity(updated as Parameters<typeof JobMapper.toEntity>[0]);
   }
 
-  async updateStatus(id: string, status: JobStatus): Promise<void> {
+  async updateStatus(id: string, status: JobStatusValue): Promise<void> {
     await this.prisma.job.update({
       where: { id },
       data: { status },
+    });
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.prisma.job.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async softDeleteClips(jobId: string): Promise<void> {
+    await this.prisma.clip.updateMany({
+      where: { jobId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async findClipsByJobId(jobId: string): Promise<Array<{
+    id: string;
+    jobId: string;
+    sceneIndex: number;
+    startTime: number;
+    endTime: number;
+    peakIntensity: number | null;
+    status: string;
+    fileUrl: string | null;
+    fileSize: number | null;
+    duration: number | null;
+    errorMessage: string | null;
+    createdAt: Date;
+    completedAt: Date | null;
+  }>> {
+    return this.prisma.clip.findMany({
+      where: { jobId, deletedAt: null },
+      orderBy: { sceneIndex: "asc" },
+    });
+  }
+
+  async countPendingClips(jobId: string): Promise<number> {
+    return this.prisma.clip.count({
+      where: { jobId, deletedAt: null, status: { in: ["pending", "processing"] } },
     });
   }
 }

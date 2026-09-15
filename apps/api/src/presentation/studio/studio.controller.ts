@@ -18,12 +18,14 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiConsumes } from "@nestjs/swagger";
 import { Response } from "express";
 import { createReadStream, existsSync } from "fs";
-import { join } from "path";
+import { join, resolve, relative } from "path";
 import { StudioService } from "./studio.service";
 import { AuthService } from "../../infrastructure/auth/auth.service";
 import type { StudioAction } from "@spikeclip/shared";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { UploadedFile } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
+import { Platform, TMP_PREVIEW_DIR, MimeTypes, PREVIEW_CACHE_CONTROL, UPLOAD_MAX_SIZE_BYTES } from "@spikeclip/shared";
 
 interface MulterFile {
   fieldname: string;
@@ -53,7 +55,24 @@ interface GeneratePreviewDto {
   platform: string;
 }
 
-const PREVIEW_TMP = "/tmp/spikeclips-preview";
+const PREVIEW_TMP = TMP_PREVIEW_DIR;
+
+/**
+ * Validates that a file path is within the allowed directory to prevent path traversal.
+ * @param path The file path to validate
+ * @param allowedDir The allowed directory (must be absolute)
+ * @returns The resolved absolute path if valid
+ * @throws BadRequestException if path tries to escape the allowed directory
+ */
+function validatePreviewPath(path: string, allowedDir: string): string {
+  const resolvedPath = resolve(path);
+  const resolvedAllowed = resolve(allowedDir);
+  const relativePath = relative(resolvedAllowed, resolvedPath);
+  if (relativePath.startsWith("..") || relativePath === "..") {
+    throw new BadRequestException("Invalid file path: path traversal detected");
+  }
+  return resolvedPath;
+}
 
 @ApiTags("studio")
 @ApiBearerAuth()
@@ -68,6 +87,7 @@ export class StudioController {
 
   @Post("translate")
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: "Translate a natural language prompt into StudioActions" })
   @ApiResponse({ status: 200, description: "Actions and FFmpeg command generated" })
   @ApiResponse({ status: 400, description: "Invalid prompt or clarification needed" })
@@ -79,7 +99,7 @@ export class StudioController {
         prompt: { type: "string", example: "Add bold white captions saying 'Highlight' from 0-3s" },
         sceneStart: { type: "number", example: 0 },
         sceneEnd: { type: "number", example: 15 },
-        platform: { type: "string", enum: ["youtube_shorts", "instagram_reels", "tiktok"], example: "youtube_shorts" },
+        platform: { type: "string", enum: Object.values(Platform), example: Platform.YOUTUBE_SHORTS },
       },
     },
   })
@@ -89,6 +109,7 @@ export class StudioController {
 
   @Post("preview")
   @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 15, ttl: 60_000 } })
   @ApiOperation({ summary: "Generate a preview video with applied actions" })
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 400, description: "Invalid actions or scene" })
@@ -98,6 +119,7 @@ export class StudioController {
 
   @Post("preview/:jobId/:sceneIndex")
   @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 15, ttl: 60_000 } })
   @ApiOperation({ summary: "Generate preview for a specific job scene" })
   @ApiResponse({ status: 202, description: "Preview generation started" })
   @ApiResponse({ status: 404, description: "Job or scene not found" })
@@ -130,15 +152,21 @@ export class StudioController {
       throw new NotFoundException("Invalid scene index");
     }
 
-    const previewFile = join(PREVIEW_TMP, `${jobId}-${safeSceneIndex}-preview.mp4`);
+    // Validate jobId format (should be a UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(jobId)) {
+      throw new BadRequestException("Invalid job ID format");
+    }
+
+    const previewFile = validatePreviewPath(join(PREVIEW_TMP, `${jobId}-${safeSceneIndex}-preview.mp4`), PREVIEW_TMP);
 
     if (!existsSync(previewFile)) {
       throw new NotFoundException("Preview file not found. Generate a preview first.");
     }
 
     res.set({
-      "Content-Type": "video/mp4",
-      "Cache-Control": "private, max-age=3600",
+      "Content-Type": MimeTypes.VIDEO_MP4,
+      "Cache-Control": PREVIEW_CACHE_CONTROL,
     });
 
     const stream = createReadStream(previewFile);
@@ -218,7 +246,7 @@ export class StudioController {
   @ApiResponse({ status: 400, description: "Invalid job, file, or unauthorized" })
   @UseInterceptors(
     FileInterceptor("file", {
-      limits: { fileSize: 500 * 1024 * 1024 },
+      limits: { fileSize: UPLOAD_MAX_SIZE_BYTES },
     })
   )
   async uploadClip(

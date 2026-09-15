@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { randomUUID } from "crypto";
-import { Queue, Worker } from "bullmq";
-import { QueueService, ExportJobConfig } from "../../domain/services/queue";
+import { Queue, Worker, Job } from "bullmq";
+import { QueueService, ExportJobConfig, ProjectExportJobData } from "../../domain/services/queue";
 
 const connectionOptions = {
   host: process.env.REDIS_HOST || "localhost",
@@ -10,17 +10,26 @@ const connectionOptions = {
   maxRetriesPerRequest: null,
 };
 
+const JOB_CLEANUP = {
+  removeOnComplete: { age: 3600, count: 100 },
+  removeOnFail: { age: 86400, count: 50 },
+};
+
 @Injectable()
 export class BullMQQueueService implements QueueService, OnModuleDestroy {
   private readonly logger = new Logger(BullMQQueueService.name);
   private readonly analysisQueue: Queue;
   private readonly exportQueue: Queue;
   private readonly sourceQueue: Queue;
+  private readonly sceneGenerationQueue: Queue;
+  private readonly projectExportQueue: Queue;
 
   constructor() {
     this.analysisQueue = new Queue("analysis", { connection: connectionOptions });
     this.exportQueue = new Queue("export", { connection: connectionOptions });
     this.sourceQueue = new Queue("source", { connection: connectionOptions });
+    this.sceneGenerationQueue = new Queue("scene-generation", { connection: connectionOptions });
+    this.projectExportQueue = new Queue("project-export", { connection: connectionOptions });
     this.logger.log("Queues initialized");
   }
 
@@ -32,29 +41,63 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       jobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5000 },
+      ...JOB_CLEANUP,
     });
   }
 
   async addExportJob(
     jobId: string,
-    data: ExportJobConfig
+    data: ExportJobConfig,
+    dependsOn?: string
   ): Promise<void> {
-    await this.exportQueue.add("export-clip", { ...data, jobId }, {
+    const opts: Record<string, unknown> = {
       jobId: `export-${jobId}-${data.sceneIndex}-${randomUUID().slice(0, 8)}`,
       attempts: 2,
       backoff: { type: "exponential", delay: 10000 },
-    });
+      ...JOB_CLEANUP,
+    };
+    if (dependsOn) {
+      opts.dependencies = [dependsOn];
+    }
+    await this.exportQueue.add("export-clip", { ...data, jobId }, opts);
   }
 
   async addSourceJob(
     jobId: string,
     data: { userId: string; start: number; end: number }
-  ): Promise<void> {
+  ): Promise<string> {
+    const bullJobId = `source-${jobId}`;
     await this.sourceQueue.add("prepare-source", { ...data, jobId }, {
-      jobId: `source-${jobId}`,
+      jobId: bullJobId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5000 },
+      ...JOB_CLEANUP,
     });
+    return bullJobId;
+  }
+
+  async addSceneGenerationJob(
+    data: { sourceId: string; projectId: string; userId: string }
+  ): Promise<string> {
+    const bullJobId = `scene-${data.sourceId}-${randomUUID().slice(0, 8)}`;
+    await this.sceneGenerationQueue.add("generate-scenes", data, {
+      jobId: bullJobId,
+      attempts: 2,
+      backoff: { type: "exponential", delay: 5000 },
+      ...JOB_CLEANUP,
+    });
+    return bullJobId;
+  }
+
+  async addProjectExportJob(data: ProjectExportJobData): Promise<string> {
+    const bullJobId = `proj-export-${data.clipId}-${randomUUID().slice(0, 8)}`;
+    await this.projectExportQueue.add("export-clip", data, {
+      jobId: bullJobId,
+      attempts: 2,
+      backoff: { type: "exponential", delay: 10000 },
+      ...JOB_CLEANUP,
+    });
+    return bullJobId;
   }
 
   createWorker(
@@ -78,6 +121,23 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
     return worker;
   }
 
+  async getJobCounts(): Promise<{
+    analysis: { waiting: number; active: number; completed: number; failed: number };
+    export: { waiting: number; active: number; completed: number; failed: number };
+    source: { waiting: number; active: number; completed: number; failed: number };
+  }> {
+    const [analysis, exp, source] = await Promise.all([
+      this.analysisQueue.getJobCounts("waiting", "active", "completed", "failed"),
+      this.exportQueue.getJobCounts("waiting", "active", "completed", "failed"),
+      this.sourceQueue.getJobCounts("waiting", "active", "completed", "failed"),
+    ]);
+    return {
+      analysis: analysis as any,
+      export: exp as any,
+      source: source as any,
+    };
+  }
+
   async onModuleDestroy() {
     try {
       await this.analysisQueue.close();
@@ -93,6 +153,16 @@ export class BullMQQueueService implements QueueService, OnModuleDestroy {
       await this.sourceQueue.close();
     } catch (err) {
       this.logger.error(`Failed to close source queue: ${err}`);
+    }
+    try {
+      await this.sceneGenerationQueue.close();
+    } catch (err) {
+      this.logger.error(`Failed to close scene generation queue: ${err}`);
+    }
+    try {
+      await this.projectExportQueue.close();
+    } catch (err) {
+      this.logger.error(`Failed to close project export queue: ${err}`);
     }
   }
 }

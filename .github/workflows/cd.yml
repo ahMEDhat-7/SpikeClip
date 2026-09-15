@@ -1,0 +1,204 @@
+name: CD
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9.0.0"
+  API_PORT: "3001"
+  WEB_PORT: "3000"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # PHASE 1: Build Docker Images (needs CI to pass)
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-base:
+    name: Build Base Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - name: Set up Docker Buildx (local driver for image sharing)
+        uses: docker/setup-buildx-action@v4.0.0
+        with:
+          driver: docker
+      - name: Build base image
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: .
+          file: docker/base.Dockerfile
+          push: false
+          load: true
+          tags: spikeclip-base:ci
+      - name: Save base image
+        run: docker save spikeclip-base:ci -o /tmp/base.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-base
+          path: /tmp/base.tar
+          retention-days: 1
+
+  docker-build:
+    name: Build Docker Image (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [docker-base]
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: api
+            dockerfile: apps/api/Dockerfile
+            target: production
+          - service: web
+            dockerfile: apps/web/Dockerfile
+            target: production
+            build-args: |
+              NEXT_PUBLIC_API_URL=http://api:3001
+              NEXT_PUBLIC_SITE_URL=http://localhost
+              NEXT_PUBLIC_DOMAIN=localhost
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-base
+          path: /tmp
+      - name: Load base image
+        run: docker load -i /tmp/base.tar
+      - name: Set up Docker Buildx (local driver to see loaded images)
+        uses: docker/setup-buildx-action@v4.0.0
+        with:
+          driver: docker
+      - name: Build ${{ matrix.service }} image
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          build-args: ${{ matrix.build-args }}
+          push: false
+          load: true
+          tags: spikeclip-${{ matrix.service }}:ci
+      - name: Save image for connectivity job
+        run: docker save spikeclip-${{ matrix.service }}:ci -o /tmp/${{ matrix.service }}.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ matrix.service }}
+          path: /tmp/${{ matrix.service }}.tar
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # PHASE 2: Integration Test — full stack connectivity check
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-connectivity:
+    name: Container Connectivity Check
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-api
+          path: /tmp
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-web
+          path: /tmp
+      - name: Load built images
+        run: |
+          docker load -i /tmp/api.tar
+          docker load -i /tmp/web.tar
+      - name: Start full stack
+        run: docker compose -f docker/docker-compose.ci.yml up -d --wait
+      - name: Show container status
+        if: always()
+        run: docker compose -f docker/docker-compose.ci.yml ps
+      - name: Verify API can reach Postgres, Redis, and MinIO
+        run: |
+          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.API_PORT }}/api/health | tee /tmp/api-health.json
+          grep -q '"database":"ok"' /tmp/api-health.json
+          grep -q '"redis":"ok"' /tmp/api-health.json
+          grep -q '"storage":"ok"' /tmp/api-health.json
+      - name: Verify web can reach the API
+        run: |
+          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.WEB_PORT }}
+          curl --fail --retry 5 --retry-delay 3 http://localhost:${{ env.WEB_PORT }}/api/health
+      - name: Verify containers reach each other by service name (not localhost)
+        run: |
+          docker compose -f docker/docker-compose.ci.yml exec -T api sh -c \
+            "curl -sf http://minio:9000/minio/health/live" \
+            && echo "api -> minio (by name): OK"
+          docker compose -f docker/docker-compose.ci.yml exec -T api sh -c \
+            "curl -sf http://web:${{ env.WEB_PORT }}" \
+            && echo "api -> web (by name): OK"
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f docker/docker-compose.ci.yml logs
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker/docker-compose.ci.yml down -v
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # PHASE 3: Push to Docker Hub (only on push to main/develop)
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-push:
+    name: Push Docker Image (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: [docker-connectivity]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [api, web]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-${{ matrix.service }}
+          path: /tmp
+      - name: Load the exact image that passed the connectivity check
+        run: docker load -i /tmp/${{ matrix.service }}.tar
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Tag and push
+        env:
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/spikeclip-${{ matrix.service }}
+          SHA_TAG: ${{ github.sha }}
+        run: |
+          SHORT_SHA=$(echo "$SHA_TAG" | cut -c1-7)
+          BRANCH_TAG=${{ github.ref_name }}
+          docker tag spikeclip-${{ matrix.service }}:ci "$IMAGE:$SHORT_SHA"
+          docker tag spikeclip-${{ matrix.service }}:ci "$IMAGE:$BRANCH_TAG"
+          docker push "$IMAGE:$SHORT_SHA"
+          docker push "$IMAGE:$BRANCH_TAG"
+          if [ "$BRANCH_TAG" = "main" ]; then
+            docker tag spikeclip-${{ matrix.service }}:ci "$IMAGE:latest"
+            docker push "$IMAGE:latest"
+          fi

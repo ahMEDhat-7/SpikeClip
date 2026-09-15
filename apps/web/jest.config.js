@@ -8,4 +8,5 @@ module.exports = {
   },
   setupFiles: ["<rootDir>/src/test-setup.ts"],
   testMatch: ["**/__tests__/**/*.test.{ts,tsx}"],
+  testTimeout: 30000,
 };

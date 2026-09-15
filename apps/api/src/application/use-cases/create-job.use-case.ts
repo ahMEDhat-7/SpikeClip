@@ -3,6 +3,7 @@ import { Job } from "../../domain/entities/job.entity";
 import { YoutubeUrl } from "../../domain/value-objects/youtube-url";
 import { JobRepository, JOB_REPOSITORY } from "../../domain/repositories/job.repository";
 import { VideoExtractor, VIDEO_EXTRACTOR } from "../../domain/services/video-extractor";
+import { QueueService, QUEUE_SERVICE } from "../../domain/services/queue";
 import { JobResponseDto } from "../dto/job-response.dto";
 
 const MIN_VIEWS = 1000;
@@ -25,7 +26,8 @@ export class CreateJobUseCase {
 
   constructor(
     @Inject(JOB_REPOSITORY) private readonly jobRepository: JobRepository,
-    @Inject(VIDEO_EXTRACTOR) private readonly videoExtractor: VideoExtractor
+    @Inject(VIDEO_EXTRACTOR) private readonly videoExtractor: VideoExtractor,
+    @Inject(QUEUE_SERVICE) private readonly queueService: QueueService
   ) {}
 
   async execute(url: string, userId: string): Promise<JobResponseDto> {
@@ -75,6 +77,14 @@ export class CreateJobUseCase {
     );
 
     const saved = await this.jobRepository.create(job);
+
+    // Enqueue analysis job — worker handles heatmap processing asynchronously
+    try {
+      await this.queueService.addAnalysisJob(saved.id, { url: youtubeUrl.toString(), userId });
+      this.logger.log(`Enqueued analysis job for ${saved.id}`);
+    } catch (err) {
+      this.logger.warn(`Failed to enqueue analysis job: ${err}`);
+    }
 
     return JobResponseDto.fromEntity(saved);
   }

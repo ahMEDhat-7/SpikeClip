@@ -63,8 +63,10 @@ export function validateAlgorithmConfig(cfg: Partial<AlgorithmConfig>): void {
   if (totalWeight <= 0) {
     throw new AlgorithmConfigError(`sum of weights must be > 0, got ${totalWeight}`);
   }
-  if (Math.abs(totalWeight - 1.0) > 1e-9) {
-    throw new AlgorithmConfigError(`sum of weights must equal 1.0, got ${totalWeight}`);
+  if (Math.abs(totalWeight - 1.0) > 0.05) {
+    throw new AlgorithmConfigError(
+      `sum of weights must be within [0.95, 1.05], got ${totalWeight}. Weights will be normalized automatically.`
+    );
   }
 }
 
@@ -217,7 +219,28 @@ function bestSubwindow(
   let left = 0;
   let windowWeighted = 0.0;
   let windowDuration = 0.0;
-  let windowPeak = 0.0;
+
+  // Deque for sliding window maximum (stores indices, values decreasing)
+  const deque: number[] = [];
+
+  function dequeValue(idx: number): number {
+    const v = segments[idx].value;
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  function dequePopFront(upTo: number): void {
+    while (deque.length > 0 && deque[0] < upTo) {
+      deque.shift();
+    }
+  }
+
+  function dequePushBack(idx: number): void {
+    const val = dequeValue(idx);
+    while (deque.length > 0 && dequeValue(deque[deque.length - 1]) <= val) {
+      deque.pop();
+    }
+    deque.push(idx);
+  }
 
   for (let right = 0; right < segments.length; right++) {
     const seg = segments[right];
@@ -225,7 +248,8 @@ function bestSubwindow(
     const segVal = Number.isFinite(seg.value) ? seg.value : 0;
     windowWeighted += segVal * segDur;
     windowDuration += segDur;
-    if (segVal > windowPeak) windowPeak = segVal;
+
+    dequePushBack(right);
 
     while (
       segments[right].end_time - segments[left].start_time > maxClipDuration &&
@@ -237,19 +261,14 @@ function bestSubwindow(
       windowWeighted -= lsegVal * lsegDur;
       windowDuration -= lsegDur;
       left++;
-
-      if (left <= right) {
-        let newPeak = 0;
-        for (let k = left; k <= right; k++) {
-          const v = Number.isFinite(segments[k].value) ? segments[k].value : 0;
-          if (v > newPeak) newPeak = v;
-        }
-        windowPeak = newPeak;
-      }
     }
+
+    // Remove indices that are out of the window
+    dequePopFront(left);
 
     const span = segments[right].end_time - segments[left].start_time;
     if (span <= maxClipDuration && windowDuration >= minClipDuration && windowDuration > 0) {
+      const windowPeak = deque.length > 0 ? dequeValue(deque[0]) : 0;
       const avg = windowWeighted / windowDuration;
       const combined = 0.6 * avg + 0.4 * windowPeak;
       if (!best || combined > bestCombined) {
@@ -372,6 +391,16 @@ export function extractTopScenes(
   validateAlgorithmConfig(config);
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
+  const totalWeight = cfg.weight_peak + cfg.weight_avg + cfg.weight_duration_fit;
+  let wPeak = cfg.weight_peak;
+  let wAvg = cfg.weight_avg;
+  let wDurationFit = cfg.weight_duration_fit;
+  if (Math.abs(totalWeight - 1.0) > 1e-9 && totalWeight > 0) {
+    wPeak /= totalWeight;
+    wAvg /= totalWeight;
+    wDurationFit /= totalWeight;
+  }
+
   const normalized = normalizeHeatmapValues(rawSpikes);
 
   const merged = mergeHeatmapSpikes(
@@ -386,9 +415,9 @@ export function extractTopScenes(
     cfg.min_clip_duration,
     cfg.max_clip_duration,
     cfg.target_duration_range,
-    cfg.weight_peak,
-    cfg.weight_avg,
-    cfg.weight_duration_fit
+    wPeak,
+    wAvg,
+    wDurationFit
   );
 
   return selectTopScenes(scored, cfg.top_n, cfg.min_spacing);

@@ -4,50 +4,110 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useJobApi } from "@/application/providers/api-provider";
 import { ClipResponse, StudioExportConfig } from "../../domain/ports/job-api.port";
 import { CLIP_STATUS } from "../../domain/entities/job";
-import { POLLING_INTERVAL_MS } from "@/lib/constants";
 
-const MAX_POLL_ATTEMPTS = 120;
+interface ProgressEvent {
+  jobId: string;
+  clipId?: string;
+  progress: number;
+  step: string;
+}
 
 export function useExportClips(jobId: string | null) {
   const jobApi = useJobApi();
   const [clips, setClips] = useState<ClipResponse[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const pollCountRef = useRef(0);
 
-  const startPolling = useCallback(
+  const cleanup = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+    pollCountRef.current = 0;
+  }, []);
+
+  const startSSE = useCallback(
     (jid: string) => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      pollCountRef.current = 0;
+      cleanup();
 
-      pollingRef.current = setInterval(async () => {
-        pollCountRef.current++;
-        if (pollCountRef.current >= MAX_POLL_ATTEMPTS) {
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          pollingRef.current = null;
-          setIsExporting(false);
-          setError("Export timed out. Please refresh and try again.");
-          return;
-        }
+      const es = new EventSource(`/api/clips/job/${jid}/progress`, {
+        withCredentials: true,
+      });
+      eventSourceRef.current = es;
+
+      es.onmessage = (event) => {
         try {
-          const currentClips = await jobApi.getClips(jid);
-          setClips(currentClips);
+          const data = JSON.parse(event.data) as ProgressEvent;
 
-          const allDone = currentClips.every(
-            (c) => c.status === CLIP_STATUS.COMPLETED || c.status === CLIP_STATUS.FAILED
-          );
-          if (allDone && currentClips.length > 0) {
-            if (pollingRef.current) clearInterval(pollingRef.current);
-            pollingRef.current = null;
-            setIsExporting(false);
+          // Refresh clip list when a clip completes or fails
+          if (data.step === "completed" || data.step === "failed") {
+            jobApi.getClips(jid).then((currentClips) => {
+              setClips(currentClips);
+              const allDone = currentClips.every(
+                (c) => c.status === CLIP_STATUS.COMPLETED || c.status === CLIP_STATUS.FAILED
+              );
+              if (allDone && currentClips.length > 0) {
+                setIsExporting(false);
+                es.close();
+                eventSourceRef.current = null;
+              }
+            }).catch(() => {});
+          }
+
+          // Update individual clip progress if clipId is present
+          if (data.clipId) {
+            setClips((prev) =>
+              prev.map((c) =>
+                c.id === data.clipId
+                  ? { ...c, progress: data.progress } as ClipResponse
+                  : c
+              )
+            );
           }
         } catch {
-          // polling error — ignore, will retry
+          // Ignore malformed messages
         }
-      }, POLLING_INTERVAL_MS);
+      };
+
+      es.onerror = () => {
+        // SSE connection lost — fall back to polling
+        es.close();
+        eventSourceRef.current = null;
+
+        // Fallback: poll every 2s
+        pollCountRef.current = 0;
+        pollingRef.current = setInterval(async () => {
+          pollCountRef.current++;
+          if (pollCountRef.current >= 120) {
+            cleanup();
+            setIsExporting(false);
+            setError("Export timed out. Please refresh and try again.");
+            return;
+          }
+          try {
+            const currentClips = await jobApi.getClips(jid);
+            setClips(currentClips);
+            const allDone = currentClips.every(
+              (c) => c.status === CLIP_STATUS.COMPLETED || c.status === CLIP_STATUS.FAILED
+            );
+            if (allDone && currentClips.length > 0) {
+              cleanup();
+              setIsExporting(false);
+            }
+          } catch {
+            // polling error — ignore, will retry
+          }
+        }, 2000);
+      };
     },
-    []
+    [cleanup, jobApi]
   );
 
   const exportClips = useCallback(
@@ -72,14 +132,14 @@ export function useExportClips(jobId: string | null) {
             createdAt: new Date().toISOString(),
           }))
         );
-        startPolling(jobId);
+        startSSE(jobId);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Export failed";
         setError(message);
         setIsExporting(false);
       }
     },
-    [jobId, startPolling]
+    [jobId, startSSE]
   );
 
   const loadClips = useCallback(async () => {
@@ -89,18 +149,18 @@ export function useExportClips(jobId: string | null) {
       setClips(currentClips);
       if (currentClips.some((c) => c.status === CLIP_STATUS.PENDING || c.status === CLIP_STATUS.PROCESSING)) {
         setIsExporting(true);
-        startPolling(jobId);
+        startSSE(jobId);
       }
     } catch {
       setError("Failed to load existing clips.");
     }
-  }, [jobId, startPolling]);
+  }, [jobId, startSSE]);
 
   useEffect(() => {
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      cleanup();
     };
-  }, []);
+  }, [cleanup]);
 
   return {
     clips,

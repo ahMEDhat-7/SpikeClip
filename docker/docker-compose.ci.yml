@@ -1,0 +1,128 @@
+# docker-compose.ci.yml
+#
+# Ephemeral stack used ONLY by the CI "docker-connectivity" job.
+# Local dev should keep using scripts/dev.sh / your existing docker-compose
+# setup — this file exists purely to prove every container can see every
+# other container before code merges, not to replace local dev tooling.
+#
+# Service names, env var names, and the DB user/name below are matched to
+# the real docker-compose.yml in the repo (checked directly), not guessed.
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: spikeclips
+      POSTGRES_PASSWORD: spikeclips_dev
+      POSTGRES_DB: spikeclips
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spikeclips"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:8-alpine
+    command: redis-server --requirepass spikeclips_dev_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "spikeclips_dev_redis", "ping", "|", "grep", "PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # One-off job: applies migrations before `api` is allowed to start.
+  # Proves the api image itself (not just a local `pnpm` process) can
+  # reach postgres. Uses the prisma CLI directly rather than a named
+  # package script, since I haven't confirmed the exact script name in
+  # apps/api/package.json — adjust if you've got e.g. `prisma:deploy`.
+  migrate:
+    image: spikeclip-api:ci
+    command: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+    environment:
+      DATABASE_URL: postgresql://spikeclips:spikeclips_dev@postgres:5432/spikeclips
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: spikeclip-api:ci
+    environment:
+      DATABASE_URL: postgresql://spikeclips:spikeclips_dev@postgres:5432/spikeclips
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: spikeclips_dev_redis
+      STORAGE_DRIVER: minio   # forced on for CI, even though prod defaults to
+                               # "local" — otherwise this stack never actually
+                               # exercises MinIO connectivity, which defeats
+                               # the point of this job.
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: spikeclips-clips
+      MINIO_USE_SSL: "false"
+      PORT: "${API_PORT:-3001}"
+      JWT_SECRET: "ci-test-jwt-secret-change-in-production"
+      CLIP_SIGNING_SECRET: "ci-test-clip-signing-secret"
+      NODE_ENV: "test"
+    ports:
+      - "${API_PORT:-3001}:${API_PORT:-3001}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # Real path confirmed from docker-compose.yml: /api/health, not /health.
+      # I have NOT confirmed the exact JSON shape this returns (couldn't
+      # locate health.controller.ts), so ci.yml only asserts HTTP 200 here —
+      # same bar this healthcheck itself uses. Tell me the real response
+      # shape and I'll tighten the field-level assertions in ci.yml.
+      test: ["CMD", "curl", "-f", "http://localhost:${API_PORT:-3001}/api/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  web:
+    image: spikeclip-web:ci
+    environment:
+      # NEXT_PUBLIC_API_URL is NOT set here on purpose — in your real
+      # docker-compose.yml it's a build ARG (baked into the client bundle
+      # at image build time), not a runtime env var. Setting it here would
+      # have zero effect on an already-built image. It's passed as a
+      # build-arg in the docker-build job in ci.yml instead.
+      INTERNAL_API_URL: http://api:${API_PORT:-3001}
+      PORT: "${WEB_PORT:-3000}"
+    ports:
+      - "${WEB_PORT:-3000}:${WEB_PORT:-3000}"
+    depends_on:
+      api:
+        condition: service_healthy   # stricter than prod's service_started —
+                                      # deliberate for a connectivity gate.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${WEB_PORT:-3000}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s

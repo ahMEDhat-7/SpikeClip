@@ -1,5 +1,6 @@
 import {
   JobStatus,
+  type JobStatusValue,
   ScoredBlock,
   HeatmapSpike,
   StudioAction,
@@ -16,7 +17,7 @@ export class Job {
     public videoViewCount?: number,
     public videoUploadDate?: string,
     public videoChannelName?: string,
-    public status: JobStatus = "pending",
+    public status: JobStatusValue = JobStatus.PENDING,
     public scenes?: ScoredBlock[],
     public heatmapData?: HeatmapSpike[],
     public errorMessage?: string,
@@ -27,17 +28,17 @@ export class Job {
   ) {}
 
   markProcessing(): void {
-    this.status = "processing";
+    this.status = JobStatus.PROCESSING;
   }
 
   markCompleted(scenes: ScoredBlock[]): void {
-    this.status = "completed";
+    this.status = JobStatus.COMPLETED;
     this.scenes = scenes;
     this.completedAt = new Date();
   }
 
   markFailed(error: string): void {
-    this.status = "failed";
+    this.status = JobStatus.FAILED;
     this.errorMessage = error;
     this.completedAt = new Date();
   }

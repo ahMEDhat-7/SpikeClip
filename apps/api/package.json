@@ -1,6 +1,6 @@
 {
   "name": "@spikeclip/api",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "prisma generate && nest build",
@@ -12,6 +12,7 @@
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.js",
     "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts"
@@ -35,6 +36,7 @@
     "helmet": "^8.3.0",
     "ioredis": "^5.6.0",
     "minio": "^8.0.7",
+    "multer": "^2.3.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
@@ -61,6 +63,6 @@
     "ts-jest": "^29.0.0",
     "ts-loader": "^9.0.0",
     "ts-node": "^10.0.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.9.3"
   }
 }

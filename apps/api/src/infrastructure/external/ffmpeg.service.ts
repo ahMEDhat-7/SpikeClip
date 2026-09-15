@@ -16,6 +16,8 @@ import {
   OutputQuality,
   OutputFormat,
   FONT_MAP,
+  isArabicText,
+  getFontForText,
 } from "@spikeclip/shared";
 import { withTimeout } from "./utils/timeout";
 
@@ -151,8 +153,9 @@ export class FfmpegService implements VideoProcessor {
         .replace(/\n/g, " ");
 
       const fontSize = Math.round(cap.size * 0.5);
-      const fontFile = FONT_MAP[cap.font] ?? FONT_MAP.inter;
+      const fontFile = getFontForText(cap.text, cap.font);
       const color = cap.color.replace("#", "0x");
+      const isRtl = isArabicText(cap.text);
 
       let yExpr: string;
       if (cap.y !== undefined && cap.y !== null) {
@@ -168,6 +171,8 @@ export class FfmpegService implements VideoProcessor {
       let xExpr: string;
       if (cap.x !== undefined && cap.x !== null) {
         xExpr = `w*${(cap.x / 100).toFixed(3)}-text_w/2`;
+      } else if (isRtl) {
+        xExpr = "w-text_w-w*0.05";
       } else {
         xExpr = "(w-text_w)/2";
       }

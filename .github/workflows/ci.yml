@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
     branches: [main]
 
@@ -10,20 +10,32 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read
+  security-events: write
+
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   PNPM_VERSION: "9.0.0"
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # PHASE 1: Code Quality (no Docker) — lint, prisma-validate, test, audit
+  # ─────────────────────────────────────────────────────────────────────────
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -31,32 +43,98 @@ jobs:
       - run: pnpm --filter @spikeclip/shared build
       - run: pnpm lint
 
+  prisma-validate:
+    name: Prisma Schema Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: spikeclips
+          POSTGRES_PASSWORD: spikeclips_dev
+          POSTGRES_DB: spikeclips
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U spikeclips"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://spikeclips:spikeclips_dev@localhost:5432/spikeclips
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @spikeclip/api prisma:validate
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @spikeclip/shared build
-      - run: pnpm test
+      - name: Run shared tests with coverage
+        run: pnpm --filter @spikeclip/shared test -- --coverage
+      - name: Run API tests
+        run: pnpm --filter @spikeclip/api test -- --coverage --passWithNoTests
 
-  build:
-    name: Build
+  security-audit:
+    name: Security Audit
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    permissions:
+      contents: read
+      security-events: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Audit for known vulnerabilities
+        run: pnpm audit --audit-level=high || true
+
+  build:
+    name: Build All Packages
+    runs-on: ubuntu-latest
+    needs: [lint, prisma-validate, test, security-audit]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm

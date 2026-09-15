@@ -11,6 +11,7 @@ import {
 } from "@spikeclip/shared";
 import { RedisService } from "../redis/redis.service";
 import { LLM_PROVIDER, LLMProvider, ChatMessage } from "./llm-provider.interface";
+import { PatternPresetService } from "../../application/services/pattern-preset.service";
 
 interface TranslationResult {
   success: boolean;
@@ -31,6 +32,7 @@ export class PromptTranslationService {
     @Inject(LLM_PROVIDER) private readonly llm: LLMProvider,
     private readonly redis: RedisService,
     private readonly config: ConfigService,
+    private readonly presets: PatternPresetService,
   ) {
     this.verbosePrompt = this.config.get("LLM_VERBOSE_PROMPT", "false") === "true";
   }
@@ -72,12 +74,18 @@ export class PromptTranslationService {
   }
 
   private buildCompactPrompt(context: StudioEditContext): string {
+    const hasArabicContext = context.captions.some((c) => /[\u0600-\u06FF]/.test(c.text));
+    const fontOptions = hasArabicContext
+      ? "inter,impact,bebas,playfair,mono,noto-arabic,noto-naskh,noto-kufi"
+      : "inter,impact,bebas,playfair,mono";
+    const fontDefault = hasArabicContext ? "noto-arabic" : "inter";
+
     return `Translate editing instructions to JSON. Return ONLY a JSON array. If ambiguous, return {"type":"clarification","question":"...","suggestions":["..."]}.
 
-Actions: add_captions(text,font|inter,impact,bebas,playfair,mono,size 12-120,color hex,start,end,position|top,center,bottom,animation|fade,slide,pop,typewriter,none,style|normal,bold,outlined,shadow,neon,opacity 0-1,backgroundColor hex,backgroundEnabled bool,strokeWidth number,shadowRadius number,x 0-100,y 0-100), mix_audio(volume 0-1,originalVolume 0-1,fadeIn,fadeOut,startTime,tone|normal,bass_boost,treble_boost,warm), apply_effect(type|vignette,zoom_in,zoom_out,blur,sharpen,sepia,bw,glitch,glow,intensity 0-1,startTime,endTime), set_speed(rate 0.25-4.0,preservePitch bool), add_overlay(assetKey,x,y,scale 0.1-2,opacity 0-1,startTime,endTime), set_transition(type|fade,slide_left,slide_right,zoom,wipe,duration,position|start,end), add_background(color hex,startTime,endTime), trim(startTime,endTime).
+Actions: add_captions(text,font|${fontOptions},size 12-120,color hex,start,end,position|top,center,bottom,animation|fade,slide,pop,typewriter,none,style|normal,bold,outlined,shadow,neon,opacity 0-1,backgroundColor hex,backgroundEnabled bool,strokeWidth number,shadowRadius number,x 0-100,y 0-100), mix_audio(volume 0-1,originalVolume 0-1,fadeIn,fadeOut,startTime,tone|normal,bass_boost,treble_boost,warm), apply_effect(type|vignette,zoom_in,zoom_out,blur,sharpen,sepia,bw,glitch,glow,intensity 0-1,startTime,endTime), set_speed(rate 0.25-4.0,preservePitch bool), add_overlay(assetKey,x,y,scale 0.1-2,opacity 0-1,startTime,endTime), set_transition(type|fade,slide_left,slide_right,zoom,wipe,duration,position|start,end), add_background(color hex,startTime,endTime), trim(startTime,endTime).
 
 Platform: ${context.platform} (${context.aspectRatio}, max ${context.maxDuration}s). Scene: ${context.sceneStart}-${context.sceneEnd}s (duration ${context.sceneDuration}s). Available assets: ${context.availableAssets.length > 0 ? context.availableAssets.join(",") : "none"}.
-Defaults: font=inter, size=48, color=#FFFFFF. Apply to full scene if no timing. Actions execute sequentially. Times must be within ${context.sceneStart}-${context.sceneEnd}.
+Defaults: font=${fontDefault}, size=48, color=#FFFFFF. For Arabic text, use noto-arabic font. Apply to full scene if no timing. Actions execute sequentially. Times must be within ${context.sceneStart}-${context.sceneEnd}.
 Example: "make it 2x" → [{"action":"set_speed","rate":2}].
 
 # Current scene state
@@ -91,7 +99,7 @@ ${this.buildStateSummary(context)}`;
 
 ### add_captions
 Add text overlay to the video.
-Parameters: text (required), font (inter|impact|bebas|playfair|mono), size (12-120), color (hex), position (top|center|bottom), start (seconds), end (seconds), animation (fade|slide|pop|typewriter|none), style (normal|bold|outlined|shadow|neon), opacity (0-1), backgroundColor (hex), backgroundEnabled (bool), strokeWidth (number), shadowRadius (number), x (0-100%), y (0-100%).
+Parameters: text (required), font (inter|impact|bebas|playfair|mono|noto-arabic|noto-naskh|noto-kufi), size (12-120), color (hex), position (top|center|bottom), start (seconds), end (seconds), animation (fade|slide|pop|typewriter|none), style (normal|bold|outlined|shadow|neon), opacity (0-1), backgroundColor (hex), backgroundEnabled (bool), strokeWidth (number), shadowRadius (number), x (0-100%), y (0-100%). For Arabic text, always use noto-arabic or noto-naskh font.
 
 ### mix_audio
 Mix background music/audio with the original.
@@ -253,6 +261,25 @@ ${this.buildStateSummary(context)}
       }
     } catch {
       this.logger.debug("Cache read failed, proceeding with LLM call");
+    }
+
+    try {
+      const presetMatch = await this.presets.matchPreset(prompt);
+      if (presetMatch && presetMatch.confidence >= 0.6) {
+        this.logger.log(`Preset match: "${presetMatch.name}" (confidence: ${presetMatch.confidence.toFixed(2)})`);
+        const actions = await this.presets.extractOverrides(prompt, presetMatch.template);
+        const clampedActions = this.clampActions(actions, context);
+
+        try {
+          await this.redis.set(cacheKey, JSON.stringify(clampedActions), CACHE_TTL_SECONDS);
+        } catch {
+          this.logger.debug("Cache write failed");
+        }
+
+        return { success: true, actions: clampedActions, summary: clampedActions.map(describeAction).join("; ") };
+      }
+    } catch (err) {
+      this.logger.debug(`Preset match failed, falling through to LLM: ${err}`);
     }
 
     try {

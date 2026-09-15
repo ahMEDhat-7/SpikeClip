@@ -11,6 +11,7 @@ import { startWorkers, stopWorkers } from "./infrastructure/workers";
 import { PrismaService } from "./infrastructure/database/prisma.service";
 import { AuthService } from "./infrastructure/auth/auth.service";
 import { FFMPEG_SERVICE } from "./infrastructure/external/external.module";
+import { YtdlpService } from "./infrastructure/external/ytdlp.service";
 
 const logger = new Logger("Bootstrap");
 
@@ -53,7 +54,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle("Clutch API")
+    .setTitle("SpikeClip API")
     .setDescription(
       "YouTube heatmap-driven clip extraction API. " +
         "Analyze viewer engagement data to find the most-replayed moments in videos."
@@ -72,8 +73,9 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
-  logger.log(`API running on http://localhost:${port}`);
+  const host = process.env.NODE_ENV === "production" ? "127.0.0.1" : "0.0.0.0";
+  await app.listen(port, host);
+  logger.log(`API running on http://${host}:${port}`);
   if (process.env.NODE_ENV?.toLowerCase() !== "production") {
     logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
   }
@@ -83,7 +85,8 @@ async function bootstrap() {
     const authService = app.get(AuthService);
     const storage = app.get("STORAGE_SERVICE");
     const ffmpeg = app.get(FFMPEG_SERVICE);
-    startWorkers(prisma, authService, storage, ffmpeg);
+    const ytdlp = app.get(YtdlpService);
+    startWorkers(prisma, authService, storage, ffmpeg, ytdlp);
   } catch (err) {
     logger.warn(`Failed to start workers (Redis may be unavailable): ${err instanceof Error ? err.message : err}`);
   }
@@ -99,11 +102,13 @@ process.on("uncaughtException", (err) => {
 });
 
 process.on("SIGTERM", async () => {
+  logger.log("SIGTERM received, shutting down gracefully...");
   await stopWorkers();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
+  logger.log("SIGINT received, shutting down gracefully...");
   await stopWorkers();
   process.exit(0);
 });

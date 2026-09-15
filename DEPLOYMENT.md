@@ -3,7 +3,7 @@
 ## Local Development
 
 ### Prerequisites
-- Node.js ≥ 24
+- Node.js ≥ 22
 - pnpm 9.x
 - Docker + Docker Compose
 - yt-dlp (`pip install yt-dlp`)
@@ -113,7 +113,7 @@ chmod +x deploy/setup.sh
 1. System updates + dependencies (Nginx, Certbot, FFmpeg, UFW)
 2. Creates 2GB swap
 3. Installs Docker + Docker Compose
-4. Installs Node.js 24, pnpm 9
+4. Installs Node.js 22, pnpm 9
 5. Installs yt-dlp
 6. Creates `spikeclips` system user
 7. Clones repo, installs deps, builds

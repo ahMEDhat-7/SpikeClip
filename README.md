@@ -5,263 +5,156 @@
 > Find what viewers actually rewatch — then make it beautiful.
 
 [![CI](https://github.com/ahMEDhat-7/SpikeClip/actions/workflows/ci.yml/badge.svg)](https://github.com/ahMEDhat-7/SpikeClip/actions/workflows/ci.yml)
-[![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue)](https://www.typescriptlang.org/)
-[![Node](https://img.shields.io/badge/Node-24-green)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/Node-22-green)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**SpikeClip extracts the most-replayed moments from YouTube videos using *actual viewer heatmap data* — not AI guesses.** It detects spikes in audience replay behavior and reformats those moments into vertical shorts ready for TikTok, YouTube Shorts, and Instagram Reels.
+**SpikeClip extracts the most-replayed moments from YouTube videos using actual viewer heatmap data — not AI guesses.** It detects spikes in audience replay behavior and reformats those moments into vertical shorts ready for TikTok, YouTube Shorts, and Instagram Reels.
 
 Unlike AI-guessing tools (OpusClip, Vexub, etc.), SpikeClip is built on the engagement signal YouTube already collects: the heatmap that shows exactly where viewers rewatched. The result is a clip selection you can defend with data, not vibes.
 
-![Landing Page — Desktop](./media/landing-desktop.png)
+---
+
+## Key Features
+
+| Category | Features |
+|----------|----------|
+| **Data-Driven Selection** | Real heatmap data via yt-dlp · Spike Merging Algorithm v2 (5s gap tolerance, 0.25 intensity delta) · 3-60s configurable clip duration · Top-N scene ranking |
+| **Clip Studio Editor** | Multi-track timeline (OpenReel-based) · SRT/drawtext captions · Background music with fades · Curated templates (kinetic typography, split-screen, POV, collages) · WebCodecs/WebGPU in-browser rendering |
+| **Multi-Platform Export** | Single download - 9:16 crop - keyframe-accurate cuts - TikTok / YouTube Shorts / Instagram Reels ready · HMAC-signed downloads (no public buckets) |
+| **Accounts & Tiers** | Google OAuth 2.0 · httpOnly JWT cookies · Free (3 analyses/mo, 3 scenes) · Pro (unlimited, 10 scenes) · Team (unlimited, 25 scenes) · Stripe subscriptions |
+| **Production Backend** | Clean/hexagonal architecture (NestJS 11) · BullMQ workers · PostgreSQL 18 + Redis 8 + MinIO · Sentry · Rate limiting · Structured logging (Pino) |
 
 ---
 
-## Watch it in action
+## Architecture Overview
 
-A walkthrough of SpikeClip running locally — landing page, the heatmap analysis dashboard, and the full Clip Studio pipeline (platform → scenes → captions → music → templates → export).
+```mermaid
+graph TB
+    subgraph "External"
+        User[User Browser]
+        YouTube[YouTube API]
+    end
 
-<video src="./media/demo" controls width="800" poster="./media/home" preload="metadata">
-  Your browser does not support the video tag.
-  <a href="./media/demo">Download the walkthrough (MP4)</a>.
-</video>
+    subgraph "VPS / Docker Host"
+        Nginx[nginx :80/443<br/>Reverse Proxy + TLS]
+        
+        subgraph "Frontend"
+            Web[Next.js 16 :3000<br/>App Router + React 19]
+        end
+        
+        subgraph "Backend"
+            API[NestJS 11 :3001<br/>Internal API Only]
+            Workers[BullMQ Workers<br/>Analysis + Export Queues]
+        end
+        
+        subgraph "Data Layer"
+            PG[(PostgreSQL 18<br/>:5432)]
+            Redis[(Redis 8<br/>:6379)]
+            MinIO[(MinIO<br/>:9000/:9001)]
+        end
+    end
 
----
-
-## Screenshots
-
-| Page | Preview |
-|------|---------|
-| Landing (desktop) | ![Landing Desktop](./media/landing-desktop.png) |
-| Landing (mobile) | ![Landing Mobile](./media/landing-mobile.png) |
-| Pricing | ![Pricing](./media/pricing.png) |
-| Features | ![Features](./media/features.png) |
-| Full page | ![Full Page](./media/landing-full.png) |
-
-> Screenshots captured from the production build (`pnpm build && pnpm start`) via Chromium DevTools.
-
----
-
-## Features
-
-- **Real heatmap data** — extracts per-second viewer engagement directly from YouTube's heatmap via `yt-dlp`. Every recommendation is backed by actual human attention.
-- **Spike Merging Algorithm v2** — gap-tolerant clustering (5s tolerance) + intensity scoring (0.25 delta) merges adjacent high-engagement moments into coherent, naturally-bounded clips. Configurable 3–60s duration.
-- **Animated hero heatmap** — procedurally generated realistic engagement visualization (seeded PRNG, 200 data points) with a single synced playhead, floating orbit icons (Web Animations API), and glassmorphism UI. SVG paths updated via refs to bypass React render at 60fps.
-- **Interactive heatmap visualization** — see exactly where viewers rewatched, with detected scenes highlighted and clickable timestamps.
-- **Clip Studio editor** — pick scenes, add captions (SRT / drawtext), layer background music with fades, apply curated templates (kinetic typography, split-screen, POV, collages, and more).
-- **OpenReel-based editing engine** — Clip Studio is being re-architected on the open-source [OpenReel](https://openreel.video) model ([MIT](https://github.com/Augani/openreel-video)): a non-destructive multi-track timeline as the single source of truth, a typed editing-tool registry shared by manual and AI edits, and a model-agnostic AI agent — with hybrid server-ingest + in-browser WebCodecs/WebGPU rendering.
-- **Vertical reformatting** — automatically crops and reformats to 9:16 (1080×1920) from a single downloaded source, with keyframe-accurate cuts and no black bars.
-- **Multi-platform export** — one analysis, clips ready for TikTok, YouTube Shorts, and Instagram Reels.
-- **Accounts & tiers** — Google OAuth, free-tier quota enforcement, and Pro/Team subscriptions via Stripe.
-- **Production-grade backend** — clean/hexagonal architecture, BullMQ workers, PostgreSQL + Redis + MinIO, Sentry, rate limiting, and HMAC-signed clip downloads.
-
----
-
-## Architecture
-
-```
-                           ┌─────────────────────────────────┐
-                           │         nginx (port 80)         │
-                           │      reverse proxy → web        │
-                           └──────────────┬──────────────────┘
-                                          │
-                           ┌──────────────▼──────────────────┐
-                           │      Next.js web (port 3000)    │
-                           │  /api/* → proxy to API (intern) │
-                           └──────────────┬──────────────────┘
-                                          │ Docker network
-                           ┌──────────────▼───────────────────┐
-                           │      NestJS API :3001            │
-                           │         (internal only)          │
-                           └──────────┬───────────────────────┘
-                                      │
-                      ┌───────────────┼───────────────┐
-                      │               │               │
-          ┌───────────▼─────┐ ┌───────▼──────┐ ┌──────▼─────────┐
-          │  PostgreSQL 18  │ │   Redis 8    │ │    MinIO       │
-          │ (localhost:5432)│ │ (localhost:  │ │ (localhost:    │
-          └─────────────────┘ │     6379)    │ │  9000/9001)    │
-                              └──────────────┘ └────────────────┘
+    User -->|HTTPS| Nginx
+    Nginx -->|Proxy| Web
+    Web -->|/api/* -> Proxy| API
+    API -->|Prisma ORM| PG
+    API -->|ioredis| Redis
+    API -->|MinIO SDK| MinIO
+    Workers -->|BullMQ| Redis
+    Workers -->|yt-dlp/ffmpeg| YouTube
+    Workers -->|Prisma/MinIO| PG
+    Workers -->|Prisma/MinIO| MinIO
 ```
 
-- **nginx** is the only public entry point. It proxies to the web server only.
-- **Next.js** handles user-facing concerns and proxies `/api/*` internally via `apps/web/src/app/api/[...path]/route.ts`. It never connects to Postgres, Redis, or MinIO directly.
-- **NestJS API** is the single backend gateway — all data access flows through it (the web proxy blocks every non-`/api/auth/*` route without a session cookie).
-- **PostgreSQL, Redis, MinIO** are only reachable from the API layer.
-
-### Tech Stack
-
-| Layer | Technology |
-| ----- | ---------- |
-| Frontend | Next.js 16 (App Router), React 19, TypeScript 7, Tailwind CSS 4, shadcn/ui, Recharts |
-| Backend | NestJS 11, TypeScript 7, Prisma 6 (ORM), BullMQ 5 (queues), Pino (logging) |
-| Algorithm | Canonical spike-merging port in `packages/shared` (`CreateYTShorts.py` is the reference) |
-| Data | PostgreSQL 18, Redis 8, MinIO (object storage) |
-| Media | `yt-dlp` (heatmap + section download), `ffmpeg` (trim, 9:16 crop, caption/music mix) |
-| Infra | Docker Compose, nginx reverse proxy, self-hosted VPS |
-| Payments | Stripe (subscriptions + webhooks) |
-
-### Editing Engine & OpenReel Integration
-
-SpikeClip's Clip Studio editing engine is being rebuilt on the open-source **[OpenReel](https://openreel.video)** architecture ([MIT](https://github.com/Augani/openreel-video), [github.com/Augani/openreel-video](https://github.com/Augani/openreel-video)):
-
-- **Non-destructive multi-track timeline** as the single source of truth (replacing the per-scene flat `StudioAction[]` list).
-- **Typed editing-tool registry** — every edit (manual *or* AI) is one undoable, typed command through the same surface.
-- **Model-agnostic AI agent** — bring OpenAI / Anthropic / local models; plans via dry-run and executes tools, with "undo the whole turn".
-- **Hybrid rendering** — the server keeps YouTube ingest (`yt-dlp`), proxy/transcode, and storage (MinIO); compositing and export move to in-browser **WebCodecs / WebGPU** (mirroring OpenReel's engine), with server-side `ffmpeg` as a heavy-transcode fallback.
-
-This keeps SpikeClip's data-driven heatmap selection while giving it a professional, agent-native editing core. `StudioAction` remains as a legacy/translation layer during the transition.
+**Key architectural decisions:**
+- nginx is the only public entry point (terminates TLS, proxies to web)
+- Next.js handles all user-facing concerns; proxies /api/* internally to NestJS API
+- NestJS API is the single backend gateway - all data access flows through it (web never touches DB/Redis/MinIO directly)
+- Workers run async jobs (heatmap analysis, clip export) via BullMQ/Redis queues
+- PostgreSQL, Redis, MinIO are only reachable from the API layer
 
 ---
 
-## How it works
+## How It Works
 
-### Analysis Pipeline (6 stages)
+### Analysis Pipeline (6 Stages)
 
-| Stage | What happens |
+| Stage | Description |
 |-------|-------------|
-| **01 — Submit** | Paste a YouTube URL. Metadata + heatmap are extracted via `yt-dlp`. |
-| **02 — Analyze** | Per-second engagement scores are computed from the heatmap data. |
-| **03 — Detect** | The canonical spike-merging algorithm clusters high-engagement moments into scenes (3–60s). |
-| **04 — Score** | Scenes are ranked by viewer rewatch intensity — highest replay = best clip. |
-| **05 — Visualize** | Interactive heatmap renders with detected scenes highlighted and clickable timestamps. |
-| **06 — Decide** | User reviews ranked scenes and picks moments for Clip Studio. |
+| 01 - Submit | Paste a YouTube URL. Metadata + heatmap extracted via yt-dlp. |
+| 02 - Analyze | Per-second engagement scores computed from heatmap data. |
+| 03 - Detect | Canonical spike-merging algorithm clusters high-engagement moments into scenes (3-60s). |
+| 04 - Score | Scenes ranked by viewer rewatch intensity - highest replay = best clip. |
+| 05 - Visualize | Interactive heatmap renders with detected scenes highlighted + clickable timestamps. |
+| 06 - Decide | User reviews ranked scenes and picks moments for Clip Studio. |
 
-### Clip Studio Pipeline (4 stages)
+### Clip Studio Pipeline (4 Stages)
 
-| Stage | What happens |
+| Stage | Description |
 |-------|-------------|
-| **01 — Analyze** | Paste a URL and get heatmap data with per-second engagement scores. |
-| **02 — Select** | Review detected scenes ranked by viewer rewatch intensity. |
-| **03 — Edit** | Add captions (SRT / drawtext), layer background music with fades, apply curated templates. |
-| **04 — Export** | Download vertical clips (9:16, 1080×1920) ready for TikTok, YouTube Shorts, and Instagram Reels. |
+| 01 - Analyze | Paste URL - get heatmap with per-second engagement scores. |
+| 02 - Select | Review detected scenes ranked by viewer rewatch intensity. |
+| 03 - Edit | Add captions (SRT/drawtext), layer background music with fades, apply curated templates. |
+| 04 - Export | Download vertical clips (9:16, 1080x1920) ready for TikTok, Shorts, Reels. |
 
-```
-POST /api/jobs  →  yt-dlp extracts metadata + heatmap
-  →  HeatmapWorker runs the canonical merge algorithm → scenes saved
-  →  Frontend polls GET /api/jobs/:id and renders the interactive heatmap
-        ↓
-POST /api/jobs/:id/export  →  Clip rows created + export jobs enqueued
-  →  ClipWorker: download section → crop to 9:16 → overlay captions →
-     apply template effects → mix music → upload to MinIO
-  →  Clips served via HMAC-signed API URLs (never a public bucket)
-```
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- **Node.js** >= 24
-- **pnpm** 9.x
-- **Docker** + Docker Compose v2
-- **yt-dlp** — `pip install yt-dlp`
-- **FFmpeg** — `apt install ffmpeg` / `brew install ffmpeg`
-
-### 1. Clone & install
-
-```bash
-git clone git@github.com:ahMEDhat-7/SpikeClip.git
-cd SpikeClip
-pnpm install          # postinstall runs `prisma generate` automatically
-```
-
-### 2. Start infrastructure
-
-```bash
-./scripts/dev.sh
-```
-
-This starts Postgres (5432), Redis (6379), and MinIO (9000/9001) in Docker.
-
-### 3. Configure environment
-
-```bash
-cp .env.example apps/api/.env
-```
-
-Set your Google OAuth credentials at minimum (the UI and Browse pages work without them; analysis/export require a signed-in user).
-
-### 4. Migrate & run
-
-```bash
-pnpm --filter @spikeclip/api prisma:migrate
-pnpm dev
-```
-
-- **Frontend:** http://localhost:3000
-- **Swagger:** http://localhost:3001/api/docs
-
-> A seeded test user (`test@spikeclip.dev`) is available via `pnpm --filter @spikeclip/api prisma:seed` for manual testing without Google OAuth.
-
----
-
-## Project Structure
-
-```
-SpikeClip/
-├── apps/
-│   ├── api/            # NestJS 11 backend (internal) — clean/hexagonal architecture
-│   │   └── src/
-│   │       ├── domain/          # entities, value objects, repository interfaces, services
-│   │       ├── application/      # use-cases + DTOs
-│   │       ├── infrastructure/   # Prisma, auth, external (yt-dlp/ffmpeg), storage, workers
-│   │       └── presentation/     # controllers, filters, interceptors
-│   └── web/            # Next.js 16 frontend (public)
-│       └── src/
-│           ├── app/             # App Router pages (studio, dashboard, login, ...)
-│           ├── application/      # hooks + providers (API client, auth, studio)
-│           ├── domain/           # entities, ports, data
-│           ├── infrastructure/    # API clients (auth, job)
-│           └── presentation/      # components (studio, heatmap, scenes, clips)
-├── packages/
-│   └── shared/         # shared types + the canonical spike-merging algorithm
-├── deploy/             # VPS deployment (systemd, nginx, scripts)
-├── docker/             # Nginx config for Docker
-├── scripts/            # dev.sh, prod.sh
-├── docs/               # PRD, plan, tasks
-└── docker-compose.yml  # Full stack (all services)
+```text
+POST /api/jobs  ->  yt-dlp extracts metadata + heatmap
+  ->  HeatmapWorker runs canonical merge algorithm -> scenes saved
+  ->  Frontend polls GET /api/jobs/:id -> renders interactive heatmap
+        |
+POST /api/jobs/:id/export  ->  Clip rows created + export jobs enqueued
+  ->  ClipWorker: download section -> crop to 9:16 -> overlay captions ->
+     apply template effects -> mix music -> upload to MinIO
+  ->  Clips served via HMAC-signed API URLs (never a public bucket)
 ```
 
 ---
 
-## Authentication
+## Authentication & Tiers
 
-**Google OAuth 2.0 only.** Sessions are cookie-based JWTs (`httpOnly`).
+**Google OAuth 2.0 only.** Sessions are cookie-based JWTs (httpOnly).
 
-- `GET /api/auth/google` — redirect to Google consent
-- `GET /api/auth/google/callback` — sets session cookie
-- `POST /api/auth/logout` — clears cookie
-- `GET /api/auth/me` — current user
+| Endpoint | Description |
+|----------|-------------|
+| GET /api/auth/google | Redirect to Google consent |
+| GET /api/auth/google/callback | Sets session cookie |
+| POST /api/auth/logout | Clears cookie |
+| GET /api/auth/me | Current user |
 
-**Tiers:** Free (3 analyses/month, 3 scenes). Pro (unlimited, 10 scenes). Team (unlimited, 25 scenes). Unlimited tiers store `analysesLimit = -1`.
+| Tier | Analyses/Month | Scenes/Analysis |
+|------|----------------|-----------------|
+| Free | 3 | 3 |
+| Pro | Unlimited | 10 |
+| Team | Unlimited | 25 |
 
----
-
-## Testing & CI
-
-```bash
-pnpm test                              # all unit tests (shared + api + web)
-pnpm --filter @spikeclip/api test:e2e # e2e (needs docker compose up)
-```
-
-CI runs 6 jobs: Lint, Security Audit, Test, API E2E (compose infra), Build, Docker Build.
-
-> **Note:** `lint` is `tsc --noEmit` per package (the web app uses `tsconfig.lint.json`). There is no ESLint config — type-checking is the lint step.
+Unlimited tiers store `analysesLimit = -1`.
 
 ---
 
 ## Documentation
 
-| Document                        | Description                          |
-| ------------------------------- | ------------------------------------ |
-| [API Reference](API.md)         | Endpoints, request/response examples |
-| [Database Schema](SCHEMA.md)    | User, Job, Clip tables               |
-| [Algorithm](ALGORITHM.md)       | Spike detection pipeline             |
-| [Deployment](DEPLOYMENT.md)     | Local dev + VPS production           |
-| [Contributing](CONTRIBUTING.md) | Style, git + PR conventions          |
-| [Security](SECURITY.md)         | Practices + vulnerability reporting  |
+| Document | Description |
+|----------|-------------|
+| [API Reference](API.md) | Endpoints, request/response examples |
+| [Database Schema](SCHEMA.md) | User, Job, Clip tables |
+| [Algorithm](ALGORITHM.md) | Spike detection pipeline |
+| [Deployment](DEPLOYMENT.md) | Local dev + VPS production |
+| [Contributing](CONTRIBUTING.md) | Style, git + PR conventions |
+| [Security](SECURITY.md) | Practices + vulnerability reporting |
+
+---
+
+## Editing Engine & OpenReel Integration
+
+SpikeClip's Clip Studio editing engine is being rebuilt on the open-source **OpenReel** architecture (MIT, github.com/Augani/openreel-video):
+
+- **Non-destructive multi-track timeline** as the single source of truth (replacing the per-scene flat StudioAction[] list)
+- **Typed editing-tool registry** - every edit (manual or AI) is one undoable, typed command through the same surface
+- **Model-agnostic AI agent** - bring OpenAI / Anthropic / local models; plans via dry-run and executes tools, with "undo the whole turn"
+- **Hybrid rendering** - the server keeps YouTube ingest (yt-dlp), proxy/transcode, and storage (MinIO); compositing and export move to in-browser **WebCodecs / WebGPU** (mirroring OpenReel's engine), with server-side ffmpeg as a heavy-transcode fallback
+
+This keeps SpikeClip's data-driven heatmap selection while giving it a professional, agent-native editing core. StudioAction remains as a legacy/translation layer during the transition.
 
 ---
 

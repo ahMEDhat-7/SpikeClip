@@ -1,4 +1,4 @@
-import { ClipStatus } from "@spikeclip/shared";
+import { ClipStatus, type ClipStatusValue } from "@spikeclip/shared";
 
 export class Clip {
   constructor(
@@ -8,7 +8,7 @@ export class Clip {
     public readonly startTime: number,
     public readonly endTime: number,
     public peakIntensity?: number,
-    public status: ClipStatus = "pending",
+    public status: ClipStatusValue = ClipStatus.PENDING,
     public fileUrl?: string,
     public fileSize?: number,
     public duration?: number,
@@ -22,7 +22,7 @@ export class Clip {
   }
 
   markCompleted(fileUrl: string, fileSize: number): void {
-    this.status = "completed";
+    this.status = ClipStatus.COMPLETED;
     this.fileUrl = fileUrl;
     this.fileSize = fileSize;
     this.duration = this.getDuration();
@@ -30,7 +30,7 @@ export class Clip {
   }
 
   markFailed(error: string): void {
-    this.status = "failed";
+    this.status = ClipStatus.FAILED;
     this.errorMessage = error;
   }
 }
