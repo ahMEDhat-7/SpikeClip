@@ -4,6 +4,76 @@
 
 > **OpenReel Integration**: ✅ **COMPLETED** — Clip Studio now uses `@openreel/core` from vendored `vendor/openreel-video` (MIT licensed). Non-destructive multi-track timeline, typed editing-tool registry, model-agnostic AI agent, hybrid rendering (server ingest + in-browser WebCodecs/WebGPU export).
 
+---
+
+## CI/CD Pipeline
+
+### Workflow Overview
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **CI** (`.github/workflows/ci.yml`) | Push to `main`/`develop`, PRs to `main`/`develop` | Lint, type-check, test, security audit, build |
+| **CD** (`.github/workflows/cd.yml`) | Push to `main`/`develop` | Build Docker images, integration test, push to Docker Hub |
+
+### CI Pipeline (5 jobs)
+
+| Job | Description |
+|-----|-------------|
+| **Lint & Type Check** | `tsc --noEmit` across all packages |
+| **Prisma Schema Validation** | Validates Prisma schema against Postgres |
+| **Unit Tests** | Shared (90 tests) + API (126 tests) with coverage |
+| **Security Audit** | `pnpm audit --audit-level=high` (non-blocking) |
+| **Build All Packages** | `pnpm build` (Next.js + NestJS) |
+
+### CD Pipeline (4 jobs)
+
+| Job | Description |
+|-----|-------------|
+| **Build Base Image** | Shared base with ffmpeg, yt-dlp, Python |
+| **Build Docker Images** | API + Web production images (multi-stage) |
+| **Container Connectivity** | Full stack integration test (Postgres → Redis → MinIO → API → Web) |
+| **Push to Docker Hub** | On push to `main` (tags: `latest`, `sha`, `main`) or `develop` (tags: `sha`, `develop`) |
+
+### Branch Strategy (GitFlow-inspired)
+
+```
+main ──────────────────────────────────► Production releases only
+  ▲
+  │
+  │  release/* PRs (version bump, changelog)
+  │
+develop ─────────────────────────────► Integration branch (staging)
+  ▲
+  │
+  │  feature/* PRs (new features)
+  │  fix/* PRs (bug fixes)
+  │  hotfix/* PRs (urgent prod fixes → main, then backport)
+```
+
+| Branch | Purpose | Protection | Deploys To |
+|--------|---------|------------|------------|
+| `main` | Production releases | ✅ Ruleset (5 checks, linear, 1 review) | Production |
+| `develop` | Staging / integration | ✅ Ruleset (5 checks, linear, 1 review) | Staging |
+| `feature/*` | New features | ❌ | — |
+| `fix/*` | Bug fixes | ❌ | — |
+| `hotfix/*` | Urgent production fixes | ❌ | — |
+| `release/*` | Release preparation | ❌ | — |
+
+**Rules:**
+- All work starts from `develop` (`git checkout develop && git pull && git checkout -b feature/xxx`)
+- Feature/fix branches open PRs against `develop`
+- `main` only receives merges from `release/*` or `hotfix/*` branches
+- `develop` syncs to `main` via `release/*` branches (version bump + changelog)
+- Hotfixes target `main` directly, then backported to `develop`
+
+---
+
+## SpikeClip — New End-to-End Pipeline
+
+> **Status**: ✅ Phase 0 (MCP/YouTube Connection) — **DONE** | ✅ Phase 1 (Project/Source Model) — **DONE** | ✅ Phase 2 (Extract/Source Discovery) — **DONE** | ✅ Phase 3 (Generate/Scene Generation) — **DONE** | ✅ Phase 4 (Editor/OpenReel Integration) — **DONE** | ✅ Phase 5 (Export/Download) — **DONE** | 🔄 Phase 6 (YouTube MCP/Account-First Architecture) — **PLANNED**
+
+> **OpenReel Integration**: ✅ **COMPLETED** — Clip Studio now uses `@openreel/core` from vendored `vendor/openreel-video` (MIT licensed). Non-destructive multi-track timeline, typed editing-tool registry, model-agnostic AI agent, hybrid rendering (server ingest + in-browser WebCodecs/WebGPU export).
+
 0. Objective
 Replace the current:
 
