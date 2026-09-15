@@ -3,6 +3,7 @@
 ## Local Development
 
 ### Prerequisites
+
 - Node.js ≥ 22
 - pnpm 9.x
 - Docker + Docker Compose
@@ -77,6 +78,7 @@ stripe trigger customer.subscription.created
 ### Storage
 
 The API supports two storage drivers:
+
 - **local** (default): Files stored in `/tmp/spikeclips-clips`
 - **minio**: Files stored in MinIO object storage
 
@@ -84,9 +86,72 @@ Set `STORAGE_DRIVER=minio` in `.env` to use MinIO. Music uploads require the sto
 
 ---
 
+## CI/CD Pipeline
+
+### Workflow Overview
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **CI** (`.github/workflows/ci.yml`) | Push to `main`/`develop`, PRs to `main`/`develop` | Lint, type-check, test, security audit, build |
+| **CD** (`.github/workflows/cd.yml`) | Push to `main`/`develop` | Build Docker images, integration test, push to Docker Hub |
+
+### CI Pipeline (5 jobs)
+
+| Job | Description |
+|-----|-------------|
+| **Lint & Type Check** | `tsc --noEmit` across all packages |
+| **Prisma Schema Validation** | Validates Prisma schema against Postgres |
+| **Unit Tests** | Shared (90 tests) + API (126 tests) with coverage |
+| **Security Audit** | `pnpm audit --audit-level=high` (non-blocking) |
+| **Build All Packages** | `pnpm build` (Next.js + NestJS) |
+
+### CD Pipeline (4 jobs)
+
+| Job | Description |
+|-----|-------------|
+| **Build Base Image** | Shared base with ffmpeg, yt-dlp, Python |
+| **Build Docker Images** | API + Web production images (multi-stage) |
+| **Container Connectivity** | Full stack integration test (Postgres → Redis → MinIO → API → Web) |
+| **Push to Docker Hub** | On push to `main` (tags: `latest`, `sha`, `main`) or `develop` (tags: `sha`, `develop`) |
+
+### Branch Strategy (GitFlow-inspired)
+
+```
+main ──────────────────────────────────► Production releases only
+  ▲
+  │
+  │  release/* PRs (version bump, changelog)
+  │
+develop ─────────────────────────────► Integration branch (staging)
+  ▲
+  │
+  │  feature/* PRs (new features)
+  │  fix/* PRs (bug fixes)
+  │  hotfix/* PRs (urgent prod fixes → main, then backport)
+```
+
+| Branch | Purpose | Protection | Deploys To |
+|--------|---------|------------|------------|
+| `main` | Production releases | ✅ Ruleset (5 checks, linear, 1 review) | Production |
+| `develop` | Staging / integration | ✅ Ruleset (5 checks, linear, 1 review) | Staging |
+| `feature/*` | New features | ❌ | — |
+| `fix/*` | Bug fixes | ❌ | — |
+| `hotfix/*` | Urgent production fixes | ❌ | — |
+| `release/*` | Release preparation | ❌ | — |
+
+**Rules:**
+- All work starts from `develop` (`git checkout develop && git pull && git checkout -b feature/xxx`)
+- Feature/fix branches open PRs against `develop`
+- `main` only receives merges from `release/*` or `hotfix/*` branches
+- `develop` syncs to `main` via `release/*` branches (version bump + changelog)
+- Hotfixes target `main` directly, then backported to `develop`
+
+---
+
 ## Production (VPS)
 
 ### Target Specs
+
 - AMD Ryzen 7 7700X (2c/4t)
 - 6GB DDR5 RAM
 - 120GB NVMe Gen5
@@ -180,3 +245,14 @@ sudo certbot --nginx -d spikeclips.com -d www.spikeclips.com
 curl -I https://spikeclips.com
 curl -I https://spikeclips.com/api/health
 ```
+
+---
+
+## Staging Environment
+
+The `develop` branch automatically deploys to staging via CD pipeline:
+
+- Docker images tagged with `sha` and `develop`
+- Deploy to staging VPS using same `deploy/` scripts
+- Update staging DNS: `staging.spikeclips.com`
+- Run with `STORAGE_DRIVER=minio` for full integration testing
