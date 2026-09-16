@@ -67,6 +67,9 @@ jobs:
           - service: api
             dockerfile: apps/api/Dockerfile
             target: production
+          - service: api-migrate
+            dockerfile: apps/api/Dockerfile
+            target: migrate
           - service: web
             dockerfile: apps/web/Dockerfile
             target: production
@@ -125,11 +128,16 @@ jobs:
           path: /tmp
       - uses: actions/download-artifact@v4
         with:
+          name: docker-image-api-migrate
+          path: /tmp
+      - uses: actions/download-artifact@v4
+        with:
           name: docker-image-web
           path: /tmp
       - name: Load built images
         run: |
           docker load -i /tmp/api.tar
+          docker load -i /tmp/api-migrate.tar
           docker load -i /tmp/web.tar
       - name: Start full stack
         run: docker compose -f docker/docker-compose.ci.yml up -d --wait
