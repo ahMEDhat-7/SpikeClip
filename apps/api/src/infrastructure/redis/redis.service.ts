@@ -11,7 +11,8 @@ export class RedisService {
     const redisUrl = this.config.get<string>("REDIS_URL");
     const redisHost = this.config.get<string>("REDIS_HOST");
     const redisPort = this.config.get<number>("REDIS_PORT");
-    
+    const redisPassword = this.config.get<string>("REDIS_PASSWORD");
+
     if (redisUrl) {
       this.client = new Redis(redisUrl, {
         family: 4,
@@ -25,6 +26,7 @@ export class RedisService {
       this.client = new Redis({
         host: redisHost,
         port: redisPort,
+        password: redisPassword || undefined,
         family: 4,
         maxRetriesPerRequest: 3,
         retryStrategy(times) {
