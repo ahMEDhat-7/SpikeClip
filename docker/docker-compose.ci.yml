@@ -51,8 +51,8 @@ services:
   # package script, since I haven't confirmed the exact script name in
   # apps/api/package.json — adjust if you've got e.g. `prisma:deploy`.
   migrate:
-    image: spikeclip-api:ci
-    command: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+    image: spikeclip-api-migrate:ci
+    command: pnpm exec prisma migrate deploy --schema prisma/schema.prisma
     environment:
       DATABASE_URL: postgresql://spikeclips:spikeclips_dev@postgres:5432/spikeclips
     depends_on:
