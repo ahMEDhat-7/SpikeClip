@@ -4,6 +4,76 @@
 
 > **OpenReel Integration**: ✅ **COMPLETED** — Clip Studio now uses `@openreel/core` from vendored `vendor/openreel-video` (MIT licensed). Non-destructive multi-track timeline, typed editing-tool registry, model-agnostic AI agent, hybrid rendering (server ingest + in-browser WebCodecs/WebGPU export).
 
+---
+
+## CI/CD Pipeline
+
+### Workflow Overview
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **CI** (`.github/workflows/ci.yml`) | Push to `main`/`develop`, PRs to `main`/`develop` | Lint, type-check, test, security audit, build |
+| **CD** (`.github/workflows/cd.yml`) | Push to `main`/`develop` | Build Docker images, integration test, push to Docker Hub |
+
+### CI Pipeline (5 jobs)
+
+| Job | Description |
+|-----|-------------|
+| **Lint & Type Check** | `tsc --noEmit` across all packages |
+| **Prisma Schema Validation** | Validates Prisma schema against Postgres |
+| **Unit Tests** | Shared (90 tests) + API (126 tests) with coverage |
+| **Security Audit** | `pnpm audit --audit-level=high` (non-blocking) |
+| **Build All Packages** | `pnpm build` (Next.js + NestJS) |
+
+### CD Pipeline (4 jobs)
+
+| Job | Description |
+|-----|-------------|
+| **Build Base Image** | Shared base with ffmpeg, yt-dlp, Python |
+| **Build Docker Images** | API + Web production images (multi-stage) |
+| **Container Connectivity** | Full stack integration test (Postgres → Redis → MinIO → API → Web) |
+| **Push to Docker Hub** | On push to `main` (tags: `latest`, `sha`, `main`) or `develop` (tags: `sha`, `develop`) |
+
+### Branch Strategy (GitFlow-inspired)
+
+```
+main ──────────────────────────────────► Production releases only
+  ▲
+  │
+  │  release/* PRs (version bump, changelog)
+  │
+develop ─────────────────────────────► Integration branch (staging)
+  ▲
+  │
+  │  feature/* PRs (new features)
+  │  fix/* PRs (bug fixes)
+  │  hotfix/* PRs (urgent prod fixes → main, then backport)
+```
+
+| Branch | Purpose | Protection | Deploys To |
+|--------|---------|------------|------------|
+| `main` | Production releases | ✅ Ruleset (5 checks, linear, 1 review) | Production |
+| `develop` | Staging / integration | ✅ Ruleset (5 checks, linear, 1 review) | Staging |
+| `feature/*` | New features | ❌ | — |
+| `fix/*` | Bug fixes | ❌ | — |
+| `hotfix/*` | Urgent production fixes | ❌ | — |
+| `release/*` | Release preparation | ❌ | — |
+
+**Rules:**
+- All work starts from `develop` (`git checkout develop && git pull && git checkout -b feature/xxx`)
+- Feature/fix branches open PRs against `develop`
+- `main` only receives merges from `release/*` or `hotfix/*` branches
+- `develop` syncs to `main` via `release/*` branches (version bump + changelog)
+- Hotfixes target `main` directly, then backported to `develop`
+
+---
+
+## SpikeClip — New End-to-End Pipeline
+
+> **Status**: ✅ Phase 0 (MCP/YouTube Connection) — **DONE** | ✅ Phase 1 (Project/Source Model) — **DONE** | ✅ Phase 2 (Extract/Source Discovery) — **DONE** | ✅ Phase 3 (Generate/Scene Generation) — **DONE** | ✅ Phase 4 (Editor/OpenReel Integration) — **DONE** | ✅ Phase 5 (Export/Download) — **DONE** | 🔄 Phase 6 (YouTube MCP/Account-First Architecture) — **PLANNED**
+
+> **OpenReel Integration**: ✅ **COMPLETED** — Clip Studio now uses `@openreel/core` from vendored `vendor/openreel-video` (MIT licensed). Non-destructive multi-track timeline, typed editing-tool registry, model-agnostic AI agent, hybrid rendering (server ingest + in-browser WebCodecs/WebGPU export).
+
 0. Objective
 Replace the current:
 
@@ -1925,512 +1995,3 @@ See scene scores and timestamps.
 Select a scene.
 Open it in the editor.
 Change platform/output settings.
-Apply captions.
-Apply templates.
-Apply music.
-Give natural-language editing instructions.
-Convert those instructions to validated StudioAction[].
-Preview the edit.
-Export asynchronously.
-Monitor export status.
-Download the completed MP4.
-Generate multiple clips from one source without downloading the source repeatedly.
-Recover cleanly from MCP, YouTube, yt-dlp, FFmpeg, queue, and storage failures.
-57. Final Target
-The final system should conceptually look like:
-
-                     ┌───────────────────┐
-                     │   Google Account  │
-                     │   YouTube Studio  │
-                     └─────────┬─────────┘
-                               │
-                               ▼
-                     ┌───────────────────┐
-                     │ YouTube Studio    │
-                     │ MCP               │
-                     └─────────┬─────────┘
-                               │
-                               ▼
-                     ┌───────────────────┐
-                     │  SpikeClip        │
-                     │  Project          │
-                     └─────────┬─────────┘
-                               │
-                ┌──────────────┴──────────────┐
-                ▼                             ▼
-        ┌───────────────┐             ┌───────────────┐
-        │    EXTRACT    │             │    SOURCES    │
-        │               │────────────▶│               │
-        │ YouTube videos│             │ Media/Metadata│
-        └───────┬───────┘             └───────┬───────┘
-                │                             │
-                └──────────────┬──────────────┘
-                               ▼
-                     ┌───────────────────┐
-                     │     GENERATE      │
-                     │                   │
-                     │ Heatmap           │
-                     │ Analysis          │
-                     │ Scene Detection   │
-                     │ Ranking           │
-                     └─────────┬─────────┘
-                               │
-                               ▼
-                     ┌───────────────────┐
-                     │      EDITOR       │
-                     │                   │
-                     │ OpenReel          │
-                     │ Captions          │
-                     │ Templates         │
-                     │ Music             │
-                     │ AI Actions        │
-                     └─────────┬─────────┘
-                               │
-                               ▼
-                     ┌───────────────────┐
-                     │      EXPORT       │
-                     │                   │
-                     │ BullMQ            │
-                     │ FFmpeg            │
-                     │ MinIO             │
-                     └─────────┬─────────┘
-                               │
-                               ▼
-                     ┌───────────────────┐
-                     │     DOWNLOAD      │
-                     │                   │
-                     │ Signed URL        │
-                     │ MP4               │
-                     └───────────────────┘
-
-58. Architectural Principle
-The most important implementation rule is:
-
-YouTube Studio MCP
-        =
-YouTube control plane
-
-SpikeClip
-        =
-Video intelligence + media processing + editing + rendering
-
-Do not make MCP responsible for:
-
-FFmpeg
-video rendering
-scene generation
-caption rendering
-storage
-export queues
-editor state
-
-And do not make SpikeClip responsible for recreating YouTube Studio account functionality that the MCP already exposes.
-
-The resulting separation should be:
-
-                YOUTUBE
-                   │
-                   ▼
-             ┌───────────┐
-             │    MCP    │
-             └─────┬─────┘
-                   │
-             account/video
-              intelligence
-                   │
-                   ▼
-             ┌───────────┐
-             │ SpikeClip │
-             └─────┬─────┘
-                   │
-        ┌──────────┼──────────┐
-        ▼          ▼          ▼
-     Extract    Generate    Editor
-                             │
-                             ▼
-                           Export
-                             │
-                             ▼
-                          Download
-
-This should be the target architecture for the implementation.
-
-One important implementation detail: the referenced MCP currently advertises metadata/analytics/channel-management capabilities, not video-media downloading or FFmpeg processing, so the cleanest architecture is to use MCP as the YouTube control/information plane and keep yt-dlp as SpikeClip's media acquisition layer.
-
----
-
-## Implementation Details (Verified)
-
-### 59. MCP Server — Verified Tool Schemas
-
-Source: `github.com/i1s-abhishek/youtube-studio-mcp` (Python, stdio, JSON-RPC 2.0, protocol `2024-11-05`).
-
-| Tool | Required Params | Optional Params |
-|------|-----------------|-----------------|
-| `youtube_auth_status` | — | — |
-| `youtube_start_auth` | — | — |
-| `youtube_channel_overview` | — | — |
-| `youtube_list_videos` | — | `max_results` (int, 1–25), `page_token` (string) |
-| `youtube_get_video` | `video_id` (string) | — |
-| `youtube_update_video` | `video_id` (string) | `title`, `description`, `tags` (string[]), `category_id`, `default_language`, `privacy_status` |
-| `youtube_upload_thumbnail` | `video_id` (string), `image_path` (string) | — |
-| `youtube_channel_analytics` | `start_date` (YYYY-MM-DD), `end_date` (YYYY-MM-DD) | — |
-| `youtube_video_analytics` | `video_id` (string), `start_date` (YYYY-MM-DD), `end_date` (YYYY-MM-DD) | — |
-| `youtube_post_comment` | `video_id` (string), `text` (string) | — |
-| `youtube_list_comments` | `video_id` (string) | `max_results` (int, 1–100, default 20) |
-
-MCP OAuth scopes: `youtube`, `youtube.force-ssl`, `youtube.readonly`, `yt-analytics.readonly`.
-
-MCP uses Desktop OAuth flow (PKCE S256), local callback on `127.0.0.1:8765`, tokens stored in `secrets/token.json`.
-
-**MCP is completely separate from SpikeClip user auth.** MCP manages its own `client_secret.json` + `token.json`. The app's Google auth (passport-google-oauth20) handles user login only.
-
-### 60. OpenReel Integration — Verified
-
-`@openreel/core` resolves from `file:../../vendor/openreel-video/packages/core` (browser-only library).
-
-**PostMessage protocol (host ↔ iframe):**
-
-| Direction | Message | Purpose |
-|-----------|---------|---------|
-| Host → Editor | `openreel:loadMedia` | Load source video with trim range |
-| Host → Editor | `openreel:updateRange` | Change scene start/end |
-| Host → Editor | `openreel:loadProject` | Restore saved project state |
-| Host → Editor | `openreel:export` | Trigger export |
-| Editor → Host | `openreel:ready` | Editor initialized |
-| Editor → Host | `openreel:exported` | Export complete (with Blob) |
-| Editor → Host | `openreel:projectChanged` | Project state changed (auto-save) |
-| Editor → Host | `openreel:error` | Error occurred |
-
-**Export presets for social media:**
-- `tiktok-1080p`: 1080×1920, H.264, 15Mbps
-- `youtube-1080p`: 1920×1080, H.264
-- ExportEngine uses WebCodecs/WebGPU (browser-only)
-
-### 61. Database Schema — Prisma
-
-```prisma
-model YoutubeConnection {
-  id               String    @id @default(uuid())
-  userId           String
-  channelId        String
-  channelTitle     String?
-  channelThumbnail String?
-  provider         String    @default("youtube-studio-mcp")
-  status           String    @default("active")
-  lastSyncedAt     DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projects         Project[]
-  @@unique([userId, channelId])
-  @@index([userId])
-}
-
-model Project {
-  id                  String    @id @default(uuid())
-  userId              String
-  youtubeConnectionId String?
-  name                String
-  description         String?
-  status              String    @default("active")
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  youtubeConnection   YoutubeConnection? @relation(fields: [youtubeConnectionId], references: [id], onDelete: SetNull)
-  sources             ProjectSource[]
-  scenes              ProjectScene[]
-  clips               GeneratedClip[]
-  @@index([userId])
-  @@index([userId, status])
-}
-
-model ProjectSource {
-  id              String   @id @default(uuid())
-  projectId       String
-  youtubeVideoId  String
-  youtubeUrl      String
-  title           String?
-  description     String?
-  thumbnailUrl    String?
-  duration        Float?
-  publishedAt     String?
-  viewCount       Int?
-  likeCount       Int?
-  commentCount    Int?
-  privacyStatus   String?
-  metadataJson    Json?
-  analyticsJson   Json?
-  sourceStatus    String   @default("discovered")
-  mediaStatus     String   @default("not_downloaded")
-  storageKey      String?
-  errorMessage    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  scenes          ProjectScene[]
-  clips           GeneratedClip[]
-  @@unique([projectId, youtubeVideoId])
-  @@index([projectId])
-  @@index([sourceStatus])
-}
-
-model ProjectScene {
-  id           String   @id @default(uuid())
-  projectId    String
-  sourceId     String
-  startTime    Float
-  endTime      Float
-  duration     Float
-  score        Float?
-  rank         Int?
-  analysisJson Json?
-  status       String   @default("candidate")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  source       ProjectSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  clips        GeneratedClip[]
-  @@index([projectId])
-  @@index([sourceId])
-  @@index([status])
-}
-
-model GeneratedClip {
-  id               String   @id @default(uuid())
-  projectId        String
-  sceneId          String
-  sourceId         String
-  status           String   @default("draft")
-  platform         String?
-  aspectRatio      String?
-  duration         Float?
-  editorConfigJson Json?
-  outputStorageKey String?
-  fileUrl          String?
-  size             Int?
-  progress         Int      @default(0)
-  errorMessage     String?
-  createdAt        DateTime @default(now())
-  startedAt        DateTime?
-  completedAt      DateTime?
-  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  scene            ProjectScene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
-  source           ProjectSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  @@index([projectId])
-  @@index([sceneId])
-  @@index([status])
-}
-```
-
-### 62. API Endpoints — Complete Reference
-
-**YouTube:**
-```
-GET  /api/youtube/status          — Connection status
-GET  /api/youtube/channel         — Channel overview (via MCP)
-GET  /api/youtube/videos          — List videos (paginated, via MCP)
-GET  /api/youtube/videos/:id      — Single video details (via MCP)
-POST /api/youtube/sync            — Sync channel data
-```
-
-**Projects:**
-```
-POST   /api/projects              — Create project
-GET    /api/projects              — List user's projects
-GET    /api/projects/:id          — Project detail
-PATCH  /api/projects/:id          — Update project
-DELETE /api/projects/:id          — Delete project
-```
-
-**Sources:**
-```
-GET  /api/projects/:pid/sources              — List sources
-POST /api/projects/:pid/sources/import       — Add videos as sources
-POST /api/projects/:pid/sources/:sid/acquire — Trigger media download
-GET  /api/projects/:pid/sources/:sid         — Source detail
-```
-
-**Generate:**
-```
-POST /api/projects/:pid/generate             — Start scene generation
-GET  /api/projects/:pid/generation-status    — Check generation progress
-```
-
-**Scenes:**
-```
-GET   /api/projects/:pid/scenes             — List scenes
-GET   /api/scenes/:sid                      — Scene detail
-PATCH /api/scenes/:sid                      — Update scene (adjust times)
-POST  /api/scenes/:sid/select               — Select scene
-```
-
-**Clips (Generated):**
-```
-POST /api/projects/:pid/clips               — Create clip from scene
-GET  /api/projects/:pid/clips               — List clips
-GET  /api/clips/:cid                        — Clip detail
-PATCH /api/clips/:cid                       — Update clip
-```
-
-**Editor:**
-```
-GET   /api/clips/:cid/editor                — Get editor config
-PUT   /api/clips/:cid/editor                — Save editor config
-POST  /api/clips/:cid/editor/actions        — Translate AI prompt
-```
-
-**Export:**
-```
-POST /api/projects/:pid/export              — Start export
-GET  /api/projects/:pid/export-status       — Check export progress
-```
-
-**Download (retained):**
-```
-GET /api/clips/:cid/download                — Signed URL redirect
-GET /api/clips/download/:key                — Serve clip file
-```
-
-### 63. Service Architecture — Concrete Files
-
-**MCP Integration (backend):**
-```
-apps/api/src/
-├── domain/ports/youtube-studio.provider.ts        — Provider interface
-├── infrastructure/youtube/
-│   ├── types.ts                                   — YouTube domain types
-│   ├── mcp-client.ts                              — JSON-RPC transport (child process)
-│   ├── youtube-studio-mcp.service.ts              — Provider implementation
-│   └── youtube.module.ts                          — NestJS module
-```
-
-**YouTube Connection:**
-```
-apps/api/src/
-├── domain/entities/youtube-connection.entity.ts
-├── domain/repositories/youtube-connection.repository.ts
-├── infrastructure/database/repositories/prisma-youtube-connection.repository.ts
-├── presentation/youtube/
-│   ├── youtube.controller.ts
-│   ├── youtube.service.ts
-│   └── youtube.module.ts
-```
-
-**Project + Source + Scene + Clip:**
-```
-apps/api/src/
-├── domain/entities/{project,project-source,project-scene,generated-clip}.entity.ts
-├── domain/repositories/{project,project-source,project-scene,generated-clip}.repository.ts
-├── infrastructure/database/repositories/prisma-{project,project-source,project-scene,generated-clip}.repository.ts
-├── presentation/{projects,sources,scenes,clips}/
-│   ├── {name}.controller.ts
-│   ├── {name}.service.ts  (or use-case)
-│   └── {name}.module.ts
-```
-
-**Scene Generation:**
-```
-apps/api/src/
-├── application/services/scene-generation.service.ts
-├── infrastructure/external/youtube-media.service.ts
-```
-
-**Frontend:**
-```
-apps/web/src/
-├── presentation/components/youtube/
-│   ├── YouTubeConnectButton.tsx
-│   └── YouTubeStatus.tsx
-├── presentation/components/extract/
-│   ├── VideoBrowser.tsx
-│   ├── VideoCard.tsx
-│   └── SourceList.tsx
-├── presentation/components/projects/
-│   ├── ProjectCard.tsx
-│   └── CreateProjectDialog.tsx
-├── presentation/components/scenes/
-│   ├── SceneResults.tsx
-│   ├── ScenePreview.tsx
-│   └── SceneAdjuster.tsx
-├── application/hooks/
-│   ├── use-youtube-connection.ts
-│   ├── use-youtube-videos.ts
-│   ├── use-project-sources.ts
-│   └── use-project-scenes.ts
-├── app/
-│   ├── projects/[id]/page.tsx
-│   ├── projects/[id]/extract/page.tsx
-│   ├── projects/[id]/generate/page.tsx
-│   ├── projects/[id]/editor/page.tsx
-│   ├── projects/[id]/export/page.tsx
-│   └── projects/[id]/downloads/page.tsx
-```
-
-### 64. Storage Layout
-
-```
-projects/
-  {projectId}/
-    sources/
-      {sourceId}/
-        source.mp4
-    clips/
-      {clipId}/
-        final.mp4
-    exports/
-      {exportId}/
-```
-
-### 65. State Machines
-
-**Source:**
-```
-discovered → acquiring → ready
-                 ↓
-              failed
-```
-
-**Scene:**
-```
-candidate → selected → editing → exported
-    ↓
- rejected
-```
-
-**Clip:**
-```
-draft → queued → processing → uploading → completed
-                  ↓
-               failed
-```
-
-### 66. Feature Flags
-
-```typescript
-const FEATURE_FLAGS = {
-  SPIKECLIP_PROJECT_PIPELINE: true,
-  YOUTUBE_MCP_INTEGRATION: true,
-  NEW_EXTRACT_UI: true,
-  NEW_GENERATE_UI: true,
-  NEW_EDITOR_PIPELINE: true,
-  NEW_EXPORT_PIPELINE: true,
-  LEGACY_URL_FLOW: true,
-};
-```
-
-### 67. Implementation Order (13 Steps)
-
-| Step | Scope | New Files | Modified Files |
-|------|-------|-----------|----------------|
-| 1 | MCP Integration | 5 | 0 |
-| 2 | YouTube Connection | 6 | 1 |
-| 3 | Project + Source models | 12 | 0 |
-| 4 | Extract UI | 5 | 1 |
-| 5 | Media Acquisition | 1 | 2 |
-| 6 | Scene Generation | 1 | 2 |
-| 7 | Scene UI | 3 | 0 |
-| 8 | Editor connection | 1 | 1 |
-| 9 | Export | 0 | 3 |
-| 10 | Frontend IA | 6 | 2 |
-| **Total** | | **~40** | **~12** |
